@@ -11,9 +11,13 @@ mod analytics;
 mod collaboration;
 mod health;
 mod project;
+mod auth;
+mod sync;
 
 pub fn configure_routes() -> Scope {
     web::scope("/api")
+        .service(auth::configure_auth_routes())
+        .service(sync::configure_sync_routes())
         .service(user::configure_user_routes())
         .service(organization::configure_organization_routes())
         .service(repository::configure_repository_routes())

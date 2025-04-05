@@ -9,25 +9,28 @@ pub struct AnalyticsQuery {
 
 pub fn configure_analytics_routes() -> actix_web::Scope {
     web::scope("/analytics")
-        .route("/repositories/{id}/activity", web::get().to(get_repository_activity))
-        .route("/repositories/{id}/velocity", web::get().to(get_repository_velocity))
-        .route("/repositories/{id}/growth", web::get().to(get_repository_growth))
-        .route("/repositories/{id}/burndown/{milestone_id}", web::get().to(get_burndown_chart))
-        .route("/repositories/{id}/release-cycle", web::get().to(get_release_cycle))
-        .route("/users/{id}/contributions", web::get().to(get_user_contributions))
-        .route("/organizations/{id}/stats", web::get().to(get_organization_stats))
-        .route("/organizations/{id}/cross-team", web::get().to(get_cross_team_collaboration))
+        .route("/repository/{owner}/{repo}/activity", web::get().to(get_repository_activity))
+        .route("/repository/{owner}/{repo}/health", web::get().to(get_repository_health))
+        .route("/repository/{owner}/{repo}/quality", web::get().to(get_code_quality_metrics))
+        .route("/user/{username}/contributions", web::get().to(get_user_contributions))
+        .route("/organization/{org}/stats", web::get().to(get_organization_stats))
+        .route("/organization/{org}/team-performance", web::get().to(get_team_performance))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RepositoryPath {
+    owner: String,
+    repo: String,
 }
 
 async fn get_repository_activity(
-    path: web::Path<i32>,
+    path: web::Path<RepositoryPath>,
     query: web::Query<AnalyticsQuery>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let repository_id = path.into_inner();
     let days = query.days.unwrap_or(30);
     
-    match analytics.get_repository_activity(repository_id, days).await {
+    match analytics.get_repository_activity(&path.owner, &path.repo, days).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "Failed to get repository activity",
@@ -36,79 +39,41 @@ async fn get_repository_activity(
     }
 }
 
-async fn get_repository_velocity(
-    path: web::Path<i32>,
-    query: web::Query<AnalyticsQuery>,
+async fn get_repository_health(
+    path: web::Path<RepositoryPath>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let repository_id = path.into_inner();
-    let days = query.days.unwrap_or(30);
-    
-    match analytics.get_repository_velocity(repository_id, days).await {
+    match analytics.get_repository_health(&path.owner, &path.repo).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to get repository velocity",
+            "error": "Failed to get repository health",
             "details": e.to_string()
         }))
     }
 }
 
-async fn get_repository_growth(
-    path: web::Path<i32>,
-    query: web::Query<AnalyticsQuery>,
+async fn get_code_quality_metrics(
+    path: web::Path<RepositoryPath>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let repository_id = path.into_inner();
-    let days = query.days.unwrap_or(30);
-    
-    match analytics.get_repository_growth(repository_id, days).await {
+    match analytics.get_code_quality_metrics(&path.owner, &path.repo).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to get repository growth",
-            "details": e.to_string()
-        }))
-    }
-}
-
-async fn get_burndown_chart(
-    path: web::Path<(i32, i32)>,
-    analytics: web::Data<Analytics>,
-) -> impl Responder {
-    let (repository_id, milestone_id) = path.into_inner();
-    
-    match analytics.get_burndown_chart(milestone_id).await {
-        Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to get burndown chart",
-            "details": e.to_string()
-        }))
-    }
-}
-
-async fn get_release_cycle(
-    path: web::Path<i32>,
-    analytics: web::Data<Analytics>,
-) -> impl Responder {
-    let repository_id = path.into_inner();
-    
-    match analytics.get_release_cycle_analysis(repository_id).await {
-        Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to get release cycle analysis",
+            "error": "Failed to get code quality metrics",
             "details": e.to_string()
         }))
     }
 }
 
 async fn get_user_contributions(
-    path: web::Path<i32>,
+    path: web::Path<String>,
     query: web::Query<AnalyticsQuery>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let user_id = path.into_inner();
+    let username = path.into_inner();
     let days = query.days.unwrap_or(30);
     
-    match analytics.get_user_contributions(user_id, days).await {
+    match analytics.get_user_contributions(&username, days).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "Failed to get user contributions",
@@ -118,14 +83,14 @@ async fn get_user_contributions(
 }
 
 async fn get_organization_stats(
-    path: web::Path<i32>,
+    path: web::Path<String>,
     query: web::Query<AnalyticsQuery>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let organization_id = path.into_inner();
+    let org = path.into_inner();
     let days = query.days.unwrap_or(30);
     
-    match analytics.get_organization_stats(organization_id, days).await {
+    match analytics.get_organization_stats(&org, days).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "Failed to get organization stats",
@@ -134,18 +99,18 @@ async fn get_organization_stats(
     }
 }
 
-async fn get_cross_team_collaboration(
-    path: web::Path<i32>,
+async fn get_team_performance(
+    path: web::Path<String>,
     query: web::Query<AnalyticsQuery>,
     analytics: web::Data<Analytics>,
 ) -> impl Responder {
-    let organization_id = path.into_inner();
+    let org = path.into_inner();
     let days = query.days.unwrap_or(30);
     
-    match analytics.get_cross_team_collaboration(organization_id, days).await {
+    match analytics.get_team_performance(&org, days).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": "Failed to get cross-team collaboration data",
+            "error": "Failed to get team performance data",
             "details": e.to_string()
         }))
     }

@@ -1,12 +1,11 @@
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error, Error};
 use actix_web::middleware::Logger;
 use actix_ratelimit::{MemoryStore, MemoryStoreActor, RateLimiter};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use reqwest::Client;
 use std::env;
 use std::time::Duration;
 use dotenv::dotenv;
-use serde::Deserialize;
 
 // Error handling
 #[derive(Serialize)]
@@ -119,6 +118,71 @@ struct Commit {
     date: String,
     stats: serde_json::Value,
     files: Vec<serde_json::Value>,
+}
+
+// Additional structs for specific endpoints
+#[derive(Serialize)]
+struct Branch {
+    name: String,
+    commit: serde_json::Value,
+    protected: bool,
+}
+
+#[derive(Serialize)]
+struct Release {
+    tag_name: String,
+    name: String,
+    body: Option<String>,
+    draft: bool,
+    prerelease: bool,
+    created_at: String,
+    published_at: Option<String>,
+    assets: Vec<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct Milestone {
+    number: i32,
+    title: String,
+    description: Option<String>,
+    state: String,
+    due_on: Option<String>,
+    open_issues: i32,
+    closed_issues: i32,
+}
+
+#[derive(Serialize)]
+struct Label {
+    name: String,
+    color: String,
+    description: Option<String>,
+}
+
+#[derive(Serialize)]
+struct Comment {
+    id: i64,
+    body: String,
+    user: serde_json::Value,
+    created_at: String,
+    updated_at: String,
+}
+
+#[derive(Serialize)]
+struct Review {
+    id: i64,
+    state: String,
+    body: Option<String>,
+    user: serde_json::Value,
+    submitted_at: String,
+}
+
+#[derive(Serialize)]
+struct Workflow {
+    id: i64,
+    name: String,
+    state: String,
+    created_at: String,
+    updated_at: String,
 }
 
 // Helper function for pagination
@@ -444,6 +508,213 @@ async fn get_commits(path: web::Path<(String, String)>, params: web::Query<Pagin
     Ok(HttpResponse::Ok().json(commits))
 }
 
+// Additional endpoints
+async fn get_branches(path: web::Path<(String, String)>) -> Result<HttpResponse, Error> {
+    let (owner, repo) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/branches", owner, repo))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let branches: Vec<Branch> = response
+        .into_iter()
+        .map(|b| Branch {
+            name: b["name"].as_str().unwrap().to_string(),
+            commit: b["commit"].clone(),
+            protected: b["protected"].as_bool().unwrap(),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(branches))
+}
+
+async fn get_releases(path: web::Path<(String, String)>) -> Result<HttpResponse, Error> {
+    let (owner, repo) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/releases", owner, repo))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let releases: Vec<Release> = response
+        .into_iter()
+        .map(|r| Release {
+            tag_name: r["tag_name"].as_str().unwrap().to_string(),
+            name: r["name"].as_str().unwrap().to_string(),
+            body: r["body"].as_str().map(|s| s.to_string()),
+            draft: r["draft"].as_bool().unwrap(),
+            prerelease: r["prerelease"].as_bool().unwrap(),
+            created_at: r["created_at"].as_str().unwrap().to_string(),
+            published_at: r["published_at"].as_str().map(|s| s.to_string()),
+            assets: r["assets"].as_array().unwrap().to_vec(),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(releases))
+}
+
+async fn get_milestones(path: web::Path<(String, String)>) -> Result<HttpResponse, Error> {
+    let (owner, repo) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/milestones", owner, repo))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let milestones: Vec<Milestone> = response
+        .into_iter()
+        .map(|m| Milestone {
+            number: m["number"].as_i64().unwrap() as i32,
+            title: m["title"].as_str().unwrap().to_string(),
+            description: m["description"].as_str().map(|s| s.to_string()),
+            state: m["state"].as_str().unwrap().to_string(),
+            due_on: m["due_on"].as_str().map(|s| s.to_string()),
+            open_issues: m["open_issues"].as_i64().unwrap() as i32,
+            closed_issues: m["closed_issues"].as_i64().unwrap() as i32,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(milestones))
+}
+
+async fn get_labels(path: web::Path<(String, String)>) -> Result<HttpResponse, Error> {
+    let (owner, repo) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/labels", owner, repo))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let labels: Vec<Label> = response
+        .into_iter()
+        .map(|l| Label {
+            name: l["name"].as_str().unwrap().to_string(),
+            color: l["color"].as_str().unwrap().to_string(),
+            description: l["description"].as_str().map(|s| s.to_string()),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(labels))
+}
+
+async fn get_issue_comments(path: web::Path<(String, String, i32)>) -> Result<HttpResponse, Error> {
+    let (owner, repo, issue_number) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/issues/{}/comments", owner, repo, issue_number))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let comments: Vec<Comment> = response
+        .into_iter()
+        .map(|c| Comment {
+            id: c["id"].as_i64().unwrap(),
+            body: c["body"].as_str().unwrap().to_string(),
+            user: c["user"].clone(),
+            created_at: c["created_at"].as_str().unwrap().to_string(),
+            updated_at: c["updated_at"].as_str().unwrap().to_string(),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(comments))
+}
+
+async fn get_pr_reviews(path: web::Path<(String, String, i32)>) -> Result<HttpResponse, Error> {
+    let (owner, repo, pr_number) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/pulls/{}/reviews", owner, repo, pr_number))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<Vec<serde_json::Value>>()
+        .await
+        .map_err(handle_error)?;
+
+    let reviews: Vec<Review> = response
+        .into_iter()
+        .map(|r| Review {
+            id: r["id"].as_i64().unwrap(),
+            state: r["state"].as_str().unwrap().to_string(),
+            body: r["body"].as_str().map(|s| s.to_string()),
+            user: r["user"].clone(),
+            submitted_at: r["submitted_at"].as_str().unwrap().to_string(),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(reviews))
+}
+
+async fn get_workflows(path: web::Path<(String, String)>) -> Result<HttpResponse, Error> {
+    let (owner, repo) = path.into_inner();
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
+    let client = Client::new();
+    let response = client
+        .get(format!("https://api.github.com/repos/{}/{}/actions/workflows", owner, repo))
+        .header("Authorization", format!("Bearer {}", token))
+        .header("User-Agent", "github-dashboard")
+        .send()
+        .await
+        .map_err(handle_error)?
+        .json::<serde_json::Value>()
+        .await
+        .map_err(handle_error)?;
+
+    let workflows: Vec<Workflow> = response["workflows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| Workflow {
+            id: w["id"].as_i64().unwrap(),
+            name: w["name"].as_str().unwrap().to_string(),
+            state: w["state"].as_str().unwrap().to_string(),
+            created_at: w["created_at"].as_str().unwrap().to_string(),
+            updated_at: w["updated_at"].as_str().unwrap().to_string(),
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(workflows))
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -470,6 +741,15 @@ async fn main() -> std::io::Result<()> {
             .route("/api/repos/{owner}/{repo}/issues", web::get().to(get_issues))
             .route("/api/repos/{owner}/{repo}/pulls", web::get().to(get_pull_requests))
             .route("/api/repos/{owner}/{repo}/commits", web::get().to(get_commits))
+            
+            // Additional specific endpoints
+            .route("/api/repos/{owner}/{repo}/branches", web::get().to(get_branches))
+            .route("/api/repos/{owner}/{repo}/releases", web::get().to(get_releases))
+            .route("/api/repos/{owner}/{repo}/milestones", web::get().to(get_milestones))
+            .route("/api/repos/{owner}/{repo}/labels", web::get().to(get_labels))
+            .route("/api/repos/{owner}/{repo}/issues/{issue_number}/comments", web::get().to(get_issue_comments))
+            .route("/api/repos/{owner}/{repo}/pulls/{pr_number}/reviews", web::get().to(get_pr_reviews))
+            .route("/api/repos/{owner}/{repo}/workflows", web::get().to(get_workflows))
     })
     .bind("127.0.0.1:8080")?
     .run()

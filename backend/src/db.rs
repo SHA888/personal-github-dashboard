@@ -265,5 +265,307 @@ impl Database {
         Ok(())
     }
 
-    // Add similar methods for other entities (issues, PRs, commits, etc.)
+    // Organization-related methods
+    pub async fn upsert_organization(&self, org: &crate::Organization) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO organizations (
+                github_id, login, description, avatar_url, members_count, repos_count, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                login = EXCLUDED.login,
+                description = EXCLUDED.description,
+                avatar_url = EXCLUDED.avatar_url,
+                members_count = EXCLUDED.members_count,
+                repos_count = EXCLUDED.repos_count,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(org.github_id)
+        .bind(&org.login)
+        .bind(&org.description)
+        .bind(&org.avatar_url)
+        .bind(org.members_count)
+        .bind(org.repos_count)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Issue-related methods
+    pub async fn upsert_issue(&self, issue: &crate::Issue) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO issues (
+                github_id, repository_id, number, title, state, body, labels,
+                assignees, milestone, comments_count, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                title = EXCLUDED.title,
+                state = EXCLUDED.state,
+                body = EXCLUDED.body,
+                labels = EXCLUDED.labels,
+                assignees = EXCLUDED.assignees,
+                milestone = EXCLUDED.milestone,
+                comments_count = EXCLUDED.comments_count,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(issue.github_id)
+        .bind(issue.repository_id)
+        .bind(issue.number)
+        .bind(&issue.title)
+        .bind(&issue.state)
+        .bind(&issue.body)
+        .bind(&issue.labels)
+        .bind(&issue.assignees)
+        .bind(&issue.milestone)
+        .bind(issue.comments_count)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Pull Request-related methods
+    pub async fn upsert_pull_request(&self, pr: &crate::PullRequest) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO pull_requests (
+                github_id, repository_id, number, title, state, body, merged,
+                merged_at, merge_commit_sha, requested_reviewers, requested_teams,
+                labels, comments_count, review_comments_count, commits_count,
+                additions, deletions, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                title = EXCLUDED.title,
+                state = EXCLUDED.state,
+                body = EXCLUDED.body,
+                merged = EXCLUDED.merged,
+                merged_at = EXCLUDED.merged_at,
+                merge_commit_sha = EXCLUDED.merge_commit_sha,
+                requested_reviewers = EXCLUDED.requested_reviewers,
+                requested_teams = EXCLUDED.requested_teams,
+                labels = EXCLUDED.labels,
+                comments_count = EXCLUDED.comments_count,
+                review_comments_count = EXCLUDED.review_comments_count,
+                commits_count = EXCLUDED.commits_count,
+                additions = EXCLUDED.additions,
+                deletions = EXCLUDED.deletions,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(pr.github_id)
+        .bind(pr.repository_id)
+        .bind(pr.number)
+        .bind(&pr.title)
+        .bind(&pr.state)
+        .bind(&pr.body)
+        .bind(pr.merged)
+        .bind(&pr.merged_at)
+        .bind(&pr.merge_commit_sha)
+        .bind(&pr.requested_reviewers)
+        .bind(&pr.requested_teams)
+        .bind(&pr.labels)
+        .bind(pr.comments_count)
+        .bind(pr.review_comments_count)
+        .bind(pr.commits_count)
+        .bind(pr.additions)
+        .bind(pr.deletions)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Commit-related methods
+    pub async fn upsert_commit(&self, commit: &crate::Commit) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO commits (
+                sha, repository_id, message, author, committer, stats, files
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (sha) DO UPDATE SET
+                message = EXCLUDED.message,
+                author = EXCLUDED.author,
+                committer = EXCLUDED.committer,
+                stats = EXCLUDED.stats,
+                files = EXCLUDED.files
+            "#
+        )
+        .bind(&commit.sha)
+        .bind(commit.repository_id)
+        .bind(&commit.message)
+        .bind(&commit.author)
+        .bind(&commit.committer)
+        .bind(&commit.stats)
+        .bind(&commit.files)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Branch-related methods
+    pub async fn upsert_branch(&self, branch: &crate::Branch) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO branches (
+                repository_id, name, commit, protected, updated_at
+            )
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (repository_id, name) DO UPDATE SET
+                commit = EXCLUDED.commit,
+                protected = EXCLUDED.protected,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(branch.repository_id)
+        .bind(&branch.name)
+        .bind(&branch.commit)
+        .bind(branch.protected)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Release-related methods
+    pub async fn upsert_release(&self, release: &crate::Release) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO releases (
+                github_id, repository_id, tag_name, name, body, draft,
+                prerelease, assets, published_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                tag_name = EXCLUDED.tag_name,
+                name = EXCLUDED.name,
+                body = EXCLUDED.body,
+                draft = EXCLUDED.draft,
+                prerelease = EXCLUDED.prerelease,
+                assets = EXCLUDED.assets,
+                published_at = EXCLUDED.published_at,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(release.github_id)
+        .bind(release.repository_id)
+        .bind(&release.tag_name)
+        .bind(&release.name)
+        .bind(&release.body)
+        .bind(release.draft)
+        .bind(release.prerelease)
+        .bind(&release.assets)
+        .bind(&release.published_at)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Milestone-related methods
+    pub async fn upsert_milestone(&self, milestone: &crate::Milestone) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO milestones (
+                github_id, repository_id, number, title, description, state,
+                due_on, open_issues, closed_issues, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                title = EXCLUDED.title,
+                description = EXCLUDED.description,
+                state = EXCLUDED.state,
+                due_on = EXCLUDED.due_on,
+                open_issues = EXCLUDED.open_issues,
+                closed_issues = EXCLUDED.closed_issues,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(milestone.github_id)
+        .bind(milestone.repository_id)
+        .bind(milestone.number)
+        .bind(&milestone.title)
+        .bind(&milestone.description)
+        .bind(&milestone.state)
+        .bind(&milestone.due_on)
+        .bind(milestone.open_issues)
+        .bind(milestone.closed_issues)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Workflow-related methods
+    pub async fn upsert_workflow(&self, workflow: &crate::Workflow) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            INSERT INTO workflows (
+                github_id, repository_id, name, state, updated_at
+            )
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (github_id) DO UPDATE SET
+                name = EXCLUDED.name,
+                state = EXCLUDED.state,
+                updated_at = CURRENT_TIMESTAMP
+            "#
+        )
+        .bind(workflow.github_id)
+        .bind(workflow.repository_id)
+        .bind(&workflow.name)
+        .bind(&workflow.state)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // Query methods for data analysis
+    pub async fn get_repository_stats(&self, repository_id: i32) -> Result<serde_json::Value, sqlx::Error> {
+        let stats = sqlx::query(
+            r#"
+            SELECT 
+                (SELECT COUNT(*) FROM issues WHERE repository_id = $1) as total_issues,
+                (SELECT COUNT(*) FROM issues WHERE repository_id = $1 AND state = 'open') as open_issues,
+                (SELECT COUNT(*) FROM pull_requests WHERE repository_id = $1) as total_prs,
+                (SELECT COUNT(*) FROM pull_requests WHERE repository_id = $1 AND state = 'open') as open_prs,
+                (SELECT COUNT(*) FROM commits WHERE repository_id = $1) as total_commits,
+                (SELECT COUNT(*) FROM branches WHERE repository_id = $1) as total_branches,
+                (SELECT COUNT(*) FROM releases WHERE repository_id = $1) as total_releases,
+                (SELECT COUNT(*) FROM workflows WHERE repository_id = $1) as total_workflows
+            "#
+        )
+        .bind(repository_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(serde_json::json!(stats))
+    }
+
+    pub async fn get_user_activity(&self, user_id: i32) -> Result<serde_json::Value, sqlx::Error> {
+        let activity = sqlx::query(
+            r#"
+            SELECT 
+                (SELECT COUNT(*) FROM issues WHERE assignees @> $1) as assigned_issues,
+                (SELECT COUNT(*) FROM pull_requests WHERE requested_reviewers @> $1) as review_requests,
+                (SELECT COUNT(*) FROM commits WHERE author->>'id' = $2::text) as commits,
+                (SELECT COUNT(*) FROM repositories WHERE owner_id = $3) as owned_repos
+            "#
+        )
+        .bind(serde_json::json!([{"id": user_id}]))
+        .bind(user_id.to_string())
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(serde_json::json!(activity))
+    }
 } 

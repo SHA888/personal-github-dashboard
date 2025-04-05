@@ -1,4 +1,5 @@
 mod db;
+mod analytics;
 
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error, Error};
 use actix_web::middleware::Logger;
@@ -10,6 +11,7 @@ use std::time::Duration;
 use dotenv::dotenv;
 use std::sync::Arc;
 use db::Database;
+use analytics::Analytics;
 
 // Error handling
 #[derive(Serialize)]
@@ -756,9 +758,12 @@ async fn main() -> std::io::Result<()> {
         client,
     });
     
+    let analytics = Analytics::new(db.clone());
+
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
+            .app_data(web::Data::new(analytics.clone()))
             .wrap(Logger::default())
             .wrap(
                 RateLimiter::new(store.clone())
@@ -784,8 +789,113 @@ async fn main() -> std::io::Result<()> {
             .route("/api/repos/{owner}/{repo}/issues/{issue_number}/comments", web::get().to(get_issue_comments))
             .route("/api/repos/{owner}/{repo}/pulls/{pr_number}/reviews", web::get().to(get_pr_reviews))
             .route("/api/repos/{owner}/{repo}/workflows", web::get().to(get_workflows))
+            .service(
+                web::scope("/api/analytics")
+                    .service(
+                        web::resource("/repositories/{id}/activity")
+                            .route(web::get().to(get_repository_activity))
+                    )
+                    .service(
+                        web::resource("/users/{id}/contributions")
+                            .route(web::get().to(get_user_contributions))
+                    )
+                    .service(
+                        web::resource("/organizations/{id}/stats")
+                            .route(web::get().to(get_organization_stats))
+                    )
+                    .service(
+                        web::resource("/repositories/{id}/quality")
+                            .route(web::get().to(get_code_quality_metrics))
+                    )
+                    .service(
+                        web::resource("/repositories/{id}/team")
+                            .route(web::get().to(get_team_performance))
+                    )
+            )
     })
     .bind("127.0.0.1:8080")?
     .run()
     .await
+}
+
+// Repository activity endpoint
+async fn get_repository_activity(
+    path: web::Path<(i32,)>,
+    query: web::Query<HashMap<String, String>>,
+    analytics: web::Data<Analytics>,
+) -> impl Responder {
+    let (repository_id,) = path.into_inner();
+    let days = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+    
+    match analytics.get_repository_activity(repository_id, days).await {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to fetch repository activity",
+            "details": e.to_string()
+        }))
+    }
+}
+
+// User contributions endpoint
+async fn get_user_contributions(
+    path: web::Path<(i32,)>,
+    analytics: web::Data<Analytics>,
+) -> impl Responder {
+    let (user_id,) = path.into_inner();
+    
+    match analytics.get_user_contributions(user_id).await {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to fetch user contributions",
+            "details": e.to_string()
+        }))
+    }
+}
+
+// Organization stats endpoint
+async fn get_organization_stats(
+    path: web::Path<(i32,)>,
+    analytics: web::Data<Analytics>,
+) -> impl Responder {
+    let (org_id,) = path.into_inner();
+    
+    match analytics.get_organization_stats(org_id).await {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to fetch organization stats",
+            "details": e.to_string()
+        }))
+    }
+}
+
+// Code quality metrics endpoint
+async fn get_code_quality_metrics(
+    path: web::Path<(i32,)>,
+    analytics: web::Data<Analytics>,
+) -> impl Responder {
+    let (repository_id,) = path.into_inner();
+    
+    match analytics.get_code_quality_metrics(repository_id).await {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to fetch code quality metrics",
+            "details": e.to_string()
+        }))
+    }
+}
+
+// Team performance endpoint
+async fn get_team_performance(
+    path: web::Path<(i32,)>,
+    analytics: web::Data<Analytics>,
+) -> impl Responder {
+    let (repository_id,) = path.into_inner();
+    
+    match analytics.get_team_performance(repository_id).await {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to fetch team performance",
+            "details": e.to_string()
+        }))
+    }
 }

@@ -1,3 +1,5 @@
+mod db;
+
 use actix_web::{web, App, HttpServer, Responder, HttpResponse, error, Error};
 use actix_web::middleware::Logger;
 use actix_ratelimit::{MemoryStore, MemoryStoreActor, RateLimiter};
@@ -6,6 +8,8 @@ use reqwest::Client;
 use std::env;
 use std::time::Duration;
 use dotenv::dotenv;
+use std::sync::Arc;
+use db::Database;
 
 // Error handling
 #[derive(Serialize)]
@@ -185,6 +189,11 @@ struct Workflow {
     updated_at: String,
 }
 
+struct AppState {
+    db: Arc<Database>,
+    client: Client,
+}
+
 // Helper function for pagination
 fn get_pagination_params(params: web::Query<PaginationParams>) -> (u32, u32) {
     let page = params.page.unwrap_or(1);
@@ -205,10 +214,9 @@ fn handle_error(err: reqwest::Error) -> Error {
 }
 
 // User endpoints
-async fn get_user() -> Result<HttpResponse, Error> {
+async fn get_user(data: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN not set");
-    let client = Client::new();
-    let response = client
+    let response = data.client
         .get("https://api.github.com/user")
         .header("Authorization", format!("Bearer {}", token))
         .header("User-Agent", "github-dashboard")
@@ -233,6 +241,18 @@ async fn get_user() -> Result<HttpResponse, Error> {
         blog: response["blog"].as_str().map(|s| s.to_string()),
         twitter_username: response["twitter_username"].as_str().map(|s| s.to_string()),
     };
+
+    // Store user in database
+    data.db.upsert_user(&user).await.map_err(|e| {
+        error::InternalError::new(
+            ErrorResponse {
+                error: "Database Error".to_string(),
+                message: e.to_string(),
+            },
+            actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
+        )
+        .into()
+    })?;
 
     Ok(HttpResponse::Ok().json(user))
 }
@@ -719,12 +739,26 @@ async fn get_workflows(path: web::Path<(String, String)>) -> Result<HttpResponse
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     
+    // Initialize database
+    let db = Database::new().await.expect("Failed to initialize database");
+    let db = Arc::new(db);
+    
     // Initialize rate limiter
     let store = MemoryStore::new();
     let store = MemoryStoreActor::from(store).start();
     
+    // Initialize HTTP client
+    let client = Client::new();
+    
+    // Create application state
+    let app_state = web::Data::new(AppState {
+        db: db.clone(),
+        client,
+    });
+    
     HttpServer::new(move || {
         App::new()
+            .app_data(app_state.clone())
             .wrap(Logger::default())
             .wrap(
                 RateLimiter::new(store.clone())

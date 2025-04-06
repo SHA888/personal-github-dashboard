@@ -2,8 +2,10 @@ use actix_web::{web, App, HttpServer};
 use actix_cors::Cors;
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
+use std::env;
 use std::sync::Arc;
-use github_dashboard::{AppState, analytics::Analytics, routes::configure_routes};
+use github_dashboard::{AppState, analytics::Analytics, routes::{configure_routes, configure_sync_routes}};
+use github_dashboard::services::{github::GitHubService, sync::SyncService};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -12,9 +14,9 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Load environment variables
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    let port = std::env::var("PORT")
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let github_token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN must be set");
+    let port = env::var("PORT")
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
         .expect("PORT must be a valid number");
@@ -33,18 +35,29 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to run migrations");
 
     // Initialize services
-    let analytics = Arc::new(Analytics::new(pool.clone()));
+    let analytics = Analytics::new(pool.clone());
+    let github = Arc::new(GitHubService::new(github_token, pool.clone()));
+    let sync_service = SyncService::new(github.clone(), pool.clone());
+
+    // Start sync service in background
+    tokio::spawn(async move {
+        sync_service.start().await;
+    });
+
     let app_state = web::Data::new(AppState {
-        db: pool,
-        analytics: analytics.clone(),
+        analytics,
+        pool,
     });
 
     // Start HTTP server
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+        
         App::new()
-            .wrap(Cors::permissive())
+            .wrap(cors)
             .app_data(app_state.clone())
             .configure(|cfg| configure_routes(cfg, &app_state))
+            .configure(|cfg| configure_sync_routes(cfg, github.clone()))
     })
     .bind(("0.0.0.0", port))?
     .run()

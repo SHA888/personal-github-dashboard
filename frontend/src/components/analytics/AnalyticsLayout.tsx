@@ -1,6 +1,14 @@
 import React, { useState } from "react";
-import { Box, Grid, Paper, TextField, MenuItem } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Paper,
+  TextField,
+  MenuItem,
+  styled,
+} from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
 import Trends from "./Trends";
 
@@ -69,21 +77,14 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
       </Box>
 
       {/* Main Content */}
-      <Grid container spacing={3}>
-        {/* Repository Activity */}
-        <Grid item xs={12} md={6}>
-          <DashboardPaper>
-            <RepositoryActivity filters={filters} />
-          </DashboardPaper>
-        </Grid>
-
-        {/* Trends */}
-        <Grid item xs={12} md={6}>
-          <DashboardPaper>
-            <Trends filters={filters} />
-          </DashboardPaper>
-        </Grid>
-      </Grid>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+        <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
+          <RepositoryActivity filters={filters} />
+        </Box>
+        <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
+          <Trends filters={filters} />
+        </Box>
+      </Box>
     </Box>
   );
 };

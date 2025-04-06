@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   LinearProgress,
-  Grid,
   Card,
   CardContent,
   styled,
@@ -29,11 +28,11 @@ ChartJS.register(
   Legend,
 );
 
-const StatCard = styled(Card)(({ theme }) => ({
+const StatCard = styled(Card)({
   height: "100%",
   display: "flex",
   flexDirection: "column",
-}));
+});
 
 interface Filters {
   timeRange: string;
@@ -113,31 +112,30 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
         Repository Activity
       </Typography>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <StatCard>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Daily Activity
-              </Typography>
-              <Box height={300}>
-                <Bar
-                  data={dailyActivityChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </StatCard>
-        </Grid>
-      </Grid>
+      <Box sx={{ width: "100%", p: 1 }}>
+        <StatCard>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Repository Activity
+            </Typography>
+            {loading ? (
+              <LinearProgress />
+            ) : error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <Bar data={dailyActivityChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                  },
+                },
+              }} />
+            )}
+          </CardContent>
+        </StatCard>
+      </Box>
     </Box>
   );
 };

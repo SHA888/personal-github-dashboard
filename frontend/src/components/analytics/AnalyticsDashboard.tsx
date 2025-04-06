@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Box, Grid, Paper, Typography, CircularProgress } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { Box, Typography, LinearProgress } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
 import Trends from "./Trends";
 import AnalyticsLayout from "./AnalyticsLayout";
-
-const DashboardPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
 
 interface Filters {
   timeRange: string;
@@ -39,9 +30,8 @@ const AnalyticsDashboard: React.FC = () => {
       try {
         // Fetch initial data here
         setLoading(false);
-      } catch (err) {
-        setError("Failed to load analytics data");
-        setLoading(false);
+      } catch {
+        setError('Failed to fetch analytics data');
       }
     };
 
@@ -56,7 +46,7 @@ const AnalyticsDashboard: React.FC = () => {
         alignItems="center"
         minHeight="100vh"
       >
-        <CircularProgress />
+        <LinearProgress />
       </Box>
     );
   }
@@ -76,19 +66,15 @@ const AnalyticsDashboard: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AnalyticsLayout onFilterChange={handleFilterChange} />
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <DashboardPaper>
-            <RepositoryActivity filters={filters} />
-          </DashboardPaper>
-        </Grid>
-        <Grid item xs={12}>
-          <DashboardPaper>
-            <Trends filters={filters} />
-          </DashboardPaper>
-        </Grid>
-      </Grid>
+      <Box sx={{ mb: 3 }}>
+        <AnalyticsLayout onFilterChange={handleFilterChange} />
+      </Box>
+      <Box sx={{ mb: 3 }}>
+        <RepositoryActivity filters={filters} />
+      </Box>
+      <Box>
+        <Trends filters={filters} />
+      </Box>
     </Box>
   );
 };

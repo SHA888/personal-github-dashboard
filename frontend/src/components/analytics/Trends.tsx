@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   LinearProgress,
-  Grid,
   Card,
   CardContent,
   styled,
@@ -31,11 +30,11 @@ ChartJS.register(
   Legend,
 );
 
-const StatCard = styled(Card)(({ theme }) => ({
+const StatCard = styled(Card)({
   height: "100%",
   display: "flex",
   flexDirection: "column",
-}));
+});
 
 interface Filters {
   timeRange: string;
@@ -114,31 +113,33 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
         Commit Trends
       </Typography>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <StatCard>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Commit Activity
-              </Typography>
-              <Box height={300}>
-                <Line
-                  data={commitChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                      },
+      <Box sx={{ width: "100%", p: 1 }}>
+        <StatCard>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Commit Trends
+            </Typography>
+            {loading ? (
+              <LinearProgress />
+            ) : error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <Line
+                data={commitChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
                     },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </StatCard>
-        </Grid>
-      </Grid>
+                  },
+                }}
+              />
+            )}
+          </CardContent>
+        </StatCard>
+      </Box>
     </Box>
   );
 };

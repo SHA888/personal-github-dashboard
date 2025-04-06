@@ -1,12 +1,15 @@
-use actix_web::{web, App, HttpServer, body::BoxBody};
 use actix_cors::Cors;
+use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
+use github_dashboard::services::{github::GitHubService, sync::SyncService};
+use github_dashboard::{
+    analytics::Analytics,
+    routes::{configure_routes, configure_sync_routes},
+    AppState,
+};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::sync::Arc;
-use github_dashboard::{AppState, analytics::Analytics, routes::{configure_routes, configure_sync_routes}};
-use github_dashboard::services::{github::GitHubService, sync::SyncService};
-use github_dashboard::middleware::error_handler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -45,18 +48,14 @@ async fn main() -> std::io::Result<()> {
         sync_service.start().await;
     });
 
-    let app_state = web::Data::new(AppState {
-        analytics,
-        pool,
-    });
+    let app_state = web::Data::new(AppState { analytics, pool });
 
     // Start HTTP server
     HttpServer::new(move || {
         let cors = Cors::permissive();
-        
+
         App::new()
             .wrap(cors)
-            .wrap(error_handler::error_handler())
             .app_data(app_state.clone())
             .configure(|cfg| configure_routes(cfg, &app_state))
             .configure(|cfg| configure_sync_routes(cfg, github.clone()))

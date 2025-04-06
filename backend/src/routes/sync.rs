@@ -1,5 +1,5 @@
-use actix_web::{web, HttpResponse};
 use crate::services::github::GitHubService;
+use actix_web::{web, HttpResponse};
 use std::sync::Arc;
 
 pub fn configure_sync_routes(cfg: &mut web::ServiceConfig, github: Arc<GitHubService>) {
@@ -15,7 +15,7 @@ async fn sync_repository(
     github: web::Data<Arc<GitHubService>>,
 ) -> HttpResponse {
     let (owner, repo) = path.into_inner();
-    
+
     match github.sync_repository(&owner, &repo).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "status": "success",
@@ -26,4 +26,4 @@ async fn sync_repository(
             "message": format!("Failed to sync repository: {}", e)
         })),
     }
-} 
+}

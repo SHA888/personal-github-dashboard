@@ -1,8 +1,8 @@
-use actix_web::{web, HttpResponse, error::ResponseError};
 use crate::AppState;
-use serde::{Serialize, Deserialize};
-use sqlx::FromRow;
+use actix_web::{web, HttpResponse};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct RepositoryResponse {
@@ -36,19 +36,13 @@ pub struct RepositoryQuery {
 pub fn configure_repository_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppState>) {
     cfg.service(
         web::scope("/repositories")
-            .service(
-                web::resource("")
-                    .route(web::get().to(list_repositories))
-            )
-            .service(
-                web::resource("/{owner}/{repo}")
-                    .route(web::get().to(get_repository))
-            )
+            .service(web::resource("").route(web::get().to(list_repositories)))
+            .service(web::resource("/{owner}/{repo}").route(web::get().to(get_repository)))
             .service(
                 web::resource("/{owner}/{repo}/activity")
-                    .route(web::get().to(get_repository_activity))
+                    .route(web::get().to(get_repository_activity)),
             )
-            .app_data(web::Data::new(app_state.clone()))
+            .app_data(web::Data::new(app_state.clone())),
     );
 }
 
@@ -65,16 +59,17 @@ async fn list_repositories(
         SELECT * FROM repositories
         ORDER BY updated_at DESC
         LIMIT $1 OFFSET $2
-        "#
+        "#,
     )
     .bind(per_page)
     .bind(offset)
     .fetch_all(&app_state.pool)
-    .await {
+    .await
+    {
         Ok(repositories) => HttpResponse::Ok().json(repositories),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e.to_string()
-        }))
+        })),
     }
 }
 
@@ -88,16 +83,17 @@ async fn get_repository(
         r#"
         SELECT * FROM repositories
         WHERE owner = $1 AND name = $2
-        "#
+        "#,
     )
     .bind(owner)
     .bind(repo)
     .fetch_one(&app_state.pool)
-    .await {
+    .await
+    {
         Ok(repository) => HttpResponse::Ok().json(repository),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e.to_string()
-        }))
+        })),
     }
 }
 
@@ -122,17 +118,18 @@ async fn get_repository_activity(
         )
         ORDER BY a.created_at DESC
         LIMIT $3 OFFSET $4
-        "#
+        "#,
     )
     .bind(owner)
     .bind(repo)
     .bind(per_page)
     .bind(offset)
     .fetch_all(&app_state.pool)
-    .await {
+    .await
+    {
         Ok(activities) => HttpResponse::Ok().json(activities),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e.to_string()
-        }))
+        })),
     }
-} 
+}

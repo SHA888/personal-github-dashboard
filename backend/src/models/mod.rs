@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Repository {
@@ -19,4 +19,4 @@ pub struct Commit {
     pub author_name: String,
     pub author_email: String,
     pub created_at: DateTime<Utc>,
-} 
+}

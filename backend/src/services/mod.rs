@@ -1,2 +1,2 @@
 pub mod github;
-pub mod sync; 
+pub mod sync;

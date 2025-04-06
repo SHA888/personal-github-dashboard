@@ -1,43 +1,15 @@
+use chrono::{DateTime, Utc};
+use serde_json::Value;
 use sqlx::PgPool;
 use sqlx::Row;
-use serde_json::Value;
-use chrono::{DateTime, Utc};
 
 /// Filter options for analytics queries
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Default)]
 pub struct AnalyticsFilter {
     /// Start date for filtering data
     pub start_date: Option<DateTime<Utc>>,
     /// End date for filtering data
     pub end_date: Option<DateTime<Utc>>,
-}
-
-impl Default for AnalyticsFilter {
-    fn default() -> Self {
-        Self {
-            start_date: None,
-            end_date: None,
-        }
-    }
-}
-
-impl AnalyticsFilter {
-    fn build_where_clause(&self) -> String {
-        let mut conditions = Vec::new();
-
-        if let Some(start_date) = self.start_date {
-            conditions.push(format!("created_at >= '{}'", start_date));
-        }
-        if let Some(end_date) = self.end_date {
-            conditions.push(format!("created_at <= '{}'", end_date));
-        }
-
-        if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        }
-    }
 }
 
 /// Analytics service for GitHub data analysis
@@ -74,7 +46,7 @@ impl Analytics {
             WHERE created_at >= NOW() - ($3 || ' days')::INTERVAL
             GROUP BY DATE_TRUNC('day', created_at)
             ORDER BY date DESC
-            "#
+            "#,
         )
         .bind(owner)
         .bind(repo)
@@ -109,7 +81,7 @@ impl Analytics {
             AND created_at >= NOW() - ($3 || ' days')::INTERVAL
             GROUP BY DATE_TRUNC('day', created_at)
             ORDER BY date DESC
-            "#
+            "#,
         )
         .bind(owner)
         .bind(repo)
@@ -122,4 +94,4 @@ impl Analytics {
             "commit_counts": trends.iter().map(|row| row.get::<i64, _>("commit_count")).collect::<Vec<_>>(),
         }))
     }
-} 
+}

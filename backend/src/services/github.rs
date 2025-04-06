@@ -1,7 +1,5 @@
 use octocrab::Octocrab;
 use sqlx::PgPool;
-use chrono::{DateTime, Utc};
-use serde_json::Value;
 
 pub struct GitHubService {
     client: Octocrab,
@@ -14,14 +12,18 @@ impl GitHubService {
             .personal_token(token)
             .build()
             .expect("Failed to create GitHub client");
-        
+
         Self { client, pool }
     }
 
-    pub async fn sync_repository(&self, owner: &str, repo: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn sync_repository(
+        &self,
+        owner: &str,
+        repo: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // Get repository info
         let repository = self.client.repos(owner, repo).get().await?;
-        
+
         // Insert or update repository
         let repository_id = sqlx::query!(
             r#"
@@ -40,10 +42,7 @@ impl GitHubService {
         .id;
 
         // Get commits
-        let commits = self.client.repos(owner, repo)
-            .list_commits()
-            .send()
-            .await?;
+        let commits = self.client.repos(owner, repo).list_commits().send().await?;
 
         // Store commits in database
         for commit in commits.items {
@@ -70,4 +69,4 @@ impl GitHubService {
 
         Ok(())
     }
-} 
+}

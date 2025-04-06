@@ -13,6 +13,10 @@ This project consists of:
 - Display commit activity trends in a chart.
 - (Planned) Manage and prioritize tasks tied to repositories.
 
+## Documentation
+
+For comprehensive documentation, including setup instructions, architecture details, API reference, and deployment guide, please visit our [Documentation](./docs/README.md).
+
 ## Prerequisites
 - Rust (install via `curl --proto '=https' --tlsv1.2 -sSf https://sh.rust-lang.org | sh`)
 - Node.js and npm (for the frontend)
@@ -54,6 +58,7 @@ This project consists of:
 github-dashboard/
 ├── backend/        # Rust backend (Actix Web)
 ├── frontend/       # TypeScript/React frontend
+├── docs/          # Comprehensive documentation
 ├── .gitignore
 └── README.md
 ```

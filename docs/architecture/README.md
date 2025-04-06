@@ -1,14 +1,34 @@
 # System Architecture
 
-This document outlines the architecture of the GitHub Dashboard project.
+This document outlines the architecture of the GitHub Dashboard project, focusing on its lightweight, efficient design for personal and small-team usage.
 
 ## Overview
 
-The GitHub Dashboard is a full-stack application designed to provide comprehensive GitHub project management and analytics. The system consists of three main components:
+The GitHub Dashboard is a streamlined full-stack application designed for efficient GitHub project management and analytics. The system consists of three main components:
 
-1. **Frontend (React + TypeScript)**: Dynamic, interactive UI for visualizing GitHub data and managing tasks
-2. **Backend (Rust)**: High-performance API server for data processing and GitHub integration
-3. **Database (PostgreSQL)**: Relational database for data persistence and analytics
+1. **Frontend (React + TypeScript)**: Lightweight, responsive UI for GitHub data visualization and task management
+2. **Backend (Rust)**: High-performance API server optimized for small-scale data processing
+3. **Database (PostgreSQL)**: Efficient relational storage for data persistence
+
+## Design Principles
+
+1. **Resource Efficiency**
+   - Minimal memory footprint
+   - Optimized data processing
+   - Efficient database queries
+   - Caching where appropriate
+
+2. **Simplicity**
+   - Focused feature set
+   - Clear data flow
+   - Straightforward deployment
+   - Easy maintenance
+
+3. **Performance**
+   - Fast response times
+   - Efficient data retrieval
+   - Optimized rendering
+   - Quick startup
 
 ## System Components
 
@@ -29,28 +49,27 @@ github-dashboard/
 ### Core Features
 
 1. **Dashboard View**
-   - Overview of GitHub activity (commits, issues, PRs)
-   - Visualizations (bar charts, line graphs, pie charts)
-   - Real-time updates
+   - Essential GitHub activity overview
+   - Focused visualizations
+   - Efficient data updates
 
 2. **Project Management**
-   - Repository list with sortable columns
-   - Drag-and-drop Kanban board
-   - Task prioritization
-   - Custom filters and tags
+   - Simple repository list
+   - Basic task management
+   - Priority-based organization
 
 3. **Analytics**
-   - Commit frequency trends
-   - Repository activity metrics
-   - Personal contribution stats
+   - Key metrics visualization
+   - Personal contribution tracking
+   - Repository activity trends
 
 ### Technical Implementation
 
-- **State Management**: Redux/Zustand for data handling
-- **Routing**: React Router for navigation
-- **Data Visualization**: Recharts/Chart.js
-- **Real-time Updates**: WebSocket integration
-- **Type Safety**: TypeScript interfaces for API responses
+- **State Management**: Lightweight state solution
+- **Routing**: Simple navigation
+- **Data Visualization**: Efficient charting
+- **Updates**: Polling-based refresh
+- **Type Safety**: TypeScript interfaces
 
 ## Backend Architecture
 
@@ -58,29 +77,28 @@ github-dashboard/
 
 1. **Web Server (Actix Web)**
    - REST API endpoints
-   - WebSocket support
-   - CORS configuration
+   - Efficient request handling
+   - Resource optimization
    - Rate limiting
 
 2. **GitHub API Integration**
-   - REST API client (reqwest)
-   - GraphQL support for complex queries
+   - Focused API usage
    - Rate limit management
-   - Webhook handling
+   - Efficient data retrieval
+   - Caching strategy
 
 3. **Data Processing**
-   - Analytics computation
-   - Task prioritization
-   - Data aggregation
-   - Caching layer
+   - Streamlined analytics
+   - Efficient aggregation
+   - Optimized storage
+   - Resource-aware processing
 
 ### API Endpoints
 
-- `/repos`: Repository listing and stats
-- `/activity`: Recent GitHub activity
+- `/repos`: Repository management
+- `/activity`: Activity tracking
 - `/tasks`: Task management
-- `/analytics`: Processed statistics
-- `/webhooks`: GitHub event handling
+- `/analytics`: Key metrics
 
 ## Database Architecture
 
@@ -102,11 +120,10 @@ github-dashboard/
    ```sql
    CREATE TABLE activity (
        id SERIAL PRIMARY KEY,
-       repo_id INTEGER REFERENCES repositories(id),
+       repository_id INTEGER REFERENCES repositories(id),
        type VARCHAR(50),
-       user VARCHAR(255),
        timestamp TIMESTAMP,
-       details JSONB
+       data JSONB
    );
    ```
 
@@ -114,93 +131,76 @@ github-dashboard/
    ```sql
    CREATE TABLE tasks (
        id SERIAL PRIMARY KEY,
-       repo_id INTEGER REFERENCES repositories(id),
-       github_issue_id INTEGER,
+       repository_id INTEGER REFERENCES repositories(id),
        title VARCHAR(255),
-       priority VARCHAR(50),
+       priority INTEGER,
        status VARCHAR(50),
-       due_date TIMESTAMP
+       created_at TIMESTAMP
    );
    ```
 
-### Database Features
+## Resource Optimization
 
-- Connection pooling
-- Query optimization
-- JSONB support for flexible data
-- Indexed fields for performance
-- Migration management
+### Backend Optimization
+- Efficient memory usage
+- Optimized database queries
+- Smart caching strategy
+- Resource-aware processing
 
-## Data Flow
+### Frontend Optimization
+- Lazy loading
+- Efficient rendering
+- Minimal dependencies
+- Optimized assets
 
-1. **Initial Data Load**
-   - Backend fetches repository data
-   - Processes and stores in PostgreSQL
-   - Frontend displays initial view
+### Database Optimization
+- Appropriate indexing
+- Efficient queries
+- Regular maintenance
+- Size management
 
-2. **Periodic Updates**
-   - Scheduled data refresh
-   - Rate limit management
-   - Cache invalidation
+## Deployment Considerations
 
-3. **Real-time Events**
-   - GitHub webhook reception
-   - WebSocket updates
-   - UI refresh
+### VPS Requirements
+- Minimal resource footprint
+- Efficient startup
+- Easy scaling
+- Simple maintenance
 
-4. **User Interactions**
-   - Task prioritization
-   - Filter application
-   - Analytics requests
+### Monitoring
+- Resource usage tracking
+- Performance metrics
+- Error logging
+- Usage analytics
 
-## Security Architecture
+## Security
 
-1. **Authentication**
-   - GitHub PAT management
-   - Environment variable storage
-   - Token encryption
+### Authentication
+- GitHub OAuth
+- Session management
+- Secure storage
+- Access control
 
-2. **API Security**
-   - CORS configuration
-   - Rate limiting
-   - Input validation
-   - Error handling
+### Data Protection
+- Input validation
+- SQL injection prevention
+- XSS protection
+- CSRF protection
 
-3. **Database Security**
-   - Secure credentials
-   - Local-only access
-   - Encrypted sensitive data
+## Maintenance
 
-## Scalability & Performance
+### Updates
+- Simple deployment process
+- Easy rollback
+- Version management
+- Dependency updates
 
-1. **Backend Optimization**
-   - Async processing
-   - Connection pooling
-   - Response caching
-   - Load balancing
+### Monitoring
+- Resource usage
+- Error tracking
+- Performance metrics
+- Usage patterns
 
-2. **Frontend Optimization**
-   - Lazy loading
-   - Debounced API calls
-   - Efficient state management
-   - Progressive loading
+## Conclusion
 
-3. **Database Optimization**
-   - Indexed queries
-   - Partitioned tables
-   - Query optimization
-   - Connection management
-
-## Monitoring & Logging
-
-1. **System Monitoring**
-   - Performance metrics
-   - Error tracking
-   - Resource usage
-   - Uptime monitoring
-
-2. **Application Logging**
-   - Request logging
-   - Error logging
-   - Performance logging
-   - Audit logging 
+The GitHub Dashboard architecture is designed for efficiency and simplicity, focusing on the needs of personal and small-team users. By optimizing resource usage and maintaining a clear, focused design, we ensure a performant and maintainable system. 

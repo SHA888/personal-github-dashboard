@@ -1,450 +1,252 @@
 # Deployment Guide
 
-This guide provides comprehensive instructions for deploying the GitHub Dashboard to production.
+This guide provides instructions for deploying the GitHub Dashboard on a VPS, with a focus on resource efficiency and optimal performance.
 
 ## Prerequisites
 
-### Server Requirements
-- Ubuntu 20.04 LTS or later
-- 2+ CPU cores
-- 4GB+ RAM
-- 20GB+ storage
-- Static IP address
-- Domain name with DNS configured
+### VPS Requirements
+- Ubuntu 20.04+ or similar Linux distribution
+- 1GB RAM minimum (2GB recommended)
+- 10GB storage
+- Root access or sudo privileges
 
-### Required Software
-1. **System Packages**
-   ```bash
-   sudo apt update
-   sudo apt install -y \
-     nginx \
-     postgresql \
-     certbot \
-     python3-certbot-nginx \
-     build-essential \
-     pkg-config \
-     libssl-dev
-   ```
+### Software Requirements
+- Nginx
+- PostgreSQL
+- Node.js (for frontend)
+- Rust toolchain (for backend)
+- Certbot (for SSL)
 
-2. **Rust Toolchain**
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   rustup default stable
-   ```
+## Deployment Steps
 
-3. **Node.js**
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt install -y nodejs
-   ```
+### 1. System Setup
 
-## Server Setup
+```bash
+# Update system
+sudo apt update
+sudo apt upgrade -y
 
-### 1. System Configuration
-
-1. **Update System**
-   ```bash
-   sudo apt update
-   sudo apt upgrade -y
-   sudo apt autoremove -y
-   ```
-
-2. **Configure Firewall**
-   ```bash
-   sudo ufw allow ssh
-   sudo ufw allow http
-   sudo ufw allow https
-   sudo ufw enable
-   ```
-
-3. **Create Deployment User**
-   ```bash
-   sudo adduser deployer
-   sudo usermod -aG sudo deployer
-   ```
+# Install required packages
+sudo apt install -y nginx postgresql certbot python3-certbot-nginx
+```
 
 ### 2. Database Setup
 
-1. **Configure PostgreSQL**
-   ```bash
-   sudo -u postgres psql
-   CREATE DATABASE github_dashboard;
-   CREATE USER dashboard WITH PASSWORD 'secure_password';
-   GRANT ALL PRIVILEGES ON DATABASE github_dashboard TO dashboard;
-   ```
+```bash
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE github_dashboard;
+CREATE USER dashboard WITH PASSWORD 'secure_password';
+GRANT ALL PRIVILEGES ON DATABASE github_dashboard TO dashboard;
+```
 
-2. **Configure PostgreSQL Access**
-   ```bash
-   sudo nano /etc/postgresql/12/main/pg_hba.conf
-   # Add line:
-   local   github_dashboard    dashboard    md5
-   ```
+### 3. Backend Deployment
 
-3. **Restart PostgreSQL**
-   ```bash
-   sudo systemctl restart postgresql
-   ```
+```bash
+# Build release binary
+cd backend
+cargo build --release
 
-### 3. Application Setup
+# Create systemd service
+sudo nano /etc/systemd/system/github-dashboard.service
+```
 
-1. **Create Application Directory**
-   ```bash
-   sudo mkdir -p /opt/github-dashboard
-   sudo chown -R deployer:deployer /opt/github-dashboard
-   ```
+Service file content:
+```ini
+[Unit]
+Description=GitHub Dashboard Backend
+After=network.target
 
-2. **Clone Repository**
-   ```bash
-   cd /opt/github-dashboard
-   git clone https://github.com/yourusername/github-dashboard.git .
-   ```
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/github-dashboard/backend
+ExecStart=/opt/github-dashboard/backend/target/release/backend
+Restart=always
+Environment=RUST_LOG=info
+Environment=DATABASE_URL=postgresql://dashboard:secure_password@localhost/github_dashboard
 
-3. **Configure Environment**
-   ```bash
-   # Backend
-   nano backend/.env
-   GITHUB_TOKEN=your_github_pat
-   DATABASE_URL=postgres://dashboard:secure_password@localhost:5432/github_dashboard
-   PORT=8080
-   RUST_LOG=info
-   
-   # Frontend
-   nano frontend/.env
-   REACT_APP_API_URL=https://dashboard.example.com/api/v1
-   REACT_APP_WS_URL=wss://dashboard.example.com/api/v1/ws
-   ```
+[Install]
+WantedBy=multi-user.target
+```
 
-### 4. Backend Deployment
+### 4. Frontend Deployment
 
-1. **Build Backend**
-   ```bash
-   cd /opt/github-dashboard/backend
-   cargo build --release
-   ```
+```bash
+# Build production bundle
+cd frontend
+npm install
+npm run build
 
-2. **Create Systemd Service**
-   ```bash
-   sudo nano /etc/systemd/system/github-dashboard.service
-   ```
-   ```ini
-   [Unit]
-   Description=GitHub Dashboard Backend
-   After=network.target postgresql.service
-   
-   [Service]
-   User=deployer
-   Group=deployer
-   WorkingDirectory=/opt/github-dashboard/backend
-   Environment="RUST_LOG=info"
-   EnvironmentFile=/opt/github-dashboard/backend/.env
-   ExecStart=/opt/github-dashboard/backend/target/release/backend
-   Restart=always
-   
-   [Install]
-   WantedBy=multi-user.target
-   ```
+# Copy to Nginx directory
+sudo cp -r build/* /var/www/github-dashboard/
+```
 
-3. **Start Backend Service**
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable github-dashboard
-   sudo systemctl start github-dashboard
-   ```
+### 5. Nginx Configuration
 
-### 5. Frontend Deployment
+```bash
+# Create Nginx configuration
+sudo nano /etc/nginx/sites-available/github-dashboard
+```
 
-1. **Build Frontend**
-   ```bash
-   cd /opt/github-dashboard/frontend
-   npm install
-   npm run build
-   ```
+Nginx configuration:
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
 
-2. **Configure Nginx**
-   ```bash
-   sudo nano /etc/nginx/sites-available/github-dashboard
-   ```
-   ```nginx
-   server {
-       listen 80;
-       server_name dashboard.example.com;
-       
-       root /opt/github-dashboard/frontend/build;
-       index index.html;
-       
-       location /api/ {
-           proxy_pass http://localhost:8080;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection 'upgrade';
-           proxy_set_header Host $host;
-           proxy_cache_bypass $http_upgrade;
-       }
-       
-       location / {
-           try_files $uri $uri/ /index.html;
-       }
-   }
-   ```
+    # Frontend
+    location / {
+        root /var/www/github-dashboard;
+        try_files $uri $uri/ /index.html;
+    }
 
-3. **Enable Site**
-   ```bash
-   sudo ln -s /etc/nginx/sites-available/github-dashboard /etc/nginx/sites-enabled/
-   sudo nginx -t
-   sudo systemctl restart nginx
-   ```
+    # Backend API
+    location /api {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
 
 ### 6. SSL Setup
 
-1. **Obtain SSL Certificate**
-   ```bash
-   sudo certbot --nginx -d dashboard.example.com
-   ```
+```bash
+# Obtain SSL certificate
+sudo certbot --nginx -d your-domain.com
+```
 
-2. **Configure Automatic Renewal**
-   ```bash
-   sudo certbot renew --dry-run
-   ```
+## Resource Optimization
 
-## Monitoring Setup
+### Backend Optimization
 
-### 1. System Monitoring
+1. **Memory Usage**
+   - Monitor with `htop`
+   - Set appropriate worker count
+   - Configure connection pooling
 
-1. **Install Monitoring Tools**
-   ```bash
-   sudo apt install -y prometheus node-exporter
-   ```
+2. **Database Optimization**
+   - Regular vacuuming
+   - Appropriate indexes
+   - Query optimization
 
-2. **Configure Prometheus**
-   ```bash
-   sudo nano /etc/prometheus/prometheus.yml
-   ```
-   ```yaml
-   global:
-     scrape_interval: 15s
-   
-   scrape_configs:
-     - job_name: 'node'
-       static_configs:
-         - targets: ['localhost:9100']
-   ```
+3. **Caching Strategy**
+   - Implement response caching
+   - Use memory-efficient cache
+   - Set appropriate TTLs
 
-3. **Start Services**
-   ```bash
-   sudo systemctl enable prometheus node-exporter
-   sudo systemctl start prometheus node-exporter
-   ```
+### Frontend Optimization
 
-### 2. Application Monitoring
+1. **Asset Optimization**
+   - Enable gzip compression
+   - Use CDN for static assets
+   - Implement browser caching
 
-1. **Configure Logging**
-   ```bash
-   sudo nano /etc/logrotate.d/github-dashboard
-   ```
-   ```
-   /opt/github-dashboard/backend/logs/*.log {
-       daily
-       missingok
-       rotate 14
-       compress
-       delaycompress
-       notifempty
-       create 0640 deployer deployer
-   }
-   ```
-
-2. **Set Up Alerts**
-   ```bash
-   sudo apt install -y alertmanager
-   sudo nano /etc/alertmanager/alertmanager.yml
-   ```
-
-## Backup Strategy
-
-### 1. Database Backups
-
-1. **Daily Backup Script**
-   ```bash
-   sudo nano /usr/local/bin/backup-database.sh
-   ```
-   ```bash
-   #!/bin/bash
-   BACKUP_DIR="/backups/database"
-   DATE=$(date +%Y%m%d)
-   
-   mkdir -p $BACKUP_DIR
-   pg_dump -U dashboard github_dashboard > $BACKUP_DIR/backup-$DATE.sql
-   gzip $BACKUP_DIR/backup-$DATE.sql
-   
-   # Keep only last 7 days
-   find $BACKUP_DIR -type f -mtime +7 -delete
-   ```
-
-2. **Schedule Backup**
-   ```bash
-   sudo chmod +x /usr/local/bin/backup-database.sh
-   sudo crontab -e
-   ```
-   ```
-   0 0 * * * /usr/local/bin/backup-database.sh
-   ```
-
-### 2. Application Backups
-
-1. **Backup Script**
-   ```bash
-   sudo nano /usr/local/bin/backup-application.sh
-   ```
-   ```bash
-   #!/bin/bash
-   BACKUP_DIR="/backups/application"
-   DATE=$(date +%Y%m%d)
-   
-   mkdir -p $BACKUP_DIR
-   tar -czf $BACKUP_DIR/app-$DATE.tar.gz /opt/github-dashboard
-   
-   # Keep only last 7 days
-   find $BACKUP_DIR -type f -mtime +7 -delete
-   ```
-
-2. **Schedule Backup**
-   ```bash
-   sudo chmod +x /usr/local/bin/backup-application.sh
-   sudo crontab -e
-   ```
-   ```
-   0 1 * * * /usr/local/bin/backup-application.sh
-   ```
+2. **Performance Monitoring**
+   - Set up error tracking
+   - Monitor load times
+   - Track resource usage
 
 ## Maintenance
 
-### 1. Regular Updates
+### Regular Tasks
 
 1. **System Updates**
    ```bash
    sudo apt update
-   sudo apt upgrade -y
-   sudo apt autoremove -y
+   sudo apt upgrade
    ```
 
-2. **Application Updates**
+2. **Database Maintenance**
    ```bash
-   cd /opt/github-dashboard
-   git pull
-   
-   # Backend
-   cd backend
-   cargo build --release
-   sudo systemctl restart github-dashboard
-   
-   # Frontend
-   cd ../frontend
-   npm install
-   npm run build
-   sudo systemctl restart nginx
+   sudo -u postgres vacuumdb --analyze github_dashboard
    ```
 
-### 2. Monitoring Checks
-
-1. **System Health**
+3. **Log Rotation**
    ```bash
-   # Check disk space
-   df -h
-   
-   # Check memory usage
-   free -h
-   
-   # Check running services
-   sudo systemctl status github-dashboard nginx postgresql
+   sudo nano /etc/logrotate.d/github-dashboard
    ```
+
+### Monitoring
+
+1. **Resource Usage**
+   - Use `htop` for CPU/memory
+   - Monitor disk space
+   - Check network usage
 
 2. **Application Health**
-   ```bash
-   # Check logs
-   sudo journalctl -u github-dashboard -f
-   
-   # Check database
-   sudo -u postgres psql -d github_dashboard -c "SELECT count(*) FROM repositories;"
-   ```
-
-### 3. Security Updates
-
-1. **Regular Security Checks**
-   ```bash
-   # Check for security updates
-   sudo apt update
-   sudo apt list --upgradable
-   
-   # Check for vulnerable packages
-   sudo apt install -y debsecan
-   debsecan
-   ```
-
-2. **Application Security**
-   - Regular dependency updates
-   - Security audits
-   - Penetration testing
-   - Access log review
+   - Check service status
+   - Monitor error logs
+   - Track response times
 
 ## Troubleshooting
 
-### 1. Common Issues
+### Common Issues
 
-1. **Database Connection Issues**
+1. **High Resource Usage**
+   - Check running processes
+   - Review database queries
+   - Monitor API calls
+
+2. **Database Issues**
+   - Check connection limits
+   - Review query performance
+   - Monitor disk space
+
+3. **Application Errors**
+   - Check service logs
+   - Review error tracking
+   - Monitor API responses
+
+### Recovery Steps
+
+1. **Service Restart**
    ```bash
-   # Check PostgreSQL status
-   sudo systemctl status postgresql
-   
-   # Check connection
-   psql -U dashboard -d github_dashboard
-   
-   # Check logs
-   sudo tail -f /var/log/postgresql/postgresql-12-main.log
+   sudo systemctl restart github-dashboard
    ```
 
-2. **Application Issues**
+2. **Database Recovery**
    ```bash
-   # Check application logs
-   sudo journalctl -u github-dashboard -f
-   
-   # Check nginx logs
-   sudo tail -f /var/log/nginx/error.log
-   
-   # Check system resources
-   htop
+   sudo -u postgres psql github_dashboard
    ```
 
-3. **SSL Issues**
+3. **Log Analysis**
    ```bash
-   # Check certificate
-   sudo certbot certificates
-   
-   # Test SSL
-   curl -vI https://dashboard.example.com
+   sudo journalctl -u github-dashboard
    ```
 
-### 2. Recovery Procedures
+## Security Considerations
 
-1. **Database Recovery**
+### System Security
+
+1. **Firewall Configuration**
    ```bash
-   # Restore from backup
-   gunzip -c /backups/database/backup-20240406.sql.gz | psql -U dashboard github_dashboard
+   sudo ufw allow 80
+   sudo ufw allow 443
+   sudo ufw enable
    ```
 
-2. **Application Recovery**
-   ```bash
-   # Restore from backup
-   tar -xzf /backups/application/app-20240406.tar.gz -C /
-   
-   # Restart services
-   sudo systemctl restart github-dashboard nginx
-   ```
+2. **Regular Updates**
+   - System packages
+   - Application dependencies
+   - Security patches
 
-3. **SSL Certificate Renewal**
-   ```bash
-   # Force renewal
-   sudo certbot renew --force-renewal
-   
-   # Check renewal
-   sudo certbot certificates
-   ``` 
+### Application Security
+
+1. **Environment Variables**
+   - Secure storage
+   - Limited access
+   - Regular rotation
+
+2. **Access Control**
+   - Rate limiting
+   - Authentication
+   - Authorization
+
+## Conclusion
+
+This deployment guide focuses on efficient resource usage and optimal performance for VPS deployment. Regular maintenance and monitoring are essential for smooth operation. 

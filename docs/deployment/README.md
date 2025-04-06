@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide provides instructions for deploying the GitHub Dashboard to production.
+This guide provides comprehensive instructions for deploying the GitHub Dashboard to production.
 
 ## Prerequisites
 
@@ -9,191 +9,442 @@ This guide provides instructions for deploying the GitHub Dashboard to productio
 - 2+ CPU cores
 - 4GB+ RAM
 - 20GB+ storage
-- Domain name (optional)
+- Static IP address
+- Domain name with DNS configured
 
 ### Required Software
-- Nginx
-- PostgreSQL
-- Node.js
-- Rust
-- Git
-- SSL certificate (Let's Encrypt)
+1. **System Packages**
+   ```bash
+   sudo apt update
+   sudo apt install -y \
+     nginx \
+     postgresql \
+     certbot \
+     python3-certbot-nginx \
+     build-essential \
+     pkg-config \
+     libssl-dev
+   ```
 
-## Deployment Steps
+2. **Rust Toolchain**
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   rustup default stable
+   ```
 
-### 1. Server Setup
+3. **Node.js**
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+   sudo apt install -y nodejs
+   ```
 
-#### Update System
-```bash
-sudo apt update
-sudo apt upgrade -y
-```
+## Server Setup
 
-#### Install Required Packages
-```bash
-sudo apt install -y nginx postgresql postgresql-contrib certbot python3-certbot-nginx
-```
+### 1. System Configuration
+
+1. **Update System**
+   ```bash
+   sudo apt update
+   sudo apt upgrade -y
+   sudo apt autoremove -y
+   ```
+
+2. **Configure Firewall**
+   ```bash
+   sudo ufw allow ssh
+   sudo ufw allow http
+   sudo ufw allow https
+   sudo ufw enable
+   ```
+
+3. **Create Deployment User**
+   ```bash
+   sudo adduser deployer
+   sudo usermod -aG sudo deployer
+   ```
 
 ### 2. Database Setup
 
-#### Create Database and User
-```bash
-sudo -u postgres psql
-```
-```sql
-CREATE DATABASE github_dashboard;
-CREATE USER dashboard_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE github_dashboard TO dashboard_user;
-```
+1. **Configure PostgreSQL**
+   ```bash
+   sudo -u postgres psql
+   CREATE DATABASE github_dashboard;
+   CREATE USER dashboard WITH PASSWORD 'secure_password';
+   GRANT ALL PRIVILEGES ON DATABASE github_dashboard TO dashboard;
+   ```
+
+2. **Configure PostgreSQL Access**
+   ```bash
+   sudo nano /etc/postgresql/12/main/pg_hba.conf
+   # Add line:
+   local   github_dashboard    dashboard    md5
+   ```
+
+3. **Restart PostgreSQL**
+   ```bash
+   sudo systemctl restart postgresql
+   ```
 
 ### 3. Application Setup
 
-#### Clone Repository
-```bash
-git clone https://github.com/SHA888/github-dashboard.git
-cd github-dashboard
-```
+1. **Create Application Directory**
+   ```bash
+   sudo mkdir -p /opt/github-dashboard
+   sudo chown -R deployer:deployer /opt/github-dashboard
+   ```
 
-#### Backend Configuration
-```bash
-cd backend
-cp .env.example .env
-```
+2. **Clone Repository**
+   ```bash
+   cd /opt/github-dashboard
+   git clone https://github.com/yourusername/github-dashboard.git .
+   ```
 
-Edit `.env`:
-```env
-DATABASE_URL=postgres://dashboard_user:your_secure_password@localhost:5432/github_dashboard
-GITHUB_TOKEN=your_production_github_token
-PORT=8080
-RUST_LOG=info
-```
+3. **Configure Environment**
+   ```bash
+   # Backend
+   nano backend/.env
+   GITHUB_TOKEN=your_github_pat
+   DATABASE_URL=postgres://dashboard:secure_password@localhost:5432/github_dashboard
+   PORT=8080
+   RUST_LOG=info
+   
+   # Frontend
+   nano frontend/.env
+   REACT_APP_API_URL=https://dashboard.example.com/api/v1
+   REACT_APP_WS_URL=wss://dashboard.example.com/api/v1/ws
+   ```
 
-#### Frontend Configuration
-```bash
-cd ../frontend
-cp .env.example .env
-```
+### 4. Backend Deployment
 
-Edit `.env`:
-```env
-VITE_API_URL=https://your-domain.com/api
-```
+1. **Build Backend**
+   ```bash
+   cd /opt/github-dashboard/backend
+   cargo build --release
+   ```
 
-### 4. Build and Deploy
+2. **Create Systemd Service**
+   ```bash
+   sudo nano /etc/systemd/system/github-dashboard.service
+   ```
+   ```ini
+   [Unit]
+   Description=GitHub Dashboard Backend
+   After=network.target postgresql.service
+   
+   [Service]
+   User=deployer
+   Group=deployer
+   WorkingDirectory=/opt/github-dashboard/backend
+   Environment="RUST_LOG=info"
+   EnvironmentFile=/opt/github-dashboard/backend/.env
+   ExecStart=/opt/github-dashboard/backend/target/release/backend
+   Restart=always
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
 
-#### Backend
-```bash
-cd backend
-cargo build --release
-sqlx database create
-sqlx migrate run
-```
+3. **Start Backend Service**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable github-dashboard
+   sudo systemctl start github-dashboard
+   ```
 
-#### Frontend
-```bash
-cd ../frontend
-npm install
-npm run build
-```
+### 5. Frontend Deployment
 
-### 5. Nginx Configuration
+1. **Build Frontend**
+   ```bash
+   cd /opt/github-dashboard/frontend
+   npm install
+   npm run build
+   ```
 
-Create `/etc/nginx/sites-available/github-dashboard`:
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+2. **Configure Nginx**
+   ```bash
+   sudo nano /etc/nginx/sites-available/github-dashboard
+   ```
+   ```nginx
+   server {
+       listen 80;
+       server_name dashboard.example.com;
+       
+       root /opt/github-dashboard/frontend/build;
+       index index.html;
+       
+       location /api/ {
+           proxy_pass http://localhost:8080;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+       
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+   }
+   ```
 
-    location / {
-        root /path/to/github-dashboard/frontend/dist;
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://localhost:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-Enable site:
-```bash
-sudo ln -s /etc/nginx/sites-available/github-dashboard /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
+3. **Enable Site**
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/github-dashboard /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
 
 ### 6. SSL Setup
 
-```bash
-sudo certbot --nginx -d your-domain.com
-```
+1. **Obtain SSL Certificate**
+   ```bash
+   sudo certbot --nginx -d dashboard.example.com
+   ```
 
-### 7. Systemd Service
+2. **Configure Automatic Renewal**
+   ```bash
+   sudo certbot renew --dry-run
+   ```
 
-Create `/etc/systemd/system/github-dashboard.service`:
-```ini
-[Unit]
-Description=GitHub Dashboard Backend
-After=network.target
+## Monitoring Setup
 
-[Service]
-User=your-user
-WorkingDirectory=/path/to/github-dashboard/backend
-ExecStart=/path/to/github-dashboard/backend/target/release/github-dashboard
-Restart=always
+### 1. System Monitoring
 
-[Install]
-WantedBy=multi-user.target
-```
+1. **Install Monitoring Tools**
+   ```bash
+   sudo apt install -y prometheus node-exporter
+   ```
 
-Enable and start service:
-```bash
-sudo systemctl enable github-dashboard
-sudo systemctl start github-dashboard
-```
+2. **Configure Prometheus**
+   ```bash
+   sudo nano /etc/prometheus/prometheus.yml
+   ```
+   ```yaml
+   global:
+     scrape_interval: 15s
+   
+   scrape_configs:
+     - job_name: 'node'
+       static_configs:
+         - targets: ['localhost:9100']
+   ```
 
-## Monitoring
+3. **Start Services**
+   ```bash
+   sudo systemctl enable prometheus node-exporter
+   sudo systemctl start prometheus node-exporter
+   ```
 
-### Logs
-```bash
-# Backend logs
-sudo journalctl -u github-dashboard -f
+### 2. Application Monitoring
 
-# Nginx logs
-sudo tail -f /var/log/nginx/error.log
-sudo tail -f /var/log/nginx/access.log
-```
+1. **Configure Logging**
+   ```bash
+   sudo nano /etc/logrotate.d/github-dashboard
+   ```
+   ```
+   /opt/github-dashboard/backend/logs/*.log {
+       daily
+       missingok
+       rotate 14
+       compress
+       delaycompress
+       notifempty
+       create 0640 deployer deployer
+   }
+   ```
 
-### Metrics
-- Set up Prometheus for metrics
-- Configure Grafana dashboards
-- Monitor system resources
+2. **Set Up Alerts**
+   ```bash
+   sudo apt install -y alertmanager
+   sudo nano /etc/alertmanager/alertmanager.yml
+   ```
 
-## Backup and Recovery
+## Backup Strategy
 
-### Database Backups
-```bash
-# Daily backup
-pg_dump -U dashboard_user github_dashboard > backup.sql
+### 1. Database Backups
 
-# Restore
-psql -U dashboard_user github_dashboard < backup.sql
-```
+1. **Daily Backup Script**
+   ```bash
+   sudo nano /usr/local/bin/backup-database.sh
+   ```
+   ```bash
+   #!/bin/bash
+   BACKUP_DIR="/backups/database"
+   DATE=$(date +%Y%m%d)
+   
+   mkdir -p $BACKUP_DIR
+   pg_dump -U dashboard github_dashboard > $BACKUP_DIR/backup-$DATE.sql
+   gzip $BACKUP_DIR/backup-$DATE.sql
+   
+   # Keep only last 7 days
+   find $BACKUP_DIR -type f -mtime +7 -delete
+   ```
 
-### Application Backups
-- Backup configuration files
-- Backup SSL certificates
-- Backup database regularly
+2. **Schedule Backup**
+   ```bash
+   sudo chmod +x /usr/local/bin/backup-database.sh
+   sudo crontab -e
+   ```
+   ```
+   0 0 * * * /usr/local/bin/backup-database.sh
+   ```
 
-## Security Considerations
+### 2. Application Backups
 
-- Keep system updated
-- Use strong passwords
-- Configure firewall
-- Enable automatic security updates
-- Regular security audits 
+1. **Backup Script**
+   ```bash
+   sudo nano /usr/local/bin/backup-application.sh
+   ```
+   ```bash
+   #!/bin/bash
+   BACKUP_DIR="/backups/application"
+   DATE=$(date +%Y%m%d)
+   
+   mkdir -p $BACKUP_DIR
+   tar -czf $BACKUP_DIR/app-$DATE.tar.gz /opt/github-dashboard
+   
+   # Keep only last 7 days
+   find $BACKUP_DIR -type f -mtime +7 -delete
+   ```
+
+2. **Schedule Backup**
+   ```bash
+   sudo chmod +x /usr/local/bin/backup-application.sh
+   sudo crontab -e
+   ```
+   ```
+   0 1 * * * /usr/local/bin/backup-application.sh
+   ```
+
+## Maintenance
+
+### 1. Regular Updates
+
+1. **System Updates**
+   ```bash
+   sudo apt update
+   sudo apt upgrade -y
+   sudo apt autoremove -y
+   ```
+
+2. **Application Updates**
+   ```bash
+   cd /opt/github-dashboard
+   git pull
+   
+   # Backend
+   cd backend
+   cargo build --release
+   sudo systemctl restart github-dashboard
+   
+   # Frontend
+   cd ../frontend
+   npm install
+   npm run build
+   sudo systemctl restart nginx
+   ```
+
+### 2. Monitoring Checks
+
+1. **System Health**
+   ```bash
+   # Check disk space
+   df -h
+   
+   # Check memory usage
+   free -h
+   
+   # Check running services
+   sudo systemctl status github-dashboard nginx postgresql
+   ```
+
+2. **Application Health**
+   ```bash
+   # Check logs
+   sudo journalctl -u github-dashboard -f
+   
+   # Check database
+   sudo -u postgres psql -d github_dashboard -c "SELECT count(*) FROM repositories;"
+   ```
+
+### 3. Security Updates
+
+1. **Regular Security Checks**
+   ```bash
+   # Check for security updates
+   sudo apt update
+   sudo apt list --upgradable
+   
+   # Check for vulnerable packages
+   sudo apt install -y debsecan
+   debsecan
+   ```
+
+2. **Application Security**
+   - Regular dependency updates
+   - Security audits
+   - Penetration testing
+   - Access log review
+
+## Troubleshooting
+
+### 1. Common Issues
+
+1. **Database Connection Issues**
+   ```bash
+   # Check PostgreSQL status
+   sudo systemctl status postgresql
+   
+   # Check connection
+   psql -U dashboard -d github_dashboard
+   
+   # Check logs
+   sudo tail -f /var/log/postgresql/postgresql-12-main.log
+   ```
+
+2. **Application Issues**
+   ```bash
+   # Check application logs
+   sudo journalctl -u github-dashboard -f
+   
+   # Check nginx logs
+   sudo tail -f /var/log/nginx/error.log
+   
+   # Check system resources
+   htop
+   ```
+
+3. **SSL Issues**
+   ```bash
+   # Check certificate
+   sudo certbot certificates
+   
+   # Test SSL
+   curl -vI https://dashboard.example.com
+   ```
+
+### 2. Recovery Procedures
+
+1. **Database Recovery**
+   ```bash
+   # Restore from backup
+   gunzip -c /backups/database/backup-20240406.sql.gz | psql -U dashboard github_dashboard
+   ```
+
+2. **Application Recovery**
+   ```bash
+   # Restore from backup
+   tar -xzf /backups/application/app-20240406.tar.gz -C /
+   
+   # Restart services
+   sudo systemctl restart github-dashboard nginx
+   ```
+
+3. **SSL Certificate Renewal**
+   ```bash
+   # Force renewal
+   sudo certbot renew --force-renewal
+   
+   # Check renewal
+   sudo certbot certificates
+   ``` 

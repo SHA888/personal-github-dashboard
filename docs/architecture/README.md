@@ -4,7 +4,13 @@ This document outlines the architecture of the GitHub Dashboard project.
 
 ## Overview
 
-The GitHub Dashboard is a full-stack application with the following components:
+The GitHub Dashboard is a full-stack application designed to provide comprehensive GitHub project management and analytics. The system consists of three main components:
+
+1. **Frontend (React + TypeScript)**: Dynamic, interactive UI for visualizing GitHub data and managing tasks
+2. **Backend (Rust)**: High-performance API server for data processing and GitHub integration
+3. **Database (PostgreSQL)**: Relational database for data persistence and analytics
+
+## System Components
 
 ```
 github-dashboard/
@@ -18,86 +24,183 @@ github-dashboard/
 └── docs/          # Documentation
 ```
 
+## Frontend Architecture
+
+### Core Features
+
+1. **Dashboard View**
+   - Overview of GitHub activity (commits, issues, PRs)
+   - Visualizations (bar charts, line graphs, pie charts)
+   - Real-time updates
+
+2. **Project Management**
+   - Repository list with sortable columns
+   - Drag-and-drop Kanban board
+   - Task prioritization
+   - Custom filters and tags
+
+3. **Analytics**
+   - Commit frequency trends
+   - Repository activity metrics
+   - Personal contribution stats
+
+### Technical Implementation
+
+- **State Management**: Redux/Zustand for data handling
+- **Routing**: React Router for navigation
+- **Data Visualization**: Recharts/Chart.js
+- **Real-time Updates**: WebSocket integration
+- **Type Safety**: TypeScript interfaces for API responses
+
 ## Backend Architecture
 
 ### Core Components
 
 1. **Web Server (Actix Web)**
-   - Handles HTTP requests
-   - Manages WebSocket connections
-   - Implements CORS policies
+   - REST API endpoints
+   - WebSocket support
+   - CORS configuration
+   - Rate limiting
 
-2. **Database Layer (SQLx)**
-   - PostgreSQL database
-   - Connection pooling
-   - Migrations management
+2. **GitHub API Integration**
+   - REST API client (reqwest)
+   - GraphQL support for complex queries
+   - Rate limit management
+   - Webhook handling
 
-3. **GitHub API Integration**
-   - Fetches repository data
-   - Handles authentication
-   - Manages rate limiting
+3. **Data Processing**
+   - Analytics computation
+   - Task prioritization
+   - Data aggregation
+   - Caching layer
 
-### Key Modules
+### API Endpoints
 
-- `analytics.rs`: Repository analytics and metrics
-- `models/`: Data structures and database models
-- `routes/`: API endpoint definitions
-- `main.rs`: Application entry point
+- `/repos`: Repository listing and stats
+- `/activity`: Recent GitHub activity
+- `/tasks`: Task management
+- `/analytics`: Processed statistics
+- `/webhooks`: GitHub event handling
 
-## Frontend Architecture
+## Database Architecture
 
-### Core Components
+### Schema Design
 
-1. **React Application**
-   - Component-based architecture
-   - State management with React hooks
-   - Client-side routing
+1. **Repositories Table**
+   ```sql
+   CREATE TABLE repositories (
+       id SERIAL PRIMARY KEY,
+       name VARCHAR(255),
+       owner VARCHAR(255),
+       url VARCHAR(255),
+       last_updated TIMESTAMP,
+       stats JSONB
+   );
+   ```
 
-2. **API Integration**
-   - REST API client
-   - Error handling
-   - Data fetching utilities
+2. **Activity Table**
+   ```sql
+   CREATE TABLE activity (
+       id SERIAL PRIMARY KEY,
+       repo_id INTEGER REFERENCES repositories(id),
+       type VARCHAR(50),
+       user VARCHAR(255),
+       timestamp TIMESTAMP,
+       details JSONB
+   );
+   ```
 
-3. **UI Components**
-   - Analytics dashboard
-   - Repository activity charts
-   - Trend visualizations
+3. **Tasks Table**
+   ```sql
+   CREATE TABLE tasks (
+       id SERIAL PRIMARY KEY,
+       repo_id INTEGER REFERENCES repositories(id),
+       github_issue_id INTEGER,
+       title VARCHAR(255),
+       priority VARCHAR(50),
+       status VARCHAR(50),
+       due_date TIMESTAMP
+   );
+   ```
 
-### Key Features
+### Database Features
 
-- Real-time data updates
-- Responsive design
-- Interactive charts
-- Error boundaries
-- Loading states
+- Connection pooling
+- Query optimization
+- JSONB support for flexible data
+- Indexed fields for performance
+- Migration management
 
 ## Data Flow
 
-1. **User Interaction**
-   - Frontend makes API requests
-   - Backend processes requests
-   - Database queries executed
+1. **Initial Data Load**
+   - Backend fetches repository data
+   - Processes and stores in PostgreSQL
+   - Frontend displays initial view
 
-2. **Data Processing**
-   - GitHub API data fetched
-   - Analytics computed
-   - Results cached
+2. **Periodic Updates**
+   - Scheduled data refresh
+   - Rate limit management
+   - Cache invalidation
 
-3. **Response**
-   - Data formatted
-   - Sent to frontend
-   - UI updated
+3. **Real-time Events**
+   - GitHub webhook reception
+   - WebSocket updates
+   - UI refresh
 
-## Security
+4. **User Interactions**
+   - Task prioritization
+   - Filter application
+   - Analytics requests
 
-- GitHub token management
-- CORS configuration
-- Input validation
-- Error handling
+## Security Architecture
 
-## Scalability Considerations
+1. **Authentication**
+   - GitHub PAT management
+   - Environment variable storage
+   - Token encryption
 
-- Database indexing
-- Connection pooling
-- API rate limiting
-- Caching strategies 
+2. **API Security**
+   - CORS configuration
+   - Rate limiting
+   - Input validation
+   - Error handling
+
+3. **Database Security**
+   - Secure credentials
+   - Local-only access
+   - Encrypted sensitive data
+
+## Scalability & Performance
+
+1. **Backend Optimization**
+   - Async processing
+   - Connection pooling
+   - Response caching
+   - Load balancing
+
+2. **Frontend Optimization**
+   - Lazy loading
+   - Debounced API calls
+   - Efficient state management
+   - Progressive loading
+
+3. **Database Optimization**
+   - Indexed queries
+   - Partitioned tables
+   - Query optimization
+   - Connection management
+
+## Monitoring & Logging
+
+1. **System Monitoring**
+   - Performance metrics
+   - Error tracking
+   - Resource usage
+   - Uptime monitoring
+
+2. **Application Logging**
+   - Request logging
+   - Error logging
+   - Performance logging
+   - Audit logging 

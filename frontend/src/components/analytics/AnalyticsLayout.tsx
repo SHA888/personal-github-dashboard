@@ -14,7 +14,8 @@ const DashboardPaper = styled(Paper)(({ theme }) => ({
 
 interface Filters {
     timeRange: string;
-    repository: string;
+    owner: string;
+    repo: string;
 }
 
 interface AnalyticsLayoutProps {
@@ -24,7 +25,8 @@ interface AnalyticsLayoutProps {
 const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({ onFilterChange }) => {
     const [filters, setFilters] = useState<Filters>({
         timeRange: '30',
-        repository: 'all',
+        owner: 'SHA888', // Default owner
+        repo: 'github-dashboard', // Default repo
     });
 
     const handleFilterChange = (field: keyof Filters, value: string) => {
@@ -51,15 +53,17 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({ onFilterChange }) => 
                     <MenuItem value="365">Last year</MenuItem>
                 </TextField>
                 <TextField
-                    select
-                    label="Repository"
-                    value={filters.repository}
-                    onChange={(e) => handleFilterChange('repository', e.target.value)}
+                    label="Owner"
+                    value={filters.owner}
+                    onChange={(e) => handleFilterChange('owner', e.target.value)}
                     sx={{ minWidth: 200 }}
-                >
-                    <MenuItem value="all">All Repositories</MenuItem>
-                    {/* Repository options will be populated dynamically */}
-                </TextField>
+                />
+                <TextField
+                    label="Repository"
+                    value={filters.repo}
+                    onChange={(e) => handleFilterChange('repo', e.target.value)}
+                    sx={{ minWidth: 200 }}
+                />
             </Box>
 
             {/* Main Content */}

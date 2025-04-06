@@ -1,11 +1,13 @@
+use sqlx::PgPool;
 use std::sync::Arc;
+use crate::analytics::Analytics;
 
 pub mod models;
-pub mod db;
 pub mod routes;
 pub mod analytics;
 
+#[derive(Clone)]
 pub struct AppState {
-    pub db: Arc<db::Database>,
-    pub analytics: Arc<analytics::Analytics>,
+    pub db: PgPool,
+    pub analytics: Arc<Analytics>,
 } 

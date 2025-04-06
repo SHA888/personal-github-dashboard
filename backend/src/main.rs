@@ -2,10 +2,8 @@ use actix_web::{web, App, HttpServer};
 use actix_cors::Cors;
 use dotenv::dotenv;
 use sqlx::postgres::PgPoolOptions;
-use std::env;
 use std::sync::Arc;
-
-use github_dashboard::{AppState, db, analytics, routes};
+use github_dashboard::{AppState, analytics::Analytics, routes::configure_routes};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -13,24 +11,32 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
-    // Get configuration from environment
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    // Load environment variables
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .expect("PORT must be a valid number");
 
-    // Initialize database pool
+    // Create database connection pool
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
         .await
         .expect("Failed to create pool");
 
+    // Run migrations
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
     // Initialize services
-    let db = Arc::new(db::Database::new().await.expect("Failed to connect to database"));
-    let analytics = Arc::new(analytics::Analytics::new(pool));
-    
+    let analytics = Arc::new(Analytics::new(pool.clone()));
     let app_state = web::Data::new(AppState {
-        db,
-        analytics,
+        db: pool,
+        analytics: analytics.clone(),
     });
 
     // Start HTTP server
@@ -38,9 +44,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Cors::permissive())
             .app_data(app_state.clone())
-            .configure(|cfg| routes::configure_routes(cfg, &app_state))
+            .configure(|cfg| configure_routes(cfg, &app_state))
     })
-    .bind(format!("0.0.0.0:{}", port))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }

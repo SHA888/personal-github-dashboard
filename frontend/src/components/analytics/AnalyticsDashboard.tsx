@@ -4,7 +4,6 @@ import { styled } from '@mui/material/styles';
 import RepositoryActivity from './RepositoryActivity';
 import Trends from './Trends';
 import AnalyticsLayout from './AnalyticsLayout';
-import { useWebSocket } from '../../services/websocket';
 
 const DashboardPaper = styled(Paper)(({ theme }) => ({
     padding: theme.spacing(3),
@@ -16,7 +15,8 @@ const DashboardPaper = styled(Paper)(({ theme }) => ({
 
 interface Filters {
     timeRange: string;
-    repository: string;
+    owner: string;
+    repo: string;
 }
 
 const AnalyticsDashboard: React.FC = () => {
@@ -24,18 +24,12 @@ const AnalyticsDashboard: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [filters, setFilters] = useState<Filters>({
         timeRange: '30',
-        repository: 'all',
-    });
-
-    // Handle real-time updates for repository activity
-    useWebSocket('repository_activity', (data) => {
-        // Update repository activity data
-        console.log('Received repository activity update:', data);
+        owner: 'SHA888',
+        repo: 'github-dashboard',
     });
 
     const handleFilterChange = (newFilters: Filters) => {
         setFilters(newFilters);
-        // Here you would typically trigger a refetch of data with the new filters
         console.log('Filters changed:', newFilters);
     };
 

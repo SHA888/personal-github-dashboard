@@ -11,6 +11,7 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
+import { apiService } from '../../services/api';
 
 ChartJS.register(
     CategoryScale,
@@ -30,49 +31,64 @@ const StatCard = styled(Card)(({ theme }) => ({
 
 interface Filters {
     timeRange: string;
-    repository: string;
+    owner: string;
+    repo: string;
 }
 
 interface TrendsProps {
     filters: Filters;
 }
 
+interface TrendData {
+    dates: string[];
+    commit_counts: number[];
+}
+
 const Trends: React.FC<TrendsProps> = ({ filters }) => {
-    const [trendData, setTrendData] = useState<any>(null);
+    const [trendData, setTrendData] = useState<TrendData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchTrendData = async () => {
             try {
-                const response = await fetch(`/api/analytics/trends?days=${filters.timeRange}`);
-                const data = await response.json();
-                setTrendData(data);
+                setLoading(true);
+                const response = await apiService.getRepositoryActivity(filters.owner, filters.repo);
+                const transformedData = {
+                    dates: response.data.dates,
+                    commit_counts: response.data.commits
+                };
+                setTrendData(transformedData);
+                setError(null);
             } catch (error) {
                 console.error('Error fetching trend data:', error);
+                setError('Failed to load trend data');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTrendData();
-    }, [filters.timeRange]);
+    }, [filters.timeRange, filters.owner, filters.repo]);
 
     if (loading) {
         return <LinearProgress />;
+    }
+
+    if (error) {
+        return <Typography color="error">{error}</Typography>;
     }
 
     if (!trendData) {
         return <Typography>No trend data available</Typography>;
     }
 
-    const { commits } = trendData;
-
     const commitChartData = {
-        labels: commits.dates.map((date: string) => new Date(date).toLocaleDateString()),
+        labels: trendData.dates.map((date: string) => new Date(date).toLocaleDateString()),
         datasets: [
             {
                 label: 'Daily Commits',
-                data: commits.counts,
+                data: trendData.commit_counts,
                 borderColor: 'rgb(75, 192, 192)',
                 tension: 0.1,
             },
@@ -98,6 +114,11 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
                                     options={{
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                            },
+                                        },
                                     }}
                                 />
                             </Box>

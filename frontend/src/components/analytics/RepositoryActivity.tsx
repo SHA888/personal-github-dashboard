@@ -10,6 +10,7 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
+import { apiService } from '../../services/api';
 
 ChartJS.register(
     CategoryScale,
@@ -28,50 +29,67 @@ const StatCard = styled(Card)(({ theme }) => ({
 
 interface Filters {
     timeRange: string;
-    repository: string;
+    owner: string;
+    repo: string;
 }
 
 interface RepositoryActivityProps {
     filters: Filters;
 }
 
+interface ActivityData {
+    dates: string[];
+    total_activity: number[];
+    commits: number[];
+}
+
 const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
-    const [activityData, setActivityData] = useState<any>(null);
+    const [activityData, setActivityData] = useState<ActivityData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchActivityData = async () => {
             try {
-                const response = await fetch(`/api/analytics/repository-activity?days=${filters.timeRange}`);
-                const data = await response.json();
-                setActivityData(data);
+                setLoading(true);
+                const response = await apiService.getRepositoryActivity(filters.owner, filters.repo);
+                setActivityData(response.data);
+                setError(null);
             } catch (error) {
                 console.error('Error fetching repository activity:', error);
+                setError('Failed to load repository activity data');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchActivityData();
-    }, [filters.timeRange]);
+    }, [filters.timeRange, filters.owner, filters.repo]);
 
     if (loading) {
         return <LinearProgress />;
+    }
+
+    if (error) {
+        return <Typography color="error">{error}</Typography>;
     }
 
     if (!activityData) {
         return <Typography>No activity data available</Typography>;
     }
 
-    const { dailyActivity, commits } = activityData;
-
     const dailyActivityChartData = {
-        labels: dailyActivity.dates.map((date: string) => new Date(date).toLocaleDateString()),
+        labels: activityData.dates.map((date: string) => new Date(date).toLocaleDateString()),
         datasets: [
             {
-                label: 'Daily Activity',
-                data: dailyActivity.counts,
+                label: 'Total Activity',
+                data: activityData.total_activity,
                 backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            },
+            {
+                label: 'Commits',
+                data: activityData.commits,
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
             },
         ],
     };
@@ -95,24 +113,13 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
                                     options={{
                                         responsive: true,
                                         maintainAspectRatio: false,
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                            },
+                                        },
                                     }}
                                 />
-                            </Box>
-                        </CardContent>
-                    </StatCard>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                    <StatCard>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Commits
-                            </Typography>
-                            <Box>
-                                <Typography variant="h4">{commits.total}</Typography>
-                                <Typography color="text.secondary">
-                                    {commits.authors} unique authors
-                                </Typography>
                             </Box>
                         </CardContent>
                     </StatCard>

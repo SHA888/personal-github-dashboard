@@ -32,21 +32,22 @@ api.interceptors.response.use(
   },
 );
 
-export const apiService = {
-  // Repositories
-  listRepositories: () => api.get("/repos"),
+export interface Task {
+  id: number;
+  repo_id: number;
+  github_issue_id: number;
+  title: string;
+  priority: string;
+  status: string;
+  due_date: string;
+}
 
-  getRepositoryDetails: (owner: string, repo: string) =>
-    api.get(`/repos/${owner}/${repo}`),
-
-  // Activity
-  getRecentActivity: (params?: { limit?: number; type?: string; repo?: string }) =>
-    api.get("/activity", { params }),
-
-  // Tasks
+export const taskService = {
+  // List Tasks
   listTasks: (params?: { status?: string; priority?: string; repo?: string }) =>
     api.get("/tasks", { params }),
 
+  // Create Task
   createTask: (data: {
     repo_id: number;
     title: string;
@@ -55,29 +56,15 @@ export const apiService = {
     due_date: string;
   }) => api.post("/tasks", data),
 
+  // Update Task
   updateTask: (id: number, data: {
     priority?: string;
     status?: string;
     due_date?: string;
   }) => api.put(`/tasks/${id}`, data),
 
+  // Delete Task
   deleteTask: (id: number) => api.delete(`/tasks/${id}`),
-
-  // Analytics
-  getRepositoryAnalytics: (owner: string, repo: string) =>
-    api.get(`/analytics/repos/${owner}/${repo}`),
-
-  getUserAnalytics: (username: string) =>
-    api.get(`/analytics/users/${username}`),
-
-  // Authentication
-  authenticate: (code: string) => api.post("/auth/github", { code }),
-
-  // Data Sync
-  syncRepository: (owner: string, repo: string) =>
-    api.post(`/sync/repository/${owner}/${repo}`),
-
-  syncOrganization: (org: string) => api.post(`/sync/organization/${org}`),
 };
 
-export default apiService; 
+export default taskService; 

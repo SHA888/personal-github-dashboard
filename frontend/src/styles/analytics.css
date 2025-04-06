@@ -1,0 +1,114 @@
+/* Analytics Layout */
+.analytics-layout {
+    @apply min-h-screen bg-gray-50;
+}
+
+.analytics-header {
+    @apply bg-white shadow-sm;
+}
+
+.analytics-content {
+    @apply container mx-auto px-4 py-8;
+}
+
+/* Analytics Dashboard */
+.dashboard-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.dashboard-card {
+    @apply bg-white rounded-lg shadow-sm p-6;
+}
+
+.dashboard-title {
+    @apply text-2xl font-bold text-gray-900 mb-6;
+}
+
+/* Repository Analytics */
+.repository-analytics {
+    @apply space-y-8;
+}
+
+.chart-container {
+    @apply h-48;
+}
+
+/* Activity Trends */
+.trends-container {
+    @apply space-y-8;
+}
+
+.trend-card {
+    @apply bg-white rounded-lg shadow-sm p-6;
+}
+
+.trend-title {
+    @apply text-lg font-medium text-gray-900 mb-4;
+}
+
+/* Common Components */
+.card {
+    @apply bg-white rounded-lg shadow-sm p-6;
+}
+
+.card-title {
+    @apply text-lg font-medium text-gray-900 mb-2;
+}
+
+.section-title {
+    @apply text-2xl font-bold text-gray-900;
+}
+
+.stat-value {
+    @apply text-3xl font-bold text-primary;
+}
+
+.loading-spinner {
+    @apply animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary;
+}
+
+.error-message {
+    @apply text-center py-8 text-red-600;
+}
+
+.empty-state {
+    @apply text-center py-8 text-gray-600;
+}
+
+/* Filter Controls */
+.filter-controls {
+    @apply grid grid-cols-1 md:grid-cols-3 gap-4 mb-8;
+}
+
+.filter-group {
+    @apply space-y-2;
+}
+
+.filter-label {
+    @apply block text-sm font-medium text-gray-700;
+}
+
+.filter-input {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm;
+}
+
+/* Chart Colors */
+.chart-primary {
+    @apply bg-primary/60;
+}
+
+.chart-secondary {
+    @apply bg-secondary/60;
+}
+
+.chart-success {
+    @apply bg-success/60;
+}
+
+.chart-warning {
+    @apply bg-warning/60;
+}
+
+.chart-danger {
+    @apply bg-danger/60;
+}

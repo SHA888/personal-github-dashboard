@@ -2,6 +2,7 @@ pub mod analytics;
 pub mod models;
 pub mod routes;
 pub mod services;
+pub mod middleware;
 
 use sqlx::PgPool;
 use std::sync::Arc;

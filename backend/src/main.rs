@@ -6,6 +6,7 @@ use std::env;
 use std::sync::Arc;
 use github_dashboard::{AppState, analytics::Analytics, routes::{configure_routes, configure_sync_routes}};
 use github_dashboard::services::{github::GitHubService, sync::SyncService};
+use github_dashboard::middleware::error_handler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -55,6 +56,7 @@ async fn main() -> std::io::Result<()> {
         
         App::new()
             .wrap(cors)
+            .wrap(error_handler::error_handler())
             .app_data(app_state.clone())
             .configure(|cfg| configure_routes(cfg, &app_state))
             .configure(|cfg| configure_sync_routes(cfg, github.clone()))

@@ -1,28 +1,13 @@
-use actix_web::{web, Scope};
-use crate::analytics::Analytics;
-use crate::collaboration::Collaboration;
-use crate::health::Health;
-use crate::project_health::ProjectHealth;
+use actix_web::web;
+use crate::AppState;
 
-mod user;
-mod organization;
-mod repository;
 mod analytics;
-mod collaboration;
-mod health;
-mod project;
-mod auth;
-mod sync;
 
-pub fn configure_routes() -> Scope {
-    web::scope("/api")
-        .service(auth::configure_auth_routes())
-        .service(sync::configure_sync_routes())
-        .service(user::configure_user_routes())
-        .service(organization::configure_organization_routes())
-        .service(repository::configure_repository_routes())
-        .service(analytics::configure_analytics_routes())
-        .service(collaboration::configure_collaboration_routes())
-        .service(health::configure_health_routes())
-        .service(project::configure_project_routes())
+pub fn configure_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppState>) {
+    cfg.service(
+        web::scope("/api")
+            .configure(|cfg| {
+                crate::routes::analytics::configure_analytics_routes(cfg, app_state);
+            })
+    );
 } 

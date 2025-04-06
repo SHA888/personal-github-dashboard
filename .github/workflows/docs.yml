@@ -1,0 +1,31 @@
+name: Documentation CI
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check for broken links
+      uses: lycheeverse/lychee-action@v1.8.0
+      with:
+        args: --verbose --no-progress --format markdown docs/ README.md
+
+    - name: Check spelling
+      uses: codespell-project/actions-codespell@master
+      with:
+        ignore_words_file: .codespellignore
+        skip: "*.json,*.lock,*.svg,*.png,*.jpg,*.jpeg,*.gif,*.ico,*.woff,*.woff2,*.ttf,*.eot,*.min.js,*.min.css" 

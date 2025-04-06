@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, LinearProgress, Grid, Card, CardContent, styled } from '@mui/material';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
     BarElement,
     Title,
     Tooltip,
@@ -16,8 +14,6 @@ import {
 ChartJS.register(
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
     BarElement,
     Title,
     Tooltip,
@@ -30,14 +26,23 @@ const StatCard = styled(Card)(({ theme }) => ({
     flexDirection: 'column',
 }));
 
-const RepositoryActivity: React.FC = () => {
+interface Filters {
+    timeRange: string;
+    repository: string;
+}
+
+interface RepositoryActivityProps {
+    filters: Filters;
+}
+
+const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
     const [activityData, setActivityData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchActivityData = async () => {
             try {
-                const response = await fetch('/api/analytics/repository-activity');
+                const response = await fetch(`/api/analytics/repository-activity?days=${filters.timeRange}`);
                 const data = await response.json();
                 setActivityData(data);
             } catch (error) {
@@ -48,7 +53,7 @@ const RepositoryActivity: React.FC = () => {
         };
 
         fetchActivityData();
-    }, []);
+    }, [filters.timeRange]);
 
     if (loading) {
         return <LinearProgress />;
@@ -58,7 +63,7 @@ const RepositoryActivity: React.FC = () => {
         return <Typography>No activity data available</Typography>;
     }
 
-    const { dailyActivity, issues, pullRequests, commits, codeReview } = activityData;
+    const { dailyActivity, commits } = activityData;
 
     const dailyActivityChartData = {
         labels: dailyActivity.dates.map((date: string) => new Date(date).toLocaleDateString()),
@@ -67,24 +72,6 @@ const RepositoryActivity: React.FC = () => {
                 label: 'Daily Activity',
                 data: dailyActivity.counts,
                 backgroundColor: 'rgba(75, 192, 192, 0.6)',
-            },
-        ],
-    };
-
-    const issuesChartData = {
-        labels: issues.dates.map((date: string) => new Date(date).toLocaleDateString()),
-        datasets: [
-            {
-                label: 'Open Issues',
-                data: issues.open,
-                borderColor: 'rgb(255, 99, 132)',
-                tension: 0.1,
-            },
-            {
-                label: 'Closed Issues',
-                data: issues.closed,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1,
             },
         ],
     };
@@ -115,42 +102,7 @@ const RepositoryActivity: React.FC = () => {
                     </StatCard>
                 </Grid>
 
-                <Grid item xs={12}>
-                    <StatCard>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Issues Trend
-                            </Typography>
-                            <Box height={300}>
-                                <Line
-                                    data={issuesChartData}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                    }}
-                                />
-                            </Box>
-                        </CardContent>
-                    </StatCard>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                    <StatCard>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Pull Requests
-                            </Typography>
-                            <Box>
-                                <Typography variant="h4">{pullRequests.total}</Typography>
-                                <Typography color="text.secondary">
-                                    {pullRequests.open} open, {pullRequests.merged} merged
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </StatCard>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                     <StatCard>
                         <CardContent>
                             <Typography variant="h6" gutterBottom>
@@ -160,22 +112,6 @@ const RepositoryActivity: React.FC = () => {
                                 <Typography variant="h4">{commits.total}</Typography>
                                 <Typography color="text.secondary">
                                     {commits.authors} unique authors
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </StatCard>
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                    <StatCard>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Code Review
-                            </Typography>
-                            <Box>
-                                <Typography variant="h4">{codeReview.averageTime}h</Typography>
-                                <Typography color="text.secondary">
-                                    Average review time
                                 </Typography>
                             </Box>
                         </CardContent>

@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Grid, Paper, Typography, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import RepositoryActivity from './RepositoryActivity';
-import UserContributions from './UserContributions';
-import OrganizationStats from './OrganizationStats';
-import CodeQuality from './CodeQuality';
-import TeamPerformance from './TeamPerformance';
 import Trends from './Trends';
-import Collaboration from './Collaboration';
-import Health from './Health';
-import ProjectHealth from './ProjectHealth';
 import AnalyticsLayout from './AnalyticsLayout';
 import { useWebSocket } from '../../services/websocket';
 
@@ -24,7 +17,6 @@ const DashboardPaper = styled(Paper)(({ theme }) => ({
 interface Filters {
     timeRange: string;
     repository: string;
-    team: string;
 }
 
 const AnalyticsDashboard: React.FC = () => {
@@ -33,25 +25,12 @@ const AnalyticsDashboard: React.FC = () => {
     const [filters, setFilters] = useState<Filters>({
         timeRange: '30',
         repository: 'all',
-        team: 'all',
-    });
-
-    // Handle real-time updates for project health
-    useWebSocket('project_health', (data) => {
-        // Update project health data
-        console.log('Received project health update:', data);
     });
 
     // Handle real-time updates for repository activity
     useWebSocket('repository_activity', (data) => {
         // Update repository activity data
         console.log('Received repository activity update:', data);
-    });
-
-    // Handle real-time updates for user contributions
-    useWebSocket('user_contributions', (data) => {
-        // Update user contributions data
-        console.log('Received user contributions update:', data);
     });
 
     const handleFilterChange = (newFilters: Filters) => {
@@ -94,6 +73,18 @@ const AnalyticsDashboard: React.FC = () => {
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AnalyticsLayout onFilterChange={handleFilterChange} />
+            <Grid container spacing={3}>
+                <Grid item xs={12}>
+                    <DashboardPaper>
+                        <RepositoryActivity filters={filters} />
+                    </DashboardPaper>
+                </Grid>
+                <Grid item xs={12}>
+                    <DashboardPaper>
+                        <Trends filters={filters} />
+                    </DashboardPaper>
+                </Grid>
+            </Grid>
         </Box>
     );
 };

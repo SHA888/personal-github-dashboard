@@ -1,12 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid, Paper, Typography, Tabs, Tab, TextField, MenuItem, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Grid, Paper, TextField, MenuItem } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import ProjectHealth from './ProjectHealth';
 import RepositoryActivity from './RepositoryActivity';
-import UserContributions from './UserContributions';
-import OrganizationStats from './OrganizationStats';
-import Collaboration from './Collaboration';
-import Health from './Health';
 import Trends from './Trends';
 
 const DashboardPaper = styled(Paper)(({ theme }) => ({
@@ -17,23 +12,22 @@ const DashboardPaper = styled(Paper)(({ theme }) => ({
     flexDirection: 'column',
 }));
 
+interface Filters {
+    timeRange: string;
+    repository: string;
+}
+
 interface AnalyticsLayoutProps {
-    onFilterChange: (filters: any) => void;
+    onFilterChange: (filters: Filters) => void;
 }
 
 const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({ onFilterChange }) => {
-    const [activeTab, setActiveTab] = useState(0);
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<Filters>({
         timeRange: '30',
         repository: 'all',
-        team: 'all',
     });
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setActiveTab(newValue);
-    };
-
-    const handleFilterChange = (field: string, value: string) => {
+    const handleFilterChange = (field: keyof Filters, value: string) => {
         const newFilters = { ...filters, [field]: value };
         setFilters(newFilters);
         onFilterChange(newFilters);
@@ -66,63 +60,21 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({ onFilterChange }) => 
                     <MenuItem value="all">All Repositories</MenuItem>
                     {/* Repository options will be populated dynamically */}
                 </TextField>
-                <TextField
-                    select
-                    label="Team"
-                    value={filters.team}
-                    onChange={(e) => handleFilterChange('team', e.target.value)}
-                    sx={{ minWidth: 200 }}
-                >
-                    <MenuItem value="all">All Teams</MenuItem>
-                    {/* Team options will be populated dynamically */}
-                </TextField>
             </Box>
 
             {/* Main Content */}
             <Grid container spacing={3}>
-                {/* Project Health Overview */}
-                <Grid item xs={12}>
+                {/* Repository Activity */}
+                <Grid item xs={12} md={6}>
                     <DashboardPaper>
-                        <ProjectHealth />
+                        <RepositoryActivity filters={filters} />
                     </DashboardPaper>
                 </Grid>
 
-                {/* Repository Activity and Trends */}
+                {/* Trends */}
                 <Grid item xs={12} md={6}>
                     <DashboardPaper>
-                        <RepositoryActivity />
-                    </DashboardPaper>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                    <DashboardPaper>
-                        <Trends />
-                    </DashboardPaper>
-                </Grid>
-
-                {/* User Contributions and Team Performance */}
-                <Grid item xs={12} md={6}>
-                    <DashboardPaper>
-                        <UserContributions />
-                    </DashboardPaper>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                    <DashboardPaper>
-                        <Collaboration />
-                    </DashboardPaper>
-                </Grid>
-
-                {/* Organization Stats and Health */}
-                <Grid item xs={12} md={6}>
-                    <DashboardPaper>
-                        <OrganizationStats />
-                    </DashboardPaper>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                    <DashboardPaper>
-                        <Health />
+                        <Trends filters={filters} />
                     </DashboardPaper>
                 </Grid>
             </Grid>

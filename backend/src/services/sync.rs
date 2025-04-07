@@ -1,4 +1,4 @@
-use crate::services::github::GitHubService;
+use crate::github::GitHubService;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};

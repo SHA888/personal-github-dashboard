@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO commits (sha, repository_id, author_name, author_email, message, created_at)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (repository_id, sha) DO UPDATE\n                SET author_name = EXCLUDED.author_name,\n                    author_email = EXCLUDED.author_email,\n                    message = EXCLUDED.message,\n                    created_at = EXCLUDED.created_at\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "162342c8c70c0644c7abfa9dfdea7e17a7d85575353070af8844ecc922f71412"
+}

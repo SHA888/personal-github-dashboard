@@ -1,4 +1,4 @@
-use crate::services::github::GitHubService;
+use crate::github::GitHubService;
 use actix_web::{web, HttpResponse};
 use std::sync::Arc;
 

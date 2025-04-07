@@ -1,12 +1,16 @@
-pub mod analytics;
+pub mod api;          // Previously routes
+pub mod db;          // Previously models
+pub mod github;      // Previously services/github
 pub mod middleware;
-pub mod models;
-pub mod routes;
-pub mod services;
+pub mod services;    // Includes analytics and sync
+pub mod websocket;
+pub mod config;
+pub mod utils;
 
 use sqlx::PgPool;
+use crate::services::analytics::Analytics;
 
 pub struct AppState {
-    pub analytics: analytics::Analytics,
+    pub analytics: Analytics,
     pub pool: PgPool,
 }

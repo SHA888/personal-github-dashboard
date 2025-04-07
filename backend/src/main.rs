@@ -1,21 +1,22 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
-use github_dashboard::services::{github::GitHubService, sync::SyncService};
-use github_dashboard::{
-    analytics::Analytics,
-    routes::{configure_routes, configure_sync_routes},
+use personal_github_dashboard::{
+    api::{configure_routes, configure_sync_routes},
+    github::GitHubService,
+    services::{analytics::Analytics, sync::SyncService},
     AppState,
 };
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     dotenv().ok();
-    env_logger::init();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     // Load environment variables
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -28,6 +29,7 @@ async fn main() -> std::io::Result<()> {
     // Create database connection pool
     let pool = PgPoolOptions::new()
         .max_connections(5)
+        .acquire_timeout(Duration::from_secs(3))
         .connect(&database_url)
         .await
         .expect("Failed to create pool");

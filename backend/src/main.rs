@@ -5,6 +5,7 @@ use personal_github_dashboard::{
     api::{configure_routes, configure_sync_routes},
     github::GitHubService,
     services::{analytics::Analytics, sync::SyncService},
+    websocket::{ws_index, WebSocket},
     AppState,
 };
 use sqlx::postgres::PgPoolOptions;
@@ -59,6 +60,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(app_state.clone())
+            .service(web::resource("/ws").to(ws_index))
             .configure(|cfg| configure_routes(cfg, &app_state))
             .configure(|cfg| configure_sync_routes(cfg, github.clone()))
     })

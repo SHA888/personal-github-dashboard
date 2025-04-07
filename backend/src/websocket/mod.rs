@@ -1,6 +1,6 @@
+use actix::{Actor, ActorContext, StreamHandler};
 use actix_web::web;
 use actix_web_actors::ws;
-use actix::{Actor, StreamHandler, ActorContext};
 use actix_web_actors::ws::Message;
 
 pub struct WebSocket;
@@ -24,6 +24,12 @@ impl StreamHandler<Result<Message, ws::ProtocolError>> for WebSocket {
     }
 }
 
+impl Default for WebSocket {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WebSocket {
     pub fn new() -> Self {
         Self
@@ -36,4 +42,4 @@ pub async fn ws_index(
 ) -> Result<actix_web::HttpResponse, actix_web::Error> {
     let resp = ws::start(WebSocket::new(), &req, stream)?;
     Ok(resp)
-} 
+}

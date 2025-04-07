@@ -16,4 +16,4 @@ impl Config {
             redis_url: env::var("REDIS_URL").expect("REDIS_URL must be set"),
         }
     }
-} 
+}

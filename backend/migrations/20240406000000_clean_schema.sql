@@ -35,4 +35,4 @@ CREATE INDEX IF NOT EXISTS idx_commits_repository_id ON commits(repository_id);
 CREATE INDEX IF NOT EXISTS idx_commits_created_at ON commits(created_at);
 CREATE INDEX IF NOT EXISTS idx_analytics_data_repository_id ON analytics_data(repository_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_data_metric_type ON analytics_data(metric_type);
-CREATE INDEX IF NOT EXISTS idx_analytics_data_created_at ON analytics_data(created_at); 
+CREATE INDEX IF NOT EXISTS idx_analytics_data_created_at ON analytics_data(created_at);

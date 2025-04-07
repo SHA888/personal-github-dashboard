@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -20,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { apiService, ActivityData } from "../../services/api";
+import { apiService } from "../../services/api";
 
 ChartJS.register(
   CategoryScale,
@@ -95,7 +94,9 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
   }
 
   const dailyCommitChartData = {
-    labels: trendData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
+    labels: trendData.commit_activity.daily.map(
+      (_, index) => `Day ${index + 1}`,
+    ),
     datasets: [
       {
         label: "Daily Commits",
@@ -107,7 +108,9 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
   };
 
   const weeklyCommitChartData = {
-    labels: trendData.commit_activity.weekly.map((_, index) => `Week ${index + 1}`),
+    labels: trendData.commit_activity.weekly.map(
+      (_, index) => `Week ${index + 1}`,
+    ),
     datasets: [
       {
         label: "Weekly Commits",
@@ -119,7 +122,9 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
   };
 
   const monthlyCommitChartData = {
-    labels: trendData.commit_activity.monthly.map((_, index) => `Month ${index + 1}`),
+    labels: trendData.commit_activity.monthly.map(
+      (_, index) => `Month ${index + 1}`,
+    ),
     datasets: [
       {
         label: "Monthly Commits",

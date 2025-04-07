@@ -87,4 +87,4 @@ Please read our [Development Guide](../../docs/development/README.md) for detail
 
 ## License
 
-MIT 
+MIT

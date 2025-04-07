@@ -102,4 +102,4 @@ The GitHub Dashboard is designed to be a lightweight, efficient tool for persona
 
 ## Conclusion
 
-The GitHub Dashboard aims to provide a powerful yet lightweight solution for personal and small-team GitHub project management. By focusing on essential features and efficient implementation, we create a tool that's both useful and maintainable for our target users. 
+The GitHub Dashboard aims to provide a powerful yet lightweight solution for personal and small-team GitHub project management. By focusing on essential features and efficient implementation, we create a tool that's both useful and maintainable for our target users.

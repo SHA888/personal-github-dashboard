@@ -1,29 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Paper,
-  TextField,
-  MenuItem,
-  styled,
-  Grid,
-  Autocomplete,
-} from "@mui/material";
+import { Box, TextField, MenuItem, Grid, Autocomplete } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
 import Trends from "./Trends";
 import { apiService, Repository } from "../../services/api";
-import { repositoryService } from "../../services/repositoryService.ts";
-
-const DashboardPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
 
 interface Filters {
   timeRange: string;
@@ -92,7 +71,10 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
             <Autocomplete
               options={repositories}
               getOptionLabel={(option) => option.owner}
-              value={repositories.find((repo) => repo.owner === filters.owner) || null}
+              value={
+                repositories.find((repo) => repo.owner === filters.owner) ||
+                null
+              }
               onChange={(_, newValue) => {
                 if (newValue) {
                   handleFilterChange("owner", newValue.owner);
@@ -106,9 +88,13 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <Autocomplete
-              options={repositories.filter((repo) => repo.owner === filters.owner)}
+              options={repositories.filter(
+                (repo) => repo.owner === filters.owner,
+              )}
               getOptionLabel={(option) => option.name}
-              value={repositories.find((repo) => repo.name === filters.repo) || null}
+              value={
+                repositories.find((repo) => repo.name === filters.repo) || null
+              }
               onChange={(_, newValue) => {
                 if (newValue) {
                   handleFilterChange("repo", newValue.name);

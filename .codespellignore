@@ -37,4 +37,4 @@ postgres@localhost
 postgres://postgres
 postgres://postgres:postgres@localhost:5432
 postgres://postgres:postgres@localhost:5432/github_dashboard
-postgres://postgres:postgres@localhost:5432/github_dashboard_test 
+postgres://postgres:postgres@localhost:5432/github_dashboard_test

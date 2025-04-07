@@ -1,10 +1,16 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+interface WebSocketMessage {
+  type: string;
+  payload: unknown;
+  timestamp: string;
+}
 
 interface WebSocketState {
   socket: WebSocket | null;
   isConnected: boolean;
   error: string | null;
-  messages: any[];
+  messages: WebSocketMessage[];
 }
 
 const initialState: WebSocketState = {
@@ -15,7 +21,7 @@ const initialState: WebSocketState = {
 };
 
 const websocketSlice = createSlice({
-  name: 'websocket',
+  name: "websocket",
   initialState,
   reducers: {
     setSocket: (state, action: PayloadAction<WebSocket>) => {
@@ -27,7 +33,7 @@ const websocketSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
-    addMessage: (state, action: PayloadAction<any>) => {
+    addMessage: (state, action: PayloadAction<WebSocketMessage>) => {
       state.messages.push(action.payload);
     },
     clearMessages: (state) => {
@@ -36,5 +42,6 @@ const websocketSlice = createSlice({
   },
 });
 
-export const { setSocket, setConnected, setError, addMessage, clearMessages } = websocketSlice.actions;
-export default websocketSlice.reducer; 
+export const { setSocket, setConnected, setError, addMessage, clearMessages } =
+  websocketSlice.actions;
+export default websocketSlice.reducer;

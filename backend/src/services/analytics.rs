@@ -32,14 +32,14 @@ impl Analytics {
     ) -> Result<Value, sqlx::Error> {
         let activity = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 DATE_TRUNC('day', created_at) as date,
                 COUNT(*) as total_activity,
                 SUM(CASE WHEN type = 'commit' THEN 1 ELSE 0 END) as commits
             FROM (
-                SELECT created_at, 'commit' as type FROM commits 
+                SELECT created_at, 'commit' as type FROM commits
                 WHERE repository_id = (
-                    SELECT id FROM repositories 
+                    SELECT id FROM repositories
                     WHERE owner = $1 AND name = $2
                 )
             ) activities
@@ -70,12 +70,12 @@ impl Analytics {
     ) -> Result<Value, sqlx::Error> {
         let trends = sqlx::query(
             r#"
-            SELECT 
+            SELECT
                 DATE_TRUNC('day', created_at) as date,
                 COUNT(*) as commit_count
             FROM commits
             WHERE repository_id = (
-                SELECT id FROM repositories 
+                SELECT id FROM repositories
                 WHERE owner = $1 AND name = $2
             )
             AND created_at >= NOW() - ($3 || ' days')::INTERVAL

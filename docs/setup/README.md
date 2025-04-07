@@ -25,7 +25,7 @@ This guide provides detailed instructions for setting up the GitHub Dashboard de
 
 3. **Node.js and npm**
    - Windows/macOS: [Node.js Downloads](https://nodejs.org/)
-   - Linux: 
+   - Linux:
      ```bash
      curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
      sudo apt install -y nodejs
@@ -267,10 +267,10 @@ psql -U postgres github_dashboard < backup.sql
    ```bash
    # Build release binary
    cargo build --release
-   
+
    # Copy binary to server
    scp target/release/backend user@server:/opt/github-dashboard/
-   
+
    # Set up systemd service
    sudo nano /etc/systemd/system/github-dashboard.service
    ```
@@ -279,7 +279,7 @@ psql -U postgres github_dashboard < backup.sql
    ```bash
    # Build production bundle
    npm run build
-   
+
    # Copy to server
    scp -r build/* user@server:/var/www/github-dashboard/
    ```
@@ -289,7 +289,7 @@ psql -U postgres github_dashboard < backup.sql
    server {
        listen 80;
        server_name dashboard.example.com;
-       
+
        location /api/ {
            proxy_pass http://localhost:8080;
            proxy_http_version 1.1;
@@ -298,7 +298,7 @@ psql -U postgres github_dashboard < backup.sql
            proxy_set_header Host $host;
            proxy_cache_bypass $http_upgrade;
        }
-       
+
        location / {
            root /var/www/github-dashboard;
            try_files $uri $uri/ /index.html;
@@ -318,7 +318,7 @@ psql -U postgres github_dashboard < backup.sql
    ```bash
    # Daily backup
    0 0 * * * pg_dump -U postgres github_dashboard > /backups/daily/backup-$(date +\%Y\%m\%d).sql
-   
+
    # Weekly backup
    0 0 * * 0 pg_dump -U postgres github_dashboard > /backups/weekly/backup-$(date +\%Y\%m\%d).sql
    ```
@@ -351,4 +351,4 @@ psql -U postgres github_dashboard < backup.sql
 3. **Alerting**
    - Set up monitoring alerts
    - Configure notification channels
-   - Define alert thresholds 
+   - Define alert thresholds

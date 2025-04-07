@@ -1,0 +1,75 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3
+        types: [python]
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx]
+        additional_dependencies:
+          - prettier@3.1.0
+        files: ^frontend/
+
+  - repo: local
+    hooks:
+      - id: cargo-check
+        name: Cargo Check
+        entry: bash -c 'cd backend && cargo check'
+        language: system
+        pass_filenames: false
+        files: ^backend/
+        types: [rust]
+
+      - id: cargo-fmt
+        name: Cargo Format
+        entry: bash -c 'cd backend && cargo fmt --all -- --check'
+        language: system
+        pass_filenames: false
+        files: ^backend/
+        types: [rust]
+
+      - id: cargo-clippy
+        name: Cargo Clippy
+        entry: bash -c 'cd backend && cargo clippy --all-targets --all-features -- -D warnings'
+        language: system
+        pass_filenames: false
+        files: ^backend/
+        types: [rust]
+
+      - id: cargo-test
+        name: Cargo Test
+        entry: bash -c 'cd backend && cargo test --all-features'
+        language: system
+        pass_filenames: false
+        files: ^backend/
+        types: [rust]
+
+      - id: npm-lint
+        name: NPM Lint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        types_or: [javascript, jsx, ts, tsx]
+
+      - id: npm-test
+        name: NPM Test
+        entry: bash -c 'cd frontend && npm test -- --run'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        types_or: [javascript, jsx, ts, tsx]

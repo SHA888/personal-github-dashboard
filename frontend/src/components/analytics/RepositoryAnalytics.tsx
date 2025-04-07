@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
-import { analyticsService } from "../../services/analyticsService.ts";
 import {
   Box,
   Typography,
   LinearProgress,
+  Grid,
   Card,
   CardContent,
   styled,
-  Grid,
 } from "@mui/material";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend,
@@ -28,8 +24,6 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend,
@@ -108,7 +102,9 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
   }
 
   const commitActivityChartData = {
-    labels: activityData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
+    labels: activityData.commit_activity.daily.map(
+      (_, index) => `Day ${index + 1}`,
+    ),
     datasets: [
       {
         label: "Daily Commits",
@@ -123,7 +119,10 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
     datasets: [
       {
         label: "Issues",
-        data: [activityData.issue_metrics.open, activityData.issue_metrics.closed],
+        data: [
+          activityData.issue_metrics.open,
+          activityData.issue_metrics.closed,
+        ],
         backgroundColor: ["rgba(255, 99, 132, 0.6)", "rgba(54, 162, 235, 0.6)"],
       },
     ],
@@ -153,15 +152,18 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
               <Typography variant="h6" gutterBottom>
                 Commit Activity
               </Typography>
-              <Bar data={commitActivityChartData} options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
+              <Bar
+                data={commitActivityChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
                   },
-                },
-              }} />
+                }}
+              />
             </CardContent>
           </StatCard>
         </Grid>
@@ -172,17 +174,21 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
               <Typography variant="h6" gutterBottom>
                 Issue Metrics
               </Typography>
-              <Bar data={issueMetricsChartData} options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
+              <Bar
+                data={issueMetricsChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
                   },
-                },
-              }} />
+                }}
+              />
               <Typography variant="body2" sx={{ mt: 2 }}>
-                Average Resolution Time: {activityData.issue_metrics.average_resolution_time}
+                Average Resolution Time:{" "}
+                {activityData.issue_metrics.average_resolution_time}
               </Typography>
             </CardContent>
           </StatCard>
@@ -194,15 +200,18 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
               <Typography variant="h6" gutterBottom>
                 Pull Request Metrics
               </Typography>
-              <Bar data={prMetricsChartData} options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
+              <Bar
+                data={prMetricsChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
                   },
-                },
-              }} />
+                }}
+              />
               <Typography variant="body2" sx={{ mt: 2 }}>
                 Average Merge Time: {activityData.pr_metrics.average_merge_time}
               </Typography>

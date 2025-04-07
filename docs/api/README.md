@@ -428,4 +428,4 @@ All endpoints may return the following error responses:
   "error": "Internal Server Error",
   "message": "An unexpected error occurred"
 }
-``` 
+```

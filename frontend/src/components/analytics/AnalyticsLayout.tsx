@@ -1,24 +1,7 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Paper,
-  TextField,
-  MenuItem,
-  styled,
-} from "@mui/material";
+import { Box, TextField, MenuItem } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
 import Trends from "./Trends";
-
-const DashboardPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
 
 interface Filters {
   timeRange: string;

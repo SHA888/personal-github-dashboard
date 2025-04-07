@@ -101,7 +101,7 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    #[cfg(test)]
    mod tests {
        use super::*;
-       
+
        #[test]
        fn test_function() {
            // Setup
@@ -353,4 +353,4 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Build artifacts
    - Optimize assets
    - Update documentation
-   - Deploy to staging 
+   - Deploy to staging

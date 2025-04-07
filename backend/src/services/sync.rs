@@ -42,7 +42,10 @@ impl SyncService {
                         repo.owner, repo.name, e
                     );
                 } else {
-                    info!("Successfully synced repository {}/{}", repo.owner, repo.name);
+                    info!(
+                        "Successfully synced repository {}/{}",
+                        repo.owner, repo.name
+                    );
                 }
             }
 

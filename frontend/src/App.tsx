@@ -8,6 +8,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { WebSocketProvider } from "./components/WebSocketProvider";
 import "./App.css";
 
+// Test comment for pre-commit hooks
 const App: React.FC = () => {
   return (
     <Provider store={store}>

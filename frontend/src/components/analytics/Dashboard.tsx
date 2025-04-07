@@ -30,7 +30,8 @@ interface RepositoryStats {
 const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [repositoryStats, setRepositoryStats] = useState<RepositoryStats | null>(null);
+  const [repositoryStats, setRepositoryStats] =
+    useState<RepositoryStats | null>(null);
   const [filters, setFilters] = useState<Filters>({
     timeRange: "30",
     owner: "SHA888",
@@ -101,7 +102,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Stars
                 </Typography>
-                <Typography variant="h4">{repositoryStats.stats.stars}</Typography>
+                <Typography variant="h4">
+                  {repositoryStats.stats.stars}
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -109,7 +112,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Forks
                 </Typography>
-                <Typography variant="h4">{repositoryStats.stats.forks}</Typography>
+                <Typography variant="h4">
+                  {repositoryStats.stats.forks}
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -117,7 +122,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Open Issues
                 </Typography>
-                <Typography variant="h4">{repositoryStats.stats.open_issues}</Typography>
+                <Typography variant="h4">
+                  {repositoryStats.stats.open_issues}
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -125,7 +132,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Contributors
                 </Typography>
-                <Typography variant="h4">{repositoryStats.stats.contributors}</Typography>
+                <Typography variant="h4">
+                  {repositoryStats.stats.contributors}
+                </Typography>
               </Box>
             </Grid>
           </Grid>

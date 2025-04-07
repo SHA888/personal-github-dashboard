@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  LinearProgress,
-  Grid,
-  Card,
-  CardContent,
-  styled,
-} from "@mui/material";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend,
@@ -31,12 +19,6 @@ ChartJS.register(
   Tooltip,
   Legend,
 );
-
-const StatCard = styled(Card)(({ theme }) => ({
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
 
 interface Filters {
   timeRange: string;
@@ -60,6 +42,7 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
         const response = await apiService.getRepositoryActivity(
           filters.owner,
           filters.repo,
+          30, // Default to 30 days
         );
         setActivityData(response.data);
         setError(null);
@@ -72,18 +55,18 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
     };
 
     fetchActivityData();
-  }, [filters.timeRange, filters.owner, filters.repo]);
+  }, [filters.owner, filters.repo]);
 
   if (loading) {
-    return <LinearProgress />;
+    return <div className="w-full h-1 bg-gray-200 animate-pulse" />;
   }
 
   if (error) {
-    return <Typography color="error">{error}</Typography>;
+    return <p className="text-danger">{error}</p>;
   }
 
   if (!activityData) {
-    return <Typography>No activity data available</Typography>;
+    return <p className="text-secondary">No activity data available</p>;
   }
 
   const dailyActivityChartData = {
@@ -105,37 +88,31 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Repository Activity
-      </Typography>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold text-gray-900">Repository Activity</h2>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <StatCard>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Daily Activity
-              </Typography>
-              <Box height={300}>
-                <Bar
-                  data={dailyActivityChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </StatCard>
-        </Grid>
-      </Grid>
-    </Box>
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Daily Activity
+          </h3>
+          <div className="h-[300px]">
+            <Bar
+              data={dailyActivityChartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

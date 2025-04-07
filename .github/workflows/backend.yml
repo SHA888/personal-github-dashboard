@@ -64,4 +64,4 @@ jobs:
 
     - name: Build
       working-directory: backend
-      run: cargo build --release 
+      run: cargo build --release

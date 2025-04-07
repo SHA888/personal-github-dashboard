@@ -1,8 +1,7 @@
 use crate::AppState;
 use actix_web::{web, HttpResponse, Responder};
-use serde_json::json;
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use serde_json::json;
 
 mod analytics;
 mod repository;

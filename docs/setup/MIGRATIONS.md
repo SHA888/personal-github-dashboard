@@ -133,4 +133,4 @@ When adding new migrations:
 2. Include appropriate indexes
 3. Document changes in this file
 4. Test migrations in a development environment
-5. Consider backward compatibility 
+5. Consider backward compatibility

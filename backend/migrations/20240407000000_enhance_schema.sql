@@ -74,4 +74,4 @@ CREATE INDEX IF NOT EXISTS idx_analytics_data_activity_type ON analytics_data(ac
 
 -- Add indexes for notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_repository_id ON notifications(repository_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at); 
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);

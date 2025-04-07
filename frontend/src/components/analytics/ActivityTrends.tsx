@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { analyticsService } from "../../services/analyticsService";
+import {
+  Box,
+  Typography,
+  LinearProgress,
+  Card,
+  CardContent,
+  styled,
+  Grid,
+} from "@mui/material";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -12,6 +20,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { apiService, ActivityData } from "../../services/api";
 
 ChartJS.register(
   CategoryScale,
@@ -20,8 +29,14 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
+
+const StatCard = styled(Card)({
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+});
 
 interface Filters {
   timeRange: string;
@@ -29,111 +44,167 @@ interface Filters {
   repo: string;
 }
 
-interface ActivityTrends {
-  dates: string[];
-  commit_counts: number[];
+interface TrendsProps {
+  filters: Filters;
 }
 
-const ActivityTrends: React.FC = () => {
-  const filters = useOutletContext<Filters>();
-  const [trends, setTrends] = useState<ActivityTrends | null>(null);
+interface TrendData {
+  commit_activity: {
+    daily: number[];
+    weekly: number[];
+    monthly: number[];
+  };
+}
+
+const Trends: React.FC<TrendsProps> = ({ filters }) => {
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTrends = async () => {
-      if (!filters.owner || !filters.repo) {
-        setLoading(false);
-        return;
-      }
-
+    const fetchTrendData = async () => {
       try {
         setLoading(true);
-        const response = await analyticsService.getActivityTrends(
+        const response = await apiService.getRepositoryAnalytics(
           filters.owner,
           filters.repo,
-          filters.timeRange
         );
-        setTrends(response.data || null);
+        setTrendData(response.data);
         setError(null);
       } catch (error) {
-        console.error("Error fetching trends:", error);
-        setError("Failed to load activity trends");
-        setTrends(null);
+        console.error("Error fetching trend data:", error);
+        setError("Failed to load trend data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTrends();
-  }, [filters]);
+    fetchTrendData();
+  }, [filters.owner, filters.repo]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LinearProgress />;
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-danger">{error}</div>
-      </div>
-    );
+    return <Typography color="error">{error}</Typography>;
   }
 
-  if (!trends || !trends.dates.length) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">No activity trends available</div>
-      </div>
-    );
+  if (!trendData) {
+    return <Typography>No trend data available</Typography>;
   }
 
-  const chartData = {
-    labels: trends.dates,
+  const dailyCommitChartData = {
+    labels: trendData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
     datasets: [
       {
-        label: "Commit Count",
-        data: trends.commit_counts,
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.5)",
+        label: "Daily Commits",
+        data: trendData.commit_activity.daily,
+        borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
       },
     ],
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top" as const,
+  const weeklyCommitChartData = {
+    labels: trendData.commit_activity.weekly.map((_, index) => `Week ${index + 1}`),
+    datasets: [
+      {
+        label: "Weekly Commits",
+        data: trendData.commit_activity.weekly,
+        borderColor: "rgb(255, 99, 132)",
+        tension: 0.1,
       },
-      title: {
-        display: true,
-        text: "Activity Trends",
+    ],
+  };
+
+  const monthlyCommitChartData = {
+    labels: trendData.commit_activity.monthly.map((_, index) => `Month ${index + 1}`),
+    datasets: [
+      {
+        label: "Monthly Commits",
+        data: trendData.commit_activity.monthly,
+        borderColor: "rgb(54, 162, 235)",
+        tension: 0.1,
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
+    ],
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        Activity Trends
-      </h2>
-      <div className="h-96">
-        <Line data={chartData} options={chartOptions} />
-      </div>
-    </div>
+    <Box>
+      <Typography variant="h4" gutterBottom>
+        Commit Trends
+      </Typography>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Daily Commit Trends
+              </Typography>
+              <Line
+                data={dailyCommitChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
+                  },
+                }}
+              />
+            </CardContent>
+          </StatCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Weekly Commit Trends
+              </Typography>
+              <Line
+                data={weeklyCommitChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
+                  },
+                }}
+              />
+            </CardContent>
+          </StatCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Monthly Commit Trends
+              </Typography>
+              <Line
+                data={monthlyCommitChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
+                  },
+                }}
+              />
+            </CardContent>
+          </StatCard>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 
-export default ActivityTrends;
+export default Trends;

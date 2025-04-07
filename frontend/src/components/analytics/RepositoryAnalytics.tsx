@@ -1,27 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { analyticsService } from "../../services/analyticsService";
-import { Line } from "react-chartjs-2";
+import { analyticsService } from "../../services/analyticsService.ts";
+import {
+  Box,
+  Typography,
+  LinearProgress,
+  Card,
+  CardContent,
+  styled,
+  Grid,
+} from "@mui/material";
+import { Bar, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
+  BarElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
   Legend,
 } from "chart.js";
+import { apiService } from "../../services/api";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
+  BarElement,
   LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
+
+const StatCard = styled(Card)({
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+});
 
 interface Filters {
   timeRange: string;
@@ -29,119 +47,171 @@ interface Filters {
   repo: string;
 }
 
-interface RepositoryAnalytics {
-  dates: string[];
-  total_activity: number[];
-  commits: number[];
+interface RepositoryActivityProps {
+  filters: Filters;
 }
 
-const RepositoryAnalytics: React.FC = () => {
-  const filters = useOutletContext<Filters>();
-  const [analytics, setAnalytics] = useState<RepositoryAnalytics | null>(null);
+interface ActivityData {
+  commit_activity: {
+    daily: number[];
+    weekly: number[];
+    monthly: number[];
+  };
+  issue_metrics: {
+    open: number;
+    closed: number;
+    average_resolution_time: string;
+  };
+  pr_metrics: {
+    open: number;
+    merged: number;
+    average_merge_time: string;
+  };
+}
+
+const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
+  const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!filters.owner || !filters.repo) {
-        setLoading(false);
-        return;
-      }
-
+    const fetchActivityData = async () => {
       try {
         setLoading(true);
-        const response = await analyticsService.getRepositoryAnalytics(
+        const response = await apiService.getRepositoryAnalytics(
           filters.owner,
           filters.repo,
-          filters.timeRange
         );
-        setAnalytics(response.data || null);
+        setActivityData(response.data);
         setError(null);
       } catch (error) {
-        console.error("Error fetching analytics:", error);
-        setError("Failed to load analytics data");
-        setAnalytics(null);
+        console.error("Error fetching repository activity:", error);
+        setError("Failed to load repository activity data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAnalytics();
-  }, [filters]);
+    fetchActivityData();
+  }, [filters.owner, filters.repo]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LinearProgress />;
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-danger">{error}</div>
-      </div>
-    );
+    return <Typography color="error">{error}</Typography>;
   }
 
-  if (!analytics || !analytics.dates.length) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">No analytics data available</div>
-      </div>
-    );
+  if (!activityData) {
+    return <Typography>No activity data available</Typography>;
   }
 
-  const chartData = {
-    labels: analytics.dates,
+  const commitActivityChartData = {
+    labels: activityData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
     datasets: [
       {
-        label: "Total Activity",
-        data: analytics.total_activity,
-        borderColor: "rgb(34, 197, 94)",
-        backgroundColor: "rgba(34, 197, 94, 0.5)",
-        tension: 0.1,
-      },
-      {
-        label: "Commits",
-        data: analytics.commits,
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.5)",
-        tension: 0.1,
+        label: "Daily Commits",
+        data: activityData.commit_activity.daily,
+        backgroundColor: "rgba(75, 192, 192, 0.6)",
       },
     ],
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top" as const,
+  const issueMetricsChartData = {
+    labels: ["Open", "Closed"],
+    datasets: [
+      {
+        label: "Issues",
+        data: [activityData.issue_metrics.open, activityData.issue_metrics.closed],
+        backgroundColor: ["rgba(255, 99, 132, 0.6)", "rgba(54, 162, 235, 0.6)"],
       },
-      title: {
-        display: true,
-        text: "Repository Activity",
+    ],
+  };
+
+  const prMetricsChartData = {
+    labels: ["Open", "Merged"],
+    datasets: [
+      {
+        label: "Pull Requests",
+        data: [activityData.pr_metrics.open, activityData.pr_metrics.merged],
+        backgroundColor: ["rgba(255, 206, 86, 0.6)", "rgba(75, 192, 192, 0.6)"],
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
+    ],
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        Activity Overview
-      </h2>
-      <div className="h-96">
-        <Line data={chartData} options={chartOptions} />
-      </div>
-    </div>
+    <Box>
+      <Typography variant="h4" gutterBottom>
+        Repository Activity
+      </Typography>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Commit Activity
+              </Typography>
+              <Bar data={commitActivityChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                  },
+                },
+              }} />
+            </CardContent>
+          </StatCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Issue Metrics
+              </Typography>
+              <Bar data={issueMetricsChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                  },
+                },
+              }} />
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                Average Resolution Time: {activityData.issue_metrics.average_resolution_time}
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <StatCard>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Pull Request Metrics
+              </Typography>
+              <Bar data={prMetricsChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                  },
+                },
+              }} />
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                Average Merge Time: {activityData.pr_metrics.average_merge_time}
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 
-export default RepositoryAnalytics;
+export default RepositoryActivity;

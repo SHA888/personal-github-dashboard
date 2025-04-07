@@ -1,6 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { repositoryService } from "../../services/repositoryService";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Paper,
+  TextField,
+  MenuItem,
+  styled,
+  Grid,
+  Autocomplete,
+} from "@mui/material";
+import RepositoryActivity from "./RepositoryActivity";
+import Trends from "./Trends";
+import { apiService, Repository } from "../../services/api";
+import { repositoryService } from "../../services/repositoryService.ts";
+
+const DashboardPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+}));
 
 interface Filters {
   timeRange: string;
@@ -8,33 +31,29 @@ interface Filters {
   repo: string;
 }
 
-interface Repository {
-  id: number;
-  name: string;
-  owner: string;
+interface AnalyticsLayoutProps {
+  onFilterChange: (filters: Filters) => void;
 }
 
-const Layout: React.FC = () => {
+const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
+  onFilterChange,
+}) => {
   const [filters, setFilters] = useState<Filters>({
-    timeRange: "30d",
-    owner: "",
-    repo: "",
+    timeRange: "30",
+    owner: "SHA888",
+    repo: "github-dashboard",
   });
   const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await repositoryService.getRepositories();
-        setRepositories(response.data || []);
-        setError(null);
+        const response = await apiService.listRepositories();
+        setRepositories(response.data.repositories);
       } catch (error) {
         console.error("Error fetching repositories:", error);
-        setError("Failed to load repositories");
-        setRepositories([]);
       } finally {
         setLoading(false);
       }
@@ -43,110 +62,78 @@ const Layout: React.FC = () => {
     fetchRepositories();
   }, []);
 
-  const handleFilterChange = (key: keyof Filters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+  const handleFilterChange = (field: keyof Filters, value: string) => {
+    const newFilters = { ...filters, [field]: value };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
   };
 
-  const uniqueOwners = Array.from(new Set(repositories.map((r) => r.owner)));
-  const filteredRepos = repositories.filter(
-    (r) => !filters.owner || r.owner === filters.owner
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-danger">{error}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            GitHub Analytics Dashboard
-          </h1>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
+      {/* Filter Controls */}
+      <Box sx={{ mb: 3 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              select
+              fullWidth
+              label="Time Range"
+              value={filters.timeRange}
+              onChange={(e) => handleFilterChange("timeRange", e.target.value)}
+            >
+              <MenuItem value="7">Last 7 days</MenuItem>
+              <MenuItem value="30">Last 30 days</MenuItem>
+              <MenuItem value="90">Last 90 days</MenuItem>
+              <MenuItem value="180">Last 180 days</MenuItem>
+              <MenuItem value="365">Last year</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Autocomplete
+              options={repositories}
+              getOptionLabel={(option) => option.owner}
+              value={repositories.find((repo) => repo.owner === filters.owner) || null}
+              onChange={(_, newValue) => {
+                if (newValue) {
+                  handleFilterChange("owner", newValue.owner);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Owner" fullWidth />
+              )}
+              loading={loading}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Autocomplete
+              options={repositories.filter((repo) => repo.owner === filters.owner)}
+              getOptionLabel={(option) => option.name}
+              value={repositories.find((repo) => repo.name === filters.repo) || null}
+              onChange={(_, newValue) => {
+                if (newValue) {
+                  handleFilterChange("repo", newValue.name);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Repository" fullWidth />
+              )}
+              loading={loading}
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label
-                htmlFor="timeRange"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Time Range
-              </label>
-              <select
-                id="timeRange"
-                value={filters.timeRange}
-                onChange={(e) => handleFilterChange("timeRange", e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="owner"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Owner
-              </label>
-              <select
-                id="owner"
-                value={filters.owner}
-                onChange={(e) => handleFilterChange("owner", e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-              >
-                <option value="">Select Owner</option>
-                {uniqueOwners.map((owner) => (
-                  <option key={owner} value={owner}>
-                    {owner}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="repo"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Repository
-              </label>
-              <select
-                id="repo"
-                value={filters.repo}
-                onChange={(e) => handleFilterChange("repo", e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                disabled={!filters.owner}
-              >
-                <option value="">Select Repository</option>
-                {filteredRepos.map((repo) => (
-                  <option key={repo.id} value={repo.name}>
-                    {repo.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <Outlet context={filters} />
-      </div>
-    </div>
+      {/* Main Content */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+        <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
+          <RepositoryActivity filters={filters} />
+        </Box>
+        <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
+          <Trends filters={filters} />
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
-export default Layout;
+export default AnalyticsLayout;

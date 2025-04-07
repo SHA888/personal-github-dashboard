@@ -1,53 +1,35 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
-export interface AnalyticsResponse {
-    data: {
-        commit_stats: {
-            total: number;
-            by_author: Record<string, number>;
-        };
-        pull_request_stats: {
-            open: number;
-            closed: number;
-            merged: number;
-        };
-        issue_stats: {
-            open: number;
-            closed: number;
-        };
-        commit_activity: {
-            daily: number[];
-            weekly: number[];
-            monthly: number[];
-        };
-    };
+export interface RepositoryAnalytics {
+    total_commits: number;
+    total_contributors: number;
+    commit_history: {
+        date: string;
+        count: number;
+    }[];
 }
 
-export const analyticsService = {
-    getRepositoryAnalytics: async (owner: string, repo: string, timeRange: string) => {
-        const response = await axios.get<AnalyticsResponse>(
-            `${API_BASE_URL}/analytics/repos/${owner}/${repo}?timeRange=${timeRange}`
-        );
-        return response.data;
-    },
+export interface ActivityTrends {
+    dates: string[];
+    commit_counts: number[];
+}
 
-    getUserAnalytics: async (username: string) => {
-        const response = await axios.get<AnalyticsResponse>(
-            `${API_BASE_URL}/analytics/users/${username}`
-        );
-        return response.data;
-    },
+class AnalyticsService {
+    async getRepositoryAnalytics(owner: string, repo: string, timeRange: string): Promise<{ data: RepositoryAnalytics }> {
+        const response = await axios.get(`${API_BASE_URL}/analytics/repos/${owner}/${repo}`, {
+            params: { timeRange }
+        });
+        return response;
+    }
 
-    getActivityTrends: async (owner: string, repo: string, timeRange: string) => {
-        const response = await axios.get<AnalyticsResponse>(
-            `${API_BASE_URL}/analytics/trends/${owner}/${repo}?timeRange=${timeRange}`
-        );
-        return response.data;
-    },
+    async getActivityTrends(owner: string, repo: string, timeRange: string): Promise<{ data: ActivityTrends }> {
+        const response = await axios.get(`${API_BASE_URL}/analytics/activity/${owner}/${repo}`, {
+            params: { timeRange }
+        });
+        return response;
+    }
+}
 
-    // Activity
-    getRecentActivity: (params?: { limit?: number; type?: string; repo?: string }) =>
-        axios.get(`${API_BASE_URL}/activity`, { params }),
-}; 
+export const analyticsService = new AnalyticsService();

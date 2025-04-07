@@ -66,32 +66,70 @@ impl Analytics {
         &self,
         owner: &str,
         repo: &str,
-        days: i32,
     ) -> Result<Value, sqlx::Error> {
-        let trends = sqlx::query(
+        let days = 30; // Default to 30 days
+        let query = sqlx::query!(
             r#"
-            SELECT
-                DATE_TRUNC('day', created_at) as date,
-                COUNT(*) as commit_count
-            FROM commits
-            WHERE repository_id = (
-                SELECT id FROM repositories
-                WHERE owner = $1 AND name = $2
+            WITH author_stats AS (
+                SELECT
+                    COALESCE(c.author_name, 'Unknown') as author,
+                    COUNT(*) as commit_count
+                FROM commits c
+                JOIN repositories r ON c.repository_id = r.id
+                WHERE r.owner = $1 AND r.name = $2
+                AND c.created_at >= NOW() - make_interval(days => $3)
+                GROUP BY c.author_name
+                ORDER BY commit_count DESC
+                LIMIT 10
             )
-            AND created_at >= NOW() - ($3 || ' days')::INTERVAL
-            GROUP BY DATE_TRUNC('day', created_at)
-            ORDER BY date DESC
+            SELECT
+                json_build_object(
+                    'authors', array_agg(author),
+                    'counts', array_agg(commit_count)
+                ) as data
+            FROM author_stats
             "#,
-        )
-        .bind(owner)
-        .bind(repo)
-        .bind(days)
-        .fetch_all(&self.pool)
-        .await?;
+            owner,
+            repo,
+            days as i32
+        );
 
-        Ok(serde_json::json!({
-            "dates": trends.iter().map(|row| row.get::<DateTime<Utc>, _>("date")).collect::<Vec<_>>(),
-            "commit_counts": trends.iter().map(|row| row.get::<i64, _>("commit_count")).collect::<Vec<_>>(),
-        }))
+        let result = query.fetch_one(&self.pool).await?;
+        Ok(result.data.unwrap_or(Value::Null))
+    }
+
+    pub async fn get_repository_analytics(
+        &self,
+        owner: &str,
+        repo: &str,
+    ) -> Result<Value, sqlx::Error> {
+        let days = 30; // Default to 30 days
+        let query = sqlx::query!(
+            r#"
+            WITH daily_commits AS (
+                SELECT
+                    date_trunc('day', c.created_at) as commit_date,
+                    COUNT(*) as commit_count
+                FROM commits c
+                JOIN repositories r ON c.repository_id = r.id
+                WHERE r.owner = $1 AND r.name = $2
+                AND c.created_at >= NOW() - make_interval(days => $3)
+                GROUP BY date_trunc('day', c.created_at)
+                ORDER BY commit_date
+            )
+            SELECT
+                json_build_object(
+                    'dates', array_agg(commit_date),
+                    'counts', array_agg(commit_count)
+                ) as data
+            FROM daily_commits
+            "#,
+            owner,
+            repo,
+            days as i32
+        );
+
+        let result = query.fetch_one(&self.pool).await?;
+        Ok(result.data.unwrap_or(Value::Null))
     }
 }

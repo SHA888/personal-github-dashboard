@@ -1,11 +1,15 @@
 use crate::AppState;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 mod analytics;
 mod repository;
 mod sync;
+
+pub use analytics::configure_analytics_routes;
+pub use repository::configure_repository_routes;
+pub use sync::configure_sync_routes;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddRepositoryRequest {
@@ -20,10 +24,15 @@ struct RepositoryResponse {
     name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: String,
+}
+
 pub async fn add_repository(
     data: web::Json<AddRepositoryRequest>,
     state: web::Data<AppState>,
-) -> impl Responder {
+) -> actix_web::HttpResponse {
     match sqlx::query!(
         r#"
         INSERT INTO repositories (owner, name)
@@ -54,31 +63,16 @@ pub async fn add_repository(
     }
 }
 
-pub fn configure_routes(cfg: &mut web::ServiceConfig, state: &web::Data<AppState>) {
+pub fn configure_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppState>) {
     cfg.service(
         web::scope("/api")
             .route("/health", web::get().to(health_check))
-            .configure(|cfg| {
-                crate::api::analytics::configure_analytics_routes(cfg, state);
-                crate::api::repository::configure_repository_routes(cfg, state);
-            })
-            .app_data(state.clone())
-            .service(web::resource("/repositories").route(web::post().to(add_repository))),
+            .configure(|cfg| configure_analytics_routes(cfg, app_state))
+            .configure(|cfg| configure_repository_routes(cfg, app_state))
+            .configure(|cfg| configure_sync_routes(cfg, app_state)),
     );
 }
 
-pub fn configure_sync_routes(
-    cfg: &mut web::ServiceConfig,
-    github: std::sync::Arc<crate::github::GitHubService>,
-) {
-    sync::configure_sync_routes(cfg, github);
-}
-
 async fn health_check() -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .json(json!({
-            "status": "ok",
-            "timestamp": chrono::Utc::now().to_rfc3339()
-        }))
+    HttpResponse::Ok().json(json!({ "status": "ok" }))
 }

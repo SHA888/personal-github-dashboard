@@ -1,63 +1,52 @@
 use crate::AppState;
 use actix_web::{web, HttpResponse};
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-pub struct AnalyticsQuery {
-    pub days: Option<i32>,
-}
+use serde_json::json;
 
 pub fn configure_analytics_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppState>) {
     cfg.service(
-        web::scope("/analytics")
-            .service(
-                web::resource("/repository/{owner}/{repo}/activity")
-                    .route(web::get().to(get_repository_activity)),
+        web::scope("/api/analytics")
+            .app_data(app_state.clone())
+            .route(
+                "/repository/{owner}/{repo}",
+                web::get().to(get_repository_analytics),
             )
-            .service(
-                web::resource("/repository/{owner}/{repo}/trends")
-                    .route(web::get().to(get_repository_trends)),
-            )
-            .app_data(web::Data::new(app_state.clone())),
+            .route(
+                "/trends/{owner}/{repo}",
+                web::get().to(get_repository_trends),
+            ),
     );
 }
 
-async fn get_repository_activity(
+async fn get_repository_analytics(
     path: web::Path<(String, String)>,
-    query: web::Query<AnalyticsQuery>,
     app_state: web::Data<AppState>,
 ) -> HttpResponse {
     let (owner, repo) = path.into_inner();
-    let days = query.days.unwrap_or(30);
-
     match app_state
         .analytics
-        .get_repository_activity(&owner, &repo, days)
+        .get_repository_analytics(&owner, &repo)
         .await
     {
-        Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": e.to_string()
+        Ok(analytics) => HttpResponse::Ok().json(analytics),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to get repository analytics: {}", e)
         })),
     }
 }
 
 async fn get_repository_trends(
     path: web::Path<(String, String)>,
-    query: web::Query<AnalyticsQuery>,
     app_state: web::Data<AppState>,
 ) -> HttpResponse {
     let (owner, repo) = path.into_inner();
-    let days = query.days.unwrap_or(30);
-
     match app_state
         .analytics
-        .get_repository_trends(&owner, &repo, days)
+        .get_repository_trends(&owner, &repo)
         .await
     {
-        Ok(data) => HttpResponse::Ok().json(data),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": e.to_string()
+        Ok(trends) => HttpResponse::Ok().json(trends),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to get repository trends: {}", e)
         })),
     }
 }

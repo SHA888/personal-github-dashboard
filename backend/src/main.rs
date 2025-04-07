@@ -5,7 +5,7 @@ use personal_github_dashboard::{
     api::{configure_routes, configure_sync_routes},
     github::GitHubService,
     services::{analytics::Analytics, sync::SyncService},
-    websocket::{ws_index, WebSocket},
+    websocket::ws_index,
     AppState,
 };
 use sqlx::postgres::PgPoolOptions;

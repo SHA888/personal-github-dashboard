@@ -1,4 +1,4 @@
-use actix::{Actor, ActorContext, AsyncContext, Handler, StreamHandler};
+use actix::{Actor, ActorContext, AsyncContext, StreamHandler};
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use log::{error, info};

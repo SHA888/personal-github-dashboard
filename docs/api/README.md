@@ -14,35 +14,81 @@ Authorization: Bearer <github_pat>
 
 The API is available at:
 ```
-http://localhost:8080/api/v1
+http://localhost:8080/api
 ```
 
 ## Endpoints
 
-### Authentication
+### Health Check
 
-#### Login with GitHub
+#### Check Service Health
 ```
-POST /auth/github
-```
-
-**Request Body**
-```json
-{
-  "code": "github_oauth_code"
-}
+GET /health
 ```
 
 **Response**
 ```json
 {
-  "token": "jwt_token",
-  "user": {
-    "id": 1,
-    "username": "username",
-    "email": "user@example.com",
-    "subscription_tier": "free"
-  }
+  "status": "ok",
+  "timestamp": "2024-04-07T02:38:25.344758663+00:00"
+}
+```
+
+### Analytics
+
+#### Get Repository Activity
+```
+GET /analytics/repository/{owner}/{repo}/activity
+```
+
+**Query Parameters**
+- `days`: Number of days to look back (default: 30)
+
+**Response**
+```json
+{
+  "dates": ["2024-04-01T00:00:00Z", "2024-04-02T00:00:00Z"],
+  "total_activity": [10, 15],
+  "commits": [5, 8]
+}
+```
+
+#### Get Repository Trends
+```
+GET /analytics/repository/{owner}/{repo}/trends
+```
+
+**Query Parameters**
+- `days`: Number of days to look back (default: 30)
+
+**Response**
+```json
+{
+  "dates": ["2024-04-01T00:00:00Z", "2024-04-02T00:00:00Z"],
+  "commit_counts": [5, 8]
+}
+```
+
+### Data Synchronization
+
+#### Sync Repository Data
+```
+POST /sync/repository/{owner}/{repo}
+```
+
+**Response**
+```json
+{
+  "status": "success",
+  "message": "Successfully synced owner/repo"
+}
+```
+
+**Error Response**
+```json
+{
+  "status": "error",
+  "message": "Failed to sync repository: error details"
 }
 ```
 
@@ -50,69 +96,73 @@ POST /auth/github
 
 #### List Repositories
 ```
-GET /repos
+GET /repositories
 ```
 
 **Query Parameters**
 - `page`: Page number (default: 1)
-- `per_page`: Items per page (default: 30)
-- `org`: Filter by organization
-- `type`: Filter by repository type (all, public, private)
+- `per_page`: Items per page (default: 10)
 
 **Response**
 ```json
-{
-  "repositories": [
-    {
-      "id": 1,
-      "github_id": 123456789,
-      "name": "repo-name",
-      "full_name": "username/repo-name",
-      "owner": "username",
-      "description": "Repository description",
-      "language": "Rust",
-      "stars": 100,
-      "forks": 50,
-      "open_issues": 10,
-      "is_private": false,
-      "last_synced_at": "2024-04-06T12:00:00Z"
-    }
-  ],
-  "pagination": {
-    "total": 100,
-    "page": 1,
-    "per_page": 30,
-    "total_pages": 4
+[
+  {
+    "id": 1,
+    "owner": "username",
+    "name": "repo-name",
+    "description": "Repository description",
+    "language": "Rust",
+    "stars": 100,
+    "forks": 50,
+    "open_issues": 10,
+    "is_private": false,
+    "created_at": "2024-04-06T12:00:00Z",
+    "updated_at": "2024-04-06T12:00:00Z"
   }
-}
+]
 ```
 
 #### Get Repository Details
 ```
-GET /repos/{owner}/{repo}
+GET /repositories/{owner}/{repo}
 ```
 
 **Response**
 ```json
 {
   "id": 1,
-  "github_id": 123456789,
-  "name": "repo-name",
-  "full_name": "username/repo-name",
   "owner": "username",
+  "name": "repo-name",
   "description": "Repository description",
   "language": "Rust",
   "stars": 100,
   "forks": 50,
   "open_issues": 10,
   "is_private": false,
-  "last_synced_at": "2024-04-06T12:00:00Z",
-  "activity": {
-    "commit_count": 500,
-    "contributors": 15,
-    "last_commit": "2024-04-06T12:00:00Z"
-  }
+  "created_at": "2024-04-06T12:00:00Z",
+  "updated_at": "2024-04-06T12:00:00Z"
 }
+```
+
+#### Get Repository Activity
+```
+GET /repositories/{owner}/{repo}/activity
+```
+
+**Query Parameters**
+- `page`: Page number (default: 1)
+- `per_page`: Items per page (default: 10)
+
+**Response**
+```json
+[
+  {
+    "id": 1,
+    "repository_id": 1,
+    "activity_type": "commit",
+    "created_at": "2024-04-06T12:00:00Z"
+  }
+]
 ```
 
 ### Organizations
@@ -354,27 +404,13 @@ X-GitHub-Delivery: <delivery_id>
 
 ## Error Responses
 
+All endpoints may return the following error responses:
+
 ### 400 Bad Request
 ```json
 {
-  "error": "Invalid request parameters",
-  "details": "Missing required field: title"
-}
-```
-
-### 401 Unauthorized
-```json
-{
-  "error": "Unauthorized",
-  "details": "Invalid or expired token"
-}
-```
-
-### 403 Forbidden
-```json
-{
-  "error": "Forbidden",
-  "details": "Insufficient permissions for this action"
+  "error": "Bad Request",
+  "message": "Invalid request parameters"
 }
 ```
 
@@ -382,16 +418,7 @@ X-GitHub-Delivery: <delivery_id>
 ```json
 {
   "error": "Not Found",
-  "details": "Resource not found"
-}
-```
-
-### 429 Too Many Requests
-```json
-{
-  "error": "Too Many Requests",
-  "details": "Rate limit exceeded",
-  "retry_after": 60
+  "message": "Resource not found"
 }
 ```
 
@@ -399,6 +426,6 @@ X-GitHub-Delivery: <delivery_id>
 ```json
 {
   "error": "Internal Server Error",
-  "details": "An unexpected error occurred"
+  "message": "An unexpected error occurred"
 }
 ``` 

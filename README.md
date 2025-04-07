@@ -15,6 +15,7 @@ This project consists of:
 - Real-time updates via WebSocket
 - Advanced analytics and custom reports
 - Modern, responsive web interface
+- Health monitoring and status checks
 
 ## Documentation
 
@@ -64,6 +65,9 @@ For comprehensive documentation, including setup instructions, architecture deta
 ```
 personal-github-dashboard/
 ├── backend/        # Rust backend (Actix Web)
+│   ├── src/       # Source code
+│   ├── migrations/# Database migrations
+│   └── .env       # Environment configuration
 ├── frontend/       # TypeScript/React frontend
 ├── docs/          # Comprehensive documentation
 ├── .gitignore
@@ -81,6 +85,7 @@ The application consists of:
   - WebSocket support for live updates
   - Automatic data synchronization
   - Manual sync triggers via API
+  - Health monitoring endpoints
 
 - Frontend (React + TypeScript)
   - Modern UI components with Tailwind CSS
@@ -114,9 +119,12 @@ MIT
 
 ## API Endpoints
 
+### Health Check
+- `GET /api/health` - Check service health status
+
 ### Analytics
-- `GET /analytics/repository/{owner}/{repo}/activity` - Get repository activity data
-- `GET /analytics/repository/{owner}/{repo}/trends` - Get repository trends
+- `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
+- `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
 
 ### Data Synchronization
-- `POST /sync/repository/{owner}/{repo}` - Manually trigger repository data sync
+- `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync

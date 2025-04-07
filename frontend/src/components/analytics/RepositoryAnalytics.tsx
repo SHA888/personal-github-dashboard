@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Pie } from "react-chartjs-2";
+import { useOutletContext } from "react-router-dom";
+import { analyticsService } from "../../services/analyticsService";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  ArcElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
   Legend,
 } from "chart.js";
-import { analyticsService } from "../../services/analyticsService";
-import "../../styles/analytics.css";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface Filters {
   timeRange: string;
@@ -17,33 +29,25 @@ interface Filters {
   repo: string;
 }
 
-interface RepositoryAnalyticsProps {
-  filters: Filters;
+interface RepositoryAnalytics {
+  dates: string[];
+  total_activity: number[];
+  commits: number[];
 }
 
-interface AnalyticsData {
-  commit_stats: {
-    total: number;
-    by_author: Record<string, number>;
-  };
-  pull_request_stats: {
-    open: number;
-    closed: number;
-    merged: number;
-  };
-  issue_stats: {
-    open: number;
-    closed: number;
-  };
-}
-
-const RepositoryAnalytics: React.FC<RepositoryAnalyticsProps> = ({ filters }) => {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+const RepositoryAnalytics: React.FC = () => {
+  const filters = useOutletContext<Filters>();
+  const [analytics, setAnalytics] = useState<RepositoryAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAnalyticsData = async () => {
+    const fetchAnalytics = async () => {
+      if (!filters.owner || !filters.repo) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await analyticsService.getRepositoryAnalytics(
@@ -51,141 +55,90 @@ const RepositoryAnalytics: React.FC<RepositoryAnalyticsProps> = ({ filters }) =>
           filters.repo,
           filters.timeRange
         );
-        setAnalyticsData(response.data);
+        setAnalytics(response.data || null);
         setError(null);
       } catch (error) {
-        console.error("Error fetching analytics data:", error);
+        console.error("Error fetching analytics:", error);
         setError("Failed to load analytics data");
+        setAnalytics(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAnalyticsData();
+    fetchAnalytics();
   }, [filters]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="loading-spinner" />
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-danger">{error}</div>
+      </div>
+    );
   }
 
-  if (!analyticsData) {
-    return <div className="empty-state">No analytics data available</div>;
+  if (!analytics || !analytics.dates.length) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">No analytics data available</div>
+      </div>
+    );
   }
 
-  const chartColors = {
-    primary: "rgba(99, 102, 241, 0.6)",    // indigo-500
-    secondary: "rgba(139, 92, 246, 0.6)",  // violet-500
-    success: "rgba(16, 185, 129, 0.6)",    // emerald-500
-    warning: "rgba(245, 158, 11, 0.6)",    // amber-500
-    danger: "rgba(239, 68, 68, 0.6)",      // red-500
-  };
-
-  const commitByAuthorData = {
-    labels: Object.keys(analyticsData.commit_stats.by_author),
+  const chartData = {
+    labels: analytics.dates,
     datasets: [
       {
-        data: Object.values(analyticsData.commit_stats.by_author),
-        backgroundColor: [
-          chartColors.primary,
-          chartColors.secondary,
-          chartColors.success,
-          chartColors.warning,
-          chartColors.danger,
-        ],
+        label: "Total Activity",
+        data: analytics.total_activity,
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.5)",
+        tension: 0.1,
+      },
+      {
+        label: "Commits",
+        data: analytics.commits,
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.5)",
+        tension: 0.1,
       },
     ],
   };
 
-  const pullRequestData = {
-    labels: ["Open", "Closed", "Merged"],
-    datasets: [
-      {
-        data: [
-          analyticsData.pull_request_stats.open,
-          analyticsData.pull_request_stats.closed,
-          analyticsData.pull_request_stats.merged,
-        ],
-        backgroundColor: [
-          chartColors.danger,
-          chartColors.secondary,
-          chartColors.success,
-        ],
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
       },
-    ],
-  };
-
-  const issueData = {
-    labels: ["Open", "Closed"],
-    datasets: [
-      {
-        data: [
-          analyticsData.issue_stats.open,
-          analyticsData.issue_stats.closed,
-        ],
-        backgroundColor: [
-          chartColors.danger,
-          chartColors.success,
-        ],
+      title: {
+        display: true,
+        text: "Repository Activity",
       },
-    ],
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
   };
 
   return (
-    <div className="repository-analytics">
-      <h2 className="section-title">Repository Analytics</h2>
-
-      <div className="dashboard-grid">
-        <div className="dashboard-card">
-          <h3 className="card-title">Total Commits</h3>
-          <p className="stat-value">{analyticsData.commit_stats.total}</p>
-        </div>
-
-        <div className="dashboard-card">
-          <h3 className="card-title">Commits by Author</h3>
-          <div className="chart-container">
-            <Pie
-              data={commitByAuthorData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="dashboard-card">
-          <h3 className="card-title">Pull Requests</h3>
-          <div className="chart-container">
-            <Pie
-              data={pullRequestData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="dashboard-card">
-          <h3 className="card-title">Issues</h3>
-          <div className="chart-container">
-            <Pie
-              data={issueData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          </div>
-        </div>
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        Activity Overview
+      </h2>
+      <div className="h-96">
+        <Line data={chartData} options={chartOptions} />
       </div>
     </div>
   );

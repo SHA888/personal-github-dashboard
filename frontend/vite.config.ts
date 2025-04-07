@@ -16,17 +16,10 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-      },
-      '/ws': {
-        target: 'ws://localhost:8080',
-        ws: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
-  },
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
   },
 })

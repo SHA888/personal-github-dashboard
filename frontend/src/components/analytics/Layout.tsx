@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { analyticsService } from "../../services/analyticsService";
+import { repositoryService } from "../../services/repositoryService";
 
 interface Filters {
   timeRange: string;
@@ -28,12 +28,13 @@ const Layout: React.FC = () => {
     const fetchRepositories = async () => {
       try {
         setLoading(true);
-        const response = await analyticsService.getRepositories();
-        setRepositories(response.data);
+        const response = await repositoryService.getRepositories();
+        setRepositories(response.data || []);
         setError(null);
       } catch (error) {
         console.error("Error fetching repositories:", error);
         setError("Failed to load repositories");
+        setRepositories([]);
       } finally {
         setLoading(false);
       }
@@ -46,76 +47,104 @@ const Layout: React.FC = () => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const uniqueOwners = Array.from(new Set(repositories.map((r) => r.owner)));
+  const filteredRepos = repositories.filter(
+    (r) => !filters.owner || r.owner === filters.owner
+  );
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="loading-spinner" />
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-danger">{error}</div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="section-title">GitHub Analytics</h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+            GitHub Analytics Dashboard
+          </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Time Range
-            </label>
-            <select
-              className="input"
-              value={filters.timeRange}
-              onChange={(e) => handleFilterChange("timeRange", e.target.value)}
-            >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label
+                htmlFor="timeRange"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Time Range
+              </label>
+              <select
+                id="timeRange"
+                value={filters.timeRange}
+                onChange={(e) => handleFilterChange("timeRange", e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+              >
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Owner
-            </label>
-            <input
-              type="text"
-              className="input"
-              value={filters.owner}
-              onChange={(e) => handleFilterChange("owner", e.target.value)}
-              placeholder="Enter owner"
-            />
-          </div>
+            <div>
+              <label
+                htmlFor="owner"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Owner
+              </label>
+              <select
+                id="owner"
+                value={filters.owner}
+                onChange={(e) => handleFilterChange("owner", e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+              >
+                <option value="">Select Owner</option>
+                {uniqueOwners.map((owner) => (
+                  <option key={owner} value={owner}>
+                    {owner}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Repository
-            </label>
-            <select
-              className="input"
-              value={filters.repo}
-              onChange={(e) => handleFilterChange("repo", e.target.value)}
-              disabled={!filters.owner}
-            >
-              <option value="">Select repository</option>
-              {repositories
-                .filter((repo) => repo.owner === filters.owner)
-                .map((repo) => (
+            <div>
+              <label
+                htmlFor="repo"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Repository
+              </label>
+              <select
+                id="repo"
+                value={filters.repo}
+                onChange={(e) => handleFilterChange("repo", e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                disabled={!filters.owner}
+              >
+                <option value="">Select Repository</option>
+                {filteredRepos.map((repo) => (
                   <option key={repo.id} value={repo.name}>
                     {repo.name}
                   </option>
                 ))}
-            </select>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      <Outlet context={filters} />
+        <Outlet context={filters} />
+      </div>
     </div>
   );
 };

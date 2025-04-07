@@ -1,21 +1,48 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     content: [
-        "./src/**/*.{js,jsx,ts,tsx}",
-        "./public/index.html",
+        "./index.html",
+        "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: "#1976d2",
-                    light: "#42a5f5",
-                    dark: "#1565c0",
+                    DEFAULT: "#2563eb",
+                    light: "#3b82f6",
+                    dark: "#1d4ed8",
                 },
                 secondary: {
-                    DEFAULT: "#dc004e",
-                    light: "#ff4081",
-                    dark: "#9a0036",
+                    DEFAULT: "#64748b",
+                    light: "#94a3b8",
+                    dark: "#475569",
+                },
+                success: {
+                    DEFAULT: "#22c55e",
+                    light: "#4ade80",
+                    dark: "#16a34a",
+                },
+                warning: {
+                    DEFAULT: "#f59e0b",
+                    light: "#fbbf24",
+                    dark: "#d97706",
+                },
+                danger: {
+                    DEFAULT: "#ef4444",
+                    light: "#f87171",
+                    dark: "#dc2626",
+                },
+                gray: {
+                    50: "#f9fafb",
+                    100: "#f3f4f6",
+                    200: "#e5e7eb",
+                    300: "#d1d5db",
+                    400: "#9ca3af",
+                    500: "#6b7280",
+                    600: "#4b5563",
+                    700: "#374151",
+                    800: "#1f2937",
+                    900: "#111827",
                 },
             },
             fontFamily: {

@@ -1,9 +1,21 @@
-# GitHub Dashboard Documentation
+# Personal GitHub Dashboard Documentation
 
-Welcome to the GitHub Dashboard documentation. This documentation provides comprehensive information about the project, from setup to deployment.
+Welcome to the Personal GitHub Dashboard documentation. This is an open-source project that helps you track and analyze your GitHub activity across repositories and organizations. This documentation provides comprehensive information about the project, from setup to deployment.
+
+## Project Overview
+
+Personal GitHub Dashboard is an open-source project that helps you track and analyze your GitHub activity. It offers:
+
+- **Core Features**:
+  - Repository activity tracking
+  - Organization analytics
+  - Real-time updates
+  - Custom reports
+  - Advanced visualizations
 
 ## Documentation Structure
 
+- [Vision](./vision/README.md) - Project vision and roadmap
 - [Setup Guide](./setup/README.md) - Instructions for setting up the development environment
 - [Architecture](./architecture/README.md) - System design and architecture details
 - [API Documentation](./api/README.md) - API endpoints and usage
@@ -18,6 +30,10 @@ For a quick start, follow these steps:
 2. Follow the [Setup Guide](./setup/README.md)
 3. Start the backend and frontend servers
 4. Access the application at `http://localhost:3001`
+
+## Project Links
+
+- **GitHub Repository**: [https://github.com/SHA888/personal-github-dashboard](https://github.com/SHA888/personal-github-dashboard)
 
 ## Contributing
 

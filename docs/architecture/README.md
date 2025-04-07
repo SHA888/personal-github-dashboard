@@ -1,39 +1,44 @@
-# System Architecture
+# Personal GitHub Dashboard System Architecture
 
-This document outlines the architecture of the GitHub Dashboard project, focusing on its lightweight, efficient design for personal and small-team usage.
+This document outlines the architecture of the Personal GitHub Dashboard, an open-source project designed for tracking and analyzing GitHub activity across repositories and organizations.
 
 ## Overview
 
-The GitHub Dashboard is a streamlined full-stack application designed for efficient GitHub project management and analytics. The system consists of three main components:
+The Personal GitHub Dashboard is a full-stack application designed for efficient GitHub project management and analytics. The system consists of four main components:
 
-1. **Frontend (React + TypeScript)**: Lightweight, responsive UI for GitHub data visualization and task management
-2. **Backend (Rust)**: High-performance API server optimized for small-scale data processing
-3. **Database (PostgreSQL)**: Efficient relational storage for data persistence
+1. **Frontend (React + TypeScript)**: Modern, responsive UI with advanced visualizations and real-time updates
+2. **Backend (Rust)**: High-performance API server with real-time capabilities
+3. **Database (PostgreSQL)**: Efficient relational storage with advanced analytics support
+4. **Cache (Redis)**: High-performance caching for real-time data and rate limiting
 
 ## Design Principles
 
-1. **Resource Efficiency**
-   - Minimal memory footprint
-   - Optimized data processing
-   - Efficient database queries
-   - Caching where appropriate
+1. **Scalability**
+   - Efficient resource utilization
+   - Performance optimization
+   - Horizontal scaling capability
 
-2. **Simplicity**
-   - Focused feature set
-   - Clear data flow
-   - Straightforward deployment
-   - Easy maintenance
+2. **Real-time Capabilities**
+   - WebSocket support
+   - GitHub webhook integration
+   - Live updates
+   - Event-driven architecture
 
-3. **Performance**
+3. **Security**
+   - Secure authentication
+   - Data encryption
+   - Access control
+
+4. **Performance**
    - Fast response times
    - Efficient data retrieval
    - Optimized rendering
-   - Quick startup
+   - Smart caching
 
 ## System Components
 
 ```
-github-dashboard/
+personal-github-dashboard/
 ├── backend/        # Rust backend (Actix Web)
 │   ├── src/       # Source code
 │   ├── migrations/# Database migrations
@@ -41,7 +46,8 @@ github-dashboard/
 ├── frontend/      # React frontend
 │   ├── src/       # Source code
 │   └── .env       # Environment configuration
-└── docs/          # Documentation
+├── docs/          # Documentation
+└── infrastructure/# Deployment and monitoring
 ```
 
 ## Frontend Architecture
@@ -49,27 +55,30 @@ github-dashboard/
 ### Core Features
 
 1. **Dashboard View**
-   - Essential GitHub activity overview
-   - Focused visualizations
-   - Efficient data updates
+   - Repository and organization overview
+   - Advanced activity visualizations
+   - Real-time updates
+   - Custom report builder
 
-2. **Project Management**
-   - Simple repository list
-   - Basic task management
-   - Priority-based organization
+2. **Organization Management**
+   - Organization dashboard
+   - Team analytics
+   - Repository grouping
+   - Access control
 
 3. **Analytics**
-   - Key metrics visualization
-   - Personal contribution tracking
-   - Repository activity trends
+   - Advanced metrics visualization
+   - Custom report generation
+   - Trend analysis
+   - Export functionality
 
 ### Technical Implementation
 
-- **State Management**: Lightweight state solution
-- **Routing**: Simple navigation
-- **Data Visualization**: Efficient charting
-- **Updates**: Polling-based refresh
-- **Type Safety**: TypeScript interfaces
+- **State Management**: Redux for complex state
+- **Routing**: React Router with protected routes
+- **Data Visualization**: Recharts with custom components
+- **Real-time Updates**: WebSocket integration
+- **Type Safety**: TypeScript with strict checks
 
 ## Backend Architecture
 
@@ -77,28 +86,36 @@ github-dashboard/
 
 1. **Web Server (Actix Web)**
    - REST API endpoints
-   - Efficient request handling
-   - Resource optimization
+   - WebSocket support
    - Rate limiting
+   - Multi-tenant support
 
 2. **GitHub API Integration**
-   - Focused API usage
+   - Paginated data fetching
+   - Webhook handling
    - Rate limit management
-   - Efficient data retrieval
-   - Caching strategy
+   - Organization support
 
 3. **Data Processing**
-   - Streamlined analytics
-   - Efficient aggregation
-   - Optimized storage
-   - Resource-aware processing
+   - Real-time analytics
+   - Background jobs
+   - Data enrichment
+   - Cache management
+
+4. **Cache Layer (Redis)**
+   - Session storage
+   - Rate limiting
+   - Real-time data
+   - API response caching
 
 ### API Endpoints
 
 - `/repos`: Repository management
+- `/orgs`: Organization management
 - `/activity`: Activity tracking
-- `/tasks`: Task management
-- `/analytics`: Key metrics
+- `/analytics`: Advanced metrics
+- `/webhooks`: GitHub webhook handling
+- `/ws`: WebSocket connections
 
 ## Database Architecture
 
@@ -108,99 +125,128 @@ github-dashboard/
    ```sql
    CREATE TABLE repositories (
        id SERIAL PRIMARY KEY,
-       name VARCHAR(255),
-       owner VARCHAR(255),
-       url VARCHAR(255),
-       last_updated TIMESTAMP,
-       stats JSONB
+       github_id BIGINT UNIQUE NOT NULL,
+       name VARCHAR(255) NOT NULL,
+       full_name VARCHAR(255) NOT NULL,
+       owner VARCHAR(255) NOT NULL,
+       description TEXT,
+       language VARCHAR(100),
+       stars INTEGER DEFAULT 0,
+       forks INTEGER DEFAULT 0,
+       open_issues INTEGER DEFAULT 0,
+       is_private BOOLEAN DEFAULT false,
+       last_synced_at TIMESTAMP WITH TIME ZONE,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
    );
    ```
 
-2. **Activity Table**
+2. **Organizations Table**
+   ```sql
+   CREATE TABLE organizations (
+       id SERIAL PRIMARY KEY,
+       github_id BIGINT UNIQUE NOT NULL,
+       name VARCHAR(255) NOT NULL,
+       description TEXT,
+       avatar_url TEXT,
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+   );
+   ```
+
+3. **Activity Table**
    ```sql
    CREATE TABLE activity (
        id SERIAL PRIMARY KEY,
        repository_id INTEGER REFERENCES repositories(id),
-       type VARCHAR(50),
-       timestamp TIMESTAMP,
-       data JSONB
+       organization_id INTEGER REFERENCES organizations(id),
+       type VARCHAR(50) NOT NULL,
+       github_id BIGINT UNIQUE NOT NULL,
+       author VARCHAR(255),
+       title TEXT,
+       body TEXT,
+       state VARCHAR(50),
+       created_at TIMESTAMP WITH TIME ZONE,
+       updated_at TIMESTAMP WITH TIME ZONE,
+       closed_at TIMESTAMP WITH TIME ZONE,
+       metadata JSONB
    );
    ```
 
-3. **Tasks Table**
+4. **Users Table**
    ```sql
-   CREATE TABLE tasks (
+   CREATE TABLE users (
        id SERIAL PRIMARY KEY,
-       repository_id INTEGER REFERENCES repositories(id),
-       title VARCHAR(255),
-       priority INTEGER,
-       status VARCHAR(50),
-       created_at TIMESTAMP
+       github_id BIGINT UNIQUE NOT NULL,
+       username VARCHAR(255) NOT NULL,
+       email VARCHAR(255),
+       subscription_tier VARCHAR(50) DEFAULT 'free',
+       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
    );
    ```
 
 ## Resource Optimization
 
 ### Backend Optimization
-- Efficient memory usage
-- Optimized database queries
-- Smart caching strategy
-- Resource-aware processing
+- Connection pooling
+- Query optimization
+- Caching strategy
+- Background processing
 
 ### Frontend Optimization
+- Code splitting
 - Lazy loading
-- Efficient rendering
-- Minimal dependencies
-- Optimized assets
+- Asset optimization
+- Performance monitoring
 
 ### Database Optimization
-- Appropriate indexing
-- Efficient queries
-- Regular maintenance
-- Size management
+- Advanced indexing
+- Materialized views
+- Query optimization
+- Partitioning strategy
 
-## Deployment Considerations
+## Deployment Architecture
 
 ### VPS Requirements
-- Minimal resource footprint
-- Efficient startup
-- Easy scaling
-- Simple maintenance
+- Load balancing
+- SSL termination
+- Monitoring
+- Backup system
 
 ### Monitoring
-- Resource usage tracking
-- Performance metrics
+- Application metrics
+- Performance tracking
 - Error logging
 - Usage analytics
+- Alerting system
 
 ## Security
 
 ### Authentication
 - GitHub OAuth
+- JWT tokens
 - Session management
-- Secure storage
-- Access control
+- Multi-tenant isolation
 
 ### Data Protection
+- Encryption at rest
+- Secure communication
 - Input validation
-- SQL injection prevention
-- XSS protection
-- CSRF protection
+- Access control
 
 ## Maintenance
 
 ### Updates
-- Simple deployment process
-- Easy rollback
+- CI/CD pipeline
+- Zero-downtime deployment
 - Version management
 - Dependency updates
 
 ### Monitoring
-- Resource usage
-- Error tracking
+- Application health
 - Performance metrics
+- Error tracking
 - Usage patterns
+- Security monitoring
 
 ## Conclusion
 
-The GitHub Dashboard architecture is designed for efficiency and simplicity, focusing on the needs of personal and small-team users. By optimizing resource usage and maintaining a clear, focused design, we ensure a performant and maintainable system. 
+The Personal GitHub Dashboard architecture is designed for both self-hosted and SaaS deployments, with a focus on scalability, real-time capabilities, and security. The system supports advanced analytics and organization management while maintaining high performance and reliability. 

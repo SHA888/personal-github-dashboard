@@ -1,6 +1,6 @@
-# API Documentation
+# Personal GitHub Dashboard API Documentation
 
-This document provides detailed information about the GitHub Dashboard API endpoints, request/response formats, and authentication.
+This document provides detailed information about the Personal GitHub Dashboard API endpoints, request/response formats, and authentication.
 
 ## Authentication
 
@@ -19,6 +19,33 @@ http://localhost:8080/api/v1
 
 ## Endpoints
 
+### Authentication
+
+#### Login with GitHub
+```
+POST /auth/github
+```
+
+**Request Body**
+```json
+{
+  "code": "github_oauth_code"
+}
+```
+
+**Response**
+```json
+{
+  "token": "jwt_token",
+  "user": {
+    "id": 1,
+    "username": "username",
+    "email": "user@example.com",
+    "subscription_tier": "free"
+  }
+}
+```
+
 ### Repositories
 
 #### List Repositories
@@ -26,24 +53,37 @@ http://localhost:8080/api/v1
 GET /repos
 ```
 
+**Query Parameters**
+- `page`: Page number (default: 1)
+- `per_page`: Items per page (default: 30)
+- `org`: Filter by organization
+- `type`: Filter by repository type (all, public, private)
+
 **Response**
 ```json
 {
   "repositories": [
     {
       "id": 1,
+      "github_id": 123456789,
       "name": "repo-name",
+      "full_name": "username/repo-name",
       "owner": "username",
-      "url": "https://github.com/username/repo-name",
-      "last_updated": "2024-04-06T12:00:00Z",
-      "stats": {
-        "stars": 100,
-        "forks": 50,
-        "open_issues": 10,
-        "watchers": 25
-      }
+      "description": "Repository description",
+      "language": "Rust",
+      "stars": 100,
+      "forks": 50,
+      "open_issues": 10,
+      "is_private": false,
+      "last_synced_at": "2024-04-06T12:00:00Z"
     }
-  ]
+  ],
+  "pagination": {
+    "total": 100,
+    "page": 1,
+    "per_page": 30,
+    "total_pages": 4
+  }
 }
 ```
 
@@ -56,18 +96,77 @@ GET /repos/{owner}/{repo}
 ```json
 {
   "id": 1,
+  "github_id": 123456789,
   "name": "repo-name",
+  "full_name": "username/repo-name",
   "owner": "username",
-  "url": "https://github.com/username/repo-name",
-  "last_updated": "2024-04-06T12:00:00Z",
-  "stats": {
-    "stars": 100,
-    "forks": 50,
-    "open_issues": 10,
-    "watchers": 25,
+  "description": "Repository description",
+  "language": "Rust",
+  "stars": 100,
+  "forks": 50,
+  "open_issues": 10,
+  "is_private": false,
+  "last_synced_at": "2024-04-06T12:00:00Z",
+  "activity": {
     "commit_count": 500,
-    "contributors": 15
+    "contributors": 15,
+    "last_commit": "2024-04-06T12:00:00Z"
   }
+}
+```
+
+### Organizations
+
+#### List Organizations
+```
+GET /orgs
+```
+
+**Response**
+```json
+{
+  "organizations": [
+    {
+      "id": 1,
+      "github_id": 987654321,
+      "name": "org-name",
+      "description": "Organization description",
+      "avatar_url": "https://github.com/orgs/org-name/avatar",
+      "repositories_count": 50
+    }
+  ]
+}
+```
+
+#### Get Organization Details
+```
+GET /orgs/{org}
+```
+
+**Response**
+```json
+{
+  "id": 1,
+  "github_id": 987654321,
+  "name": "org-name",
+  "description": "Organization description",
+  "avatar_url": "https://github.com/orgs/org-name/avatar",
+  "repositories": [
+    {
+      "id": 1,
+      "name": "repo-name",
+      "description": "Repository description",
+      "stars": 100,
+      "forks": 50
+    }
+  ],
+  "members": [
+    {
+      "id": 1,
+      "username": "username",
+      "role": "admin"
+    }
+  ]
 }
 ```
 
@@ -79,9 +178,12 @@ GET /activity
 ```
 
 **Query Parameters**
-- `limit`: Number of activities to return (default: 50)
-- `type`: Filter by activity type (commit, issue, pr)
+- `page`: Page number (default: 1)
+- `per_page`: Items per page (default: 50)
+- `type`: Filter by activity type (commit, issue, pr, review)
 - `repo`: Filter by repository
+- `org`: Filter by organization
+- `since`: Filter by date (ISO 8601)
 
 **Response**
 ```json
@@ -89,82 +191,33 @@ GET /activity
   "activities": [
     {
       "id": 1,
-      "repo_id": 1,
+      "github_id": 123456789,
       "type": "commit",
-      "user": "username",
-      "timestamp": "2024-04-06T12:00:00Z",
-      "details": {
-        "message": "Update documentation",
+      "repository": {
+        "id": 1,
+        "name": "repo-name",
+        "owner": "username"
+      },
+      "author": "username",
+      "title": "Update documentation",
+      "body": "Updated API documentation",
+      "state": "closed",
+      "created_at": "2024-04-06T12:00:00Z",
+      "updated_at": "2024-04-06T12:00:00Z",
+      "closed_at": "2024-04-06T12:00:00Z",
+      "metadata": {
         "sha": "abc123",
         "url": "https://github.com/username/repo/commit/abc123"
       }
     }
-  ]
+  ],
+  "pagination": {
+    "total": 1000,
+    "page": 1,
+    "per_page": 50,
+    "total_pages": 20
+  }
 }
-```
-
-### Tasks
-
-#### List Tasks
-```
-GET /tasks
-```
-
-**Query Parameters**
-- `status`: Filter by task status
-- `priority`: Filter by priority level
-- `repo`: Filter by repository
-
-**Response**
-```json
-{
-  "tasks": [
-    {
-      "id": 1,
-      "repo_id": 1,
-      "github_issue_id": 123,
-      "title": "Fix bug in authentication",
-      "priority": "high",
-      "status": "open",
-      "due_date": "2024-04-10T00:00:00Z"
-    }
-  ]
-}
-```
-
-#### Create Task
-```
-POST /tasks
-```
-
-**Request Body**
-```json
-{
-  "repo_id": 1,
-  "title": "New task",
-  "priority": "medium",
-  "status": "open",
-  "due_date": "2024-04-10T00:00:00Z"
-}
-```
-
-#### Update Task
-```
-PUT /tasks/{id}
-```
-
-**Request Body**
-```json
-{
-  "priority": "high",
-  "status": "in-progress",
-  "due_date": "2024-04-15T00:00:00Z"
-}
-```
-
-#### Delete Task
-```
-DELETE /tasks/{id}
 ```
 
 ### Analytics
@@ -174,45 +227,101 @@ DELETE /tasks/{id}
 GET /analytics/repos/{owner}/{repo}
 ```
 
+**Query Parameters**
+- `period`: Time period (day, week, month, year)
+- `metrics`: Comma-separated list of metrics to include
+
 **Response**
 ```json
 {
   "commit_activity": {
     "daily": [10, 15, 20, 5, 8],
     "weekly": [100, 120, 90, 110],
-    "monthly": [500, 600, 550]
+    "monthly": [500, 600, 550],
+    "trend": "up",
+    "change_percentage": 15.5
   },
   "issue_metrics": {
     "open": 10,
     "closed": 50,
-    "average_resolution_time": "2 days"
+    "average_resolution_time": "2 days",
+    "resolution_trend": "improving"
   },
   "pr_metrics": {
     "open": 5,
     "merged": 30,
-    "average_merge_time": "1 day"
+    "average_merge_time": "1 day",
+    "review_trend": "stable"
+  },
+  "contributor_stats": {
+    "total": 15,
+    "active": 8,
+    "top_contributors": [
+      {
+        "username": "user1",
+        "commits": 100,
+        "additions": 5000,
+        "deletions": 2000
+      }
+    ]
   }
 }
 ```
 
-#### Get User Analytics
+#### Get Organization Analytics
 ```
-GET /analytics/users/{username}
+GET /analytics/orgs/{org}
 ```
 
 **Response**
 ```json
 {
-  "contribution_stats": {
-    "total_commits": 1000,
-    "total_prs": 100,
-    "total_issues": 50,
-    "total_reviews": 200
+  "overview": {
+    "total_repos": 50,
+    "total_contributors": 100,
+    "total_commits": 5000,
+    "total_prs": 1000
   },
-  "activity_trends": {
-    "daily_activity": [5, 10, 15, 8, 12],
-    "weekly_activity": [50, 60, 70, 55],
-    "monthly_activity": [300, 350, 400]
+  "repository_metrics": [
+    {
+      "name": "repo1",
+      "stars": 100,
+      "forks": 50,
+      "activity_score": 85,
+      "health_score": 90
+    }
+  ],
+  "team_metrics": {
+    "total_teams": 5,
+    "active_members": 30,
+    "collaboration_score": 75
+  }
+}
+```
+
+## WebSocket API
+
+### Connect to WebSocket
+```
+ws://localhost:8080/ws
+```
+
+**Authentication**
+Include the JWT token in the connection URL:
+```
+ws://localhost:8080/ws?token=<jwt_token>
+```
+
+**Events**
+```json
+{
+  "type": "activity",
+  "data": {
+    "id": 1,
+    "type": "commit",
+    "repository": "username/repo",
+    "author": "username",
+    "timestamp": "2024-04-06T12:00:00Z"
   }
 }
 ```
@@ -228,15 +337,20 @@ POST /webhooks/github
 ```
 X-GitHub-Event: <event_type>
 X-Hub-Signature: <signature>
+X-GitHub-Delivery: <delivery_id>
 ```
 
 **Supported Events**
 - push
 - pull_request
+- pull_request_review
 - issues
 - issue_comment
 - create
 - delete
+- organization
+- member
+- team
 
 ## Error Responses
 
@@ -252,7 +366,15 @@ X-Hub-Signature: <signature>
 ```json
 {
   "error": "Unauthorized",
-  "details": "Invalid or missing GitHub token"
+  "details": "Invalid or expired token"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "error": "Forbidden",
+  "details": "Insufficient permissions for this action"
 }
 ```
 
@@ -260,15 +382,15 @@ X-Hub-Signature: <signature>
 ```json
 {
   "error": "Not Found",
-  "details": "Repository not found"
+  "details": "Resource not found"
 }
 ```
 
 ### 429 Too Many Requests
 ```json
 {
-  "error": "Rate Limit Exceeded",
-  "details": "GitHub API rate limit reached",
+  "error": "Too Many Requests",
+  "details": "Rate limit exceeded",
   "retry_after": 60
 }
 ```
@@ -278,76 +400,5 @@ X-Hub-Signature: <signature>
 {
   "error": "Internal Server Error",
   "details": "An unexpected error occurred"
-}
-```
-
-## Rate Limiting
-
-The API implements rate limiting to prevent abuse and ensure fair usage:
-
-- 100 requests per minute per IP address
-- 1000 requests per hour per GitHub token
-
-Rate limit headers are included in responses:
-```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1617724800
-```
-
-## WebSocket API
-
-### Connection
-```
-ws://localhost:8080/api/v1/ws
-```
-
-**Authentication**
-Include the GitHub token in the connection URL:
-```
-ws://localhost:8080/api/v1/ws?token=<github_pat>
-```
-
-### Events
-
-#### Repository Updates
-```json
-{
-  "type": "repo_update",
-  "data": {
-    "repo_id": 1,
-    "event": "push",
-    "timestamp": "2024-04-06T12:00:00Z"
-  }
-}
-```
-
-#### Task Updates
-```json
-{
-  "type": "task_update",
-  "data": {
-    "task_id": 1,
-    "status": "in-progress",
-    "timestamp": "2024-04-06T12:00:00Z"
-  }
-}
-```
-
-## Pagination
-
-Endpoints that return lists support pagination using cursor-based pagination:
-
-**Request**
-```
-GET /repos?cursor=<base64_encoded_cursor>&limit=50
-```
-
-**Response**
-```json
-{
-  "items": [...],
-  "next_cursor": "<base64_encoded_cursor>",
-  "has_more": true
 }
 ``` 

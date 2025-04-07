@@ -58,14 +58,13 @@ repos:
         files: ^backend/
         types: [rust]
 
-      # - repo: local
-      #   hooks:
-      #     - id: npm-lint
-      #       name: npm-lint
-      #       entry: npm run lint
-      #       language: node
-      #       types: [file]
-      #       files: ^frontend/
+      - id: npm-lint
+        name: NPM Lint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        types_or: [javascript, jsx, ts, tsx]
 
       - id: npm-test
         name: NPM Test

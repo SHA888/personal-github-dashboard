@@ -3,12 +3,10 @@ use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-mod analytics;
 mod organizations;
 mod repository;
 mod sync;
 
-pub use analytics::configure_analytics_routes;
 pub use organizations::configure_organizations_routes;
 pub use repository::configure_repository_routes;
 pub use sync::configure_sync_routes;
@@ -69,7 +67,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppS
     cfg.service(
         web::scope("/api")
             .route("/health", web::get().to(health_check))
-            .configure(|cfg| configure_analytics_routes(cfg, app_state))
             .configure(|cfg| configure_repository_routes(cfg, app_state))
             .configure(|cfg| configure_sync_routes(cfg, app_state))
             .configure(|cfg| configure_organizations_routes(cfg, app_state)),

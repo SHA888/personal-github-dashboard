@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Box, Grid, Paper, Typography, CircularProgress } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import RepositoryActivity from "./RepositoryActivity";
-import Trends from "./Trends";
+import ActivityTrends from "./ActivityTrends";
 import AnalyticsLayout from "./AnalyticsLayout";
+import { Filters } from "../../services/api";
 
 const DashboardPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -22,16 +23,10 @@ interface Filters {
 const AnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Filters>({
-    timeRange: "30",
-    owner: "SHA888",
-    repo: "github-dashboard",
+  const [filters] = useState<Filters>({
+    timeRange: "7d",
+    repo: "all",
   });
-
-  const handleFilterChange = (newFilters: Filters) => {
-    setFilters(newFilters);
-    console.log("Filters changed:", newFilters);
-  };
 
   useEffect(() => {
     // Initial data fetch
@@ -76,21 +71,18 @@ const AnalyticsDashboard: React.FC = () => {
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AnalyticsLayout onFilterChange={handleFilterChange} />
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <DashboardPaper>
+    <AnalyticsLayout>
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
             <RepositoryActivity filters={filters} />
-          </DashboardPaper>
+          </Grid>
+          <Grid item xs={12}>
+            <ActivityTrends filters={filters} />
+          </Grid>
         </Grid>
-        <Grid item xs={12}>
-          <DashboardPaper>
-            <Trends filters={filters} />
-          </DashboardPaper>
-        </Grid>
-      </Grid>
-    </Box>
+      </Box>
+    </AnalyticsLayout>
   );
 };
 

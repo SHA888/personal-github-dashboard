@@ -1,5 +1,6 @@
 use crate::AppState;
-use actix_web::{web, HttpResponse};
+#[allow(unused_imports)]
+use actix_web::{web, HttpResponse, Responder};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -43,12 +44,23 @@ pub struct CommitRecord {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(Serialize)]
+pub struct RepositoriesResponse {
+    repositories: Vec<(String, String)>,
+    organizations: Vec<String>,
+}
+
 pub fn configure_repository_routes(cfg: &mut web::ServiceConfig, app_state: &web::Data<AppState>) {
     cfg.service(
-        web::scope("/api/repositories")
+        web::scope("/repositories")
             .app_data(app_state.clone())
+            .route("", web::get().to(list_repositories))
             .route("", web::post().to(add_repository))
-            .route("/{owner}/{repo}", web::get().to(get_repository)),
+            .route("/{owner}/{repo}", web::get().to(get_repository))
+            .route(
+                "/{owner}/{repo}/activity",
+                web::get().to(get_repository_activity),
+            ),
     );
 }
 
@@ -99,31 +111,23 @@ async fn get_repository(
     }
 }
 
-#[allow(dead_code)]
-async fn list_repositories(
-    query: web::Query<RepositoryQuery>,
-    app_state: web::Data<AppState>,
-) -> HttpResponse {
-    let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(10);
-
-    match sqlx::query_as::<_, RepositoryResponse>(
-        r#"
-        SELECT id, owner, name, description, language, stars, forks, open_issues, is_private, created_at, updated_at
-        FROM repositories
-        ORDER BY updated_at DESC
-        LIMIT $1 OFFSET $2
-        "#,
-    )
-    .bind(per_page)
-    .bind((page - 1) * per_page)
-    .fetch_all(&app_state.pool)
-    .await
+pub async fn list_repositories(app_state: web::Data<AppState>) -> impl Responder {
+    match app_state
+        .github
+        .list_all_repositories_and_organizations()
+        .await
     {
-        Ok(repositories) => HttpResponse::Ok().json(repositories),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to list repositories: {}", e)
-        })),
+        Ok((repositories, organizations)) => HttpResponse::Ok().json(RepositoriesResponse {
+            repositories,
+            organizations,
+        }),
+        Err(e) => {
+            log::error!("Failed to list repositories: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to list repositories",
+                "message": e.to_string(),
+            }))
+        }
     }
 }
 

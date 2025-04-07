@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Grid, Autocomplete } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
-import Trends from "./Trends";
+import ActivityTrends from "./ActivityTrends";
 import { apiService, Repository } from "../../services/api";
 
 interface Filters {
@@ -115,7 +115,7 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
           <RepositoryActivity filters={filters} />
         </Box>
         <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
-          <Trends filters={filters} />
+          <ActivityTrends filters={filters} />
         </Box>
       </Box>
     </Box>

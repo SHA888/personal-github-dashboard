@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import { Box, TextField, MenuItem } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
-import Trends from "./Trends";
-
-interface Filters {
-  timeRange: string;
-  owner: string;
-  repo: string;
-}
+import ActivityTrends from "./ActivityTrends";
+import { Filters } from "../../services/api";
 
 interface AnalyticsLayoutProps {
   onFilterChange: (filters: Filters) => void;
@@ -29,7 +24,7 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
   };
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {/* Filter Controls */}
       <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
         <TextField
@@ -65,7 +60,7 @@ const AnalyticsLayout: React.FC<AnalyticsLayoutProps> = ({
           <RepositoryActivity filters={filters} />
         </Box>
         <Box sx={{ flex: "1 1 400px", minWidth: 0 }}>
-          <Trends filters={filters} />
+          <ActivityTrends filters={filters} />
         </Box>
       </Box>
     </Box>

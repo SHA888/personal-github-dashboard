@@ -1,11 +1,15 @@
+use crate::redis::RedisClient;
 use log;
 use octocrab::models::orgs::Organization;
 use octocrab::Octocrab;
 use sqlx::PgPool;
+use std::sync::Arc;
 
 pub struct GitHubService {
-    client: Octocrab,
-    pool: PgPool,
+    octocrab: Arc<Octocrab>,
+    pub pool: PgPool,
+    #[allow(dead_code)]
+    redis: Arc<RedisClient>,
 }
 
 impl GitHubService {
@@ -15,11 +19,15 @@ impl GitHubService {
             .build()
             .expect("Failed to create GitHub client");
 
-        Self { client, pool }
+        Self {
+            octocrab: Arc::new(client),
+            pool,
+            redis: Arc::new(RedisClient::new()),
+        }
     }
 
     pub async fn get_authenticated_user(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let user = self.client.current().user().await?;
+        let user = self.octocrab.current().user().await?;
         Ok(user.login)
     }
 
@@ -29,7 +37,7 @@ impl GitHubService {
         repo: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Get repository info
-        let repository = self.client.repos(owner, repo).get().await?;
+        let repository = self.octocrab.repos(owner, repo).get().await?;
 
         // Insert or update repository
         let repository_id = sqlx::query!(
@@ -61,7 +69,7 @@ impl GitHubService {
         .id;
 
         // Try to get commits, but don't fail if the repository is empty
-        match self.client.repos(owner, repo).list_commits().send().await {
+        match self.octocrab.repos(owner, repo).list_commits().send().await {
             Ok(commits) => {
                 for commit in commits.items {
                     sqlx::query!(
@@ -114,7 +122,7 @@ impl GitHubService {
 
         loop {
             let repos = self
-                .client
+                .octocrab
                 .current()
                 .list_repos_for_authenticated_user()
                 .per_page(per_page)
@@ -159,6 +167,49 @@ impl GitHubService {
         Ok(())
     }
 
+    pub async fn sync_organization(
+        &self,
+        org_login: &str,
+    ) -> Result<i32, Box<dyn std::error::Error>> {
+        // Get full organization details from GitHub
+        let org = self
+            .octocrab
+            .get::<Organization, _, _>(
+                &format!("https://api.github.com/orgs/{}", org_login),
+                None::<&()>,
+            )
+            .await?;
+
+        // Insert or update organization in database
+        let org_id = sqlx::query!(
+            r#"
+            INSERT INTO organizations (github_id, name, description, avatar_url)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (github_id) DO UPDATE
+            SET name = EXCLUDED.name,
+                description = EXCLUDED.description,
+                avatar_url = EXCLUDED.avatar_url
+            RETURNING id
+            "#,
+            org.id.0 as i64,
+            org.login,
+            org.description,
+            org.avatar_url.to_string(),
+        )
+        .fetch_one(&self.pool)
+        .await?
+        .id;
+
+        log::info!(
+            "Synced organization {} (ID: {}, GitHub ID: {})",
+            org.login,
+            org_id,
+            org.id.0
+        );
+
+        Ok(org_id)
+    }
+
     pub async fn fetch_user_organizations(
         &self,
     ) -> Result<Vec<Organization>, Box<dyn std::error::Error>> {
@@ -180,7 +231,7 @@ impl GitHubService {
 
             // Fetch the list of organizations the user is a member of
             let org_memberships = self
-                .client
+                .octocrab
                 .get::<Vec<Organization>, _, _>(&url, None::<&()>)
                 .await?;
 
@@ -200,14 +251,18 @@ impl GitHubService {
                     "Fetching full details for organization: {}",
                     org_membership.login
                 );
-                // Get full organization details using the login from the membership list
+                // Get full organization details and sync to database
                 let full_org = self
-                    .client
+                    .octocrab
                     .get::<Organization, _, _>(
                         &format!("https://api.github.com/orgs/{}", org_membership.login),
                         None::<&()>,
                     )
                     .await?;
+
+                // Sync organization to database
+                self.sync_organization(&full_org.login).await?;
+
                 log::info!(
                     "Found organization: {} ({})",
                     full_org.login,
@@ -233,7 +288,7 @@ impl GitHubService {
 
         loop {
             let repos = self
-                .client
+                .octocrab
                 .orgs(org)
                 .list_repos()
                 .per_page(per_page)

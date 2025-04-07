@@ -14,11 +14,11 @@ export const useWebSocket = create<WebSocketState>((set, get) => ({
   isConnected: false,
   error: null,
   connect: () => {
-    // Get the base URL without the /api path
     const baseUrl =
       import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
       "http://localhost:8080";
-    const wsUrl = baseUrl.replace("http", "ws") + "/ws";
+
+    const wsUrl = baseUrl.replace(/^http/, "ws") + "/ws";
 
     console.log("Connecting to WebSocket:", wsUrl);
     const socket = new WebSocket(wsUrl);
@@ -28,9 +28,15 @@ export const useWebSocket = create<WebSocketState>((set, get) => ({
       console.log("WebSocket connected");
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       set({ isConnected: false, socket: null });
-      console.log("WebSocket disconnected");
+      console.log("WebSocket disconnected", event.code, event.reason);
+
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        console.log("Attempting to reconnect...");
+        get().connect();
+      }, 5000);
     };
 
     socket.onerror = (error) => {

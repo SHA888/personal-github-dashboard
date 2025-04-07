@@ -18,7 +18,7 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Code as CodeIcon,
-  People as PeopleIcon,
+  Business as BusinessIcon,
   Security as SecurityIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
@@ -91,7 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
     { text: "Repositories", icon: <CodeIcon />, path: "/repositories" },
-    { text: "Team", icon: <PeopleIcon />, path: "/team" },
+    { text: "Organizations", icon: <BusinessIcon />, path: "/organizations" },
     { text: "Security", icon: <SecurityIcon />, path: "/security" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
   ];

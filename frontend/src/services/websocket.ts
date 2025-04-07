@@ -14,7 +14,11 @@ export const useWebSocket = create<WebSocketState>((set, get) => ({
     isConnected: false,
     error: null,
     connect: () => {
-        const wsUrl = import.meta.env.VITE_API_BASE_URL?.replace('http', 'ws') || 'ws://localhost:8080/ws';
+        // Get the base URL without the /api path
+        const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080';
+        const wsUrl = baseUrl.replace('http', 'ws') + '/ws';
+
+        console.log('Connecting to WebSocket:', wsUrl);
         const socket = new WebSocket(wsUrl);
 
         socket.onopen = () => {

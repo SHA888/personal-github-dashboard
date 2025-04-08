@@ -354,3 +354,66 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Optimize assets
    - Update documentation
    - Deploy to staging
+
+## API Documentation
+
+### Organization Endpoints
+
+#### GET /api/orgs
+Lists all organizations with their repositories count.
+
+**Response:**
+```json
+{
+  "organizations": [
+    {
+      "id": 1,
+      "github_id": 123456,
+      "name": "organization-name",
+      "description": "Organization description",
+      "avatar_url": "https://avatars.githubusercontent.com/...",
+      "repositories_count": 10
+    }
+  ]
+}
+```
+
+#### POST /api/orgs/sync
+Triggers a sync of all organizations from GitHub.
+
+**Response:**
+```json
+{
+  "message": "Organizations synchronized successfully"
+}
+```
+
+#### POST /api/orgs/sync-all
+Triggers a full sync of organizations and their repositories.
+
+**Response:**
+```json
+{
+  "message": "Sync completed",
+  "synced_organizations": ["org1", "org2"],
+  "synced_repositories": ["org1/repo1", "org2/repo2"]
+}
+```
+
+### Implementation Details
+
+#### Organization Sync Process
+1. Fetches organizations from GitHub API
+2. Stores organization details in database
+3. For each organization:
+   - Fetches repositories
+   - Stores repository details
+   - Syncs commits and activity
+4. Handles rate limiting and pagination
+5. Provides progress tracking
+
+#### Error Handling
+- GitHub API rate limits
+- Network errors
+- Database constraints
+- Invalid data formats

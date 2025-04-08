@@ -81,4 +81,4 @@ pub struct QueryParams {
     pub limit: Option<i64>,
     #[serde(default)]
     pub offset: Option<i64>,
-} 
+}

@@ -4,4 +4,4 @@ pub mod users;
 
 pub use organizations::*;
 pub use repositories::*;
-pub use users::*; 
+pub use users::*;

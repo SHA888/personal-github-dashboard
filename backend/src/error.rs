@@ -17,7 +17,9 @@ pub struct ErrorDetails {
 pub enum AppError {
     Database(sqlx::Error),
     NotFound(String),
+    #[allow(dead_code)]
     BadRequest(String),
+    InternalServerError(String),
 }
 
 impl fmt::Display for AppError {
@@ -26,6 +28,7 @@ impl fmt::Display for AppError {
             AppError::Database(err) => write!(f, "Database error: {}", err),
             AppError::NotFound(msg) => write!(f, "Not found: {}", msg),
             AppError::BadRequest(msg) => write!(f, "Bad request: {}", msg),
+            AppError::InternalServerError(msg) => write!(f, "Internal server error: {}", msg),
         }
     }
 }
@@ -51,6 +54,12 @@ impl ResponseError for AppError {
                     message: msg.to_string(),
                 },
             }),
+            AppError::InternalServerError(msg) => HttpResponse::InternalServerError().json(ErrorResponse {
+                error: ErrorDetails {
+                    code: "INTERNAL_SERVER_ERROR".to_string(),
+                    message: msg.to_string(),
+                },
+            }),
         }
     }
 }
@@ -59,4 +68,4 @@ impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         AppError::Database(err)
     }
-} 
+}

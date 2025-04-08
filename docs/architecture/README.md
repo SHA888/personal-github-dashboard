@@ -264,16 +264,16 @@ The Personal GitHub Dashboard architecture is designed for both self-hosted and 
    ```plaintext
    # Session storage
    session:{user_id} -> Hash
-   
+
    # Rate limiting
    rate_limit:{endpoint}:{user_id} -> Counter
-   
+
    # Real-time updates
    channel:updates:{repo_id} -> Pub/Sub
-   
+
    # API caching
    cache:{endpoint}:{params_hash} -> String
-   
+
    # Analytics
    leaderboard:{metric}:{timeframe} -> Sorted Set
    ```

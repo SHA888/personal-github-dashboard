@@ -20,4 +20,4 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                     .route("/{id}", web::get().to(get_user)),
             ),
     );
-} 
+}

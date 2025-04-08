@@ -81,4 +81,4 @@ pub async fn get_repository(
         Some(repo) => Ok(HttpResponse::Ok().json(repo)),
         None => Err(AppError::NotFound("Repository not found".to_string())),
     }
-} 
+}

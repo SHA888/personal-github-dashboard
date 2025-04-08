@@ -220,7 +220,7 @@ psql -U postgres github_dashboard < backup.sql
      ```bash
      # Edit Redis configuration
      sudo nano /etc/redis/redis.conf
-     
+
      # Add or modify these lines:
      requirepass your_secure_password
      bind 127.0.0.1
@@ -262,7 +262,7 @@ psql -U postgres github_dashboard < backup.sql
    ```bash
    # Check Redis status
    sudo systemctl status redis-server
-   
+
    # Start Redis if stopped
    sudo systemctl start redis-server
    ```

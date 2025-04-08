@@ -21,4 +21,4 @@ DROP TABLE IF EXISTS sync_status CASCADE;
 
 -- migrate:down
 
--- No down migration needed for cleanup 
+-- No down migration needed for cleanup

@@ -83,4 +83,4 @@ CREATE INDEX idx_repositories_organization_id ON repositories(organization_id);
 CREATE INDEX idx_organization_members_org_id ON organization_members(organization_id);
 CREATE INDEX idx_organization_members_user_id ON organization_members(user_id);
 CREATE INDEX idx_repository_collaborators_repo_id ON repository_collaborators(repository_id);
-CREATE INDEX idx_repository_collaborators_user_id ON repository_collaborators(user_id); 
+CREATE INDEX idx_repository_collaborators_user_id ON repository_collaborators(user_id);

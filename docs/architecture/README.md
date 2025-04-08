@@ -250,3 +250,44 @@ personal-github-dashboard/
 ## Conclusion
 
 The Personal GitHub Dashboard architecture is designed for both self-hosted and SaaS deployments, with a focus on scalability, real-time capabilities, and security. The system supports advanced analytics and organization management while maintaining high performance and reliability.
+
+### Redis Architecture
+
+1. **Data Structures and Usage**
+   - **Sessions**: Hash maps for user sessions
+   - **Rate Limiting**: Counters with TTL
+   - **Real-time Data**: Pub/Sub for live updates
+   - **API Cache**: String values with expiration
+   - **Analytics**: Sorted sets for leaderboards
+
+2. **Key Patterns**
+   ```plaintext
+   # Session storage
+   session:{user_id} -> Hash
+   
+   # Rate limiting
+   rate_limit:{endpoint}:{user_id} -> Counter
+   
+   # Real-time updates
+   channel:updates:{repo_id} -> Pub/Sub
+   
+   # API caching
+   cache:{endpoint}:{params_hash} -> String
+   
+   # Analytics
+   leaderboard:{metric}:{timeframe} -> Sorted Set
+   ```
+
+3. **Performance Considerations**
+   - Memory optimization
+   - Connection pooling
+   - Pipeline operations
+   - Lua scripting for complex operations
+   - Replication for high availability
+
+4. **Monitoring and Maintenance**
+   - Memory usage tracking
+   - Key expiration management
+   - Performance metrics
+   - Backup strategies
+   - Scaling considerations

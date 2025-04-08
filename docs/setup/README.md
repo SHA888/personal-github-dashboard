@@ -187,6 +187,116 @@ pg_dump -U postgres github_dashboard > backup.sql
 psql -U postgres github_dashboard < backup.sql
 ```
 
+## Redis Setup
+
+### Installation
+1. **Windows**:
+   - Download Redis from [Redis for Windows](https://github.com/microsoftarchive/redis/releases)
+   - Run the installer and follow the setup wizard
+   - Redis will be installed as a Windows service
+
+2. **macOS**:
+   ```bash
+   brew install redis
+   brew services start redis
+   ```
+
+3. **Linux (Ubuntu/Debian)**:
+   ```bash
+   sudo apt update
+   sudo apt install redis-server
+   sudo systemctl enable redis-server
+   sudo systemctl start redis-server
+   ```
+
+### Configuration
+1. **Basic Configuration**
+   - Default port: 6379
+   - Default host: localhost
+   - No password by default (development only)
+
+2. **Security Configuration**
+   - Set a password in production:
+     ```bash
+     # Edit Redis configuration
+     sudo nano /etc/redis/redis.conf
+     
+     # Add or modify these lines:
+     requirepass your_secure_password
+     bind 127.0.0.1
+     ```
+   - Restart Redis after configuration changes:
+     ```bash
+     sudo systemctl restart redis-server
+     ```
+
+3. **Environment Configuration**
+   Add to your backend `.env` file:
+   ```env
+   REDIS_URL=redis://localhost:6379
+   # If using password:
+   REDIS_URL=redis://:your_secure_password@localhost:6379
+   ```
+
+### Connection Testing
+1. **Basic Connection Test**:
+   ```bash
+   redis-cli ping
+   # Should return: PONG
+   ```
+
+2. **With Password**:
+   ```bash
+   redis-cli -a your_secure_password ping
+   ```
+
+3. **From Application**:
+   ```bash
+   # Test Redis connection from your application
+   cargo run --bin test-redis-connection
+   ```
+
+### Troubleshooting
+
+1. **Redis Service Not Running**
+   ```bash
+   # Check Redis status
+   sudo systemctl status redis-server
+   
+   # Start Redis if stopped
+   sudo systemctl start redis-server
+   ```
+
+2. **Connection Refused**
+   - Verify Redis is running
+   - Check firewall settings
+   - Ensure correct port (6379)
+   - Verify bind address in redis.conf
+
+3. **Authentication Failed**
+   - Verify password in redis.conf
+   - Check REDIS_URL format in .env
+   - Ensure password is properly escaped in URL
+
+4. **Memory Issues**
+   - Monitor memory usage:
+     ```bash
+     redis-cli info memory
+     ```
+   - Set maxmemory in redis.conf
+   - Configure eviction policy
+
+5. **Performance Issues**
+   - Monitor Redis performance:
+     ```bash
+     redis-cli info stats
+     ```
+   - Check for slow queries:
+     ```bash
+     redis-cli slowlog get
+     ```
+   - Optimize configuration based on usage patterns
+
 ## GitHub Integration
 
 ### Personal Access Token

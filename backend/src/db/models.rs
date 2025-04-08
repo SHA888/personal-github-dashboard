@@ -14,7 +14,7 @@ pub struct User {
     pub html_url: Option<String>,
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
-    pub last_synced_at: DateTime<Utc>,
+    pub last_synced_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -28,7 +28,7 @@ pub struct Organization {
     pub html_url: Option<String>,
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
-    pub last_synced_at: DateTime<Utc>,
+    pub last_synced_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -38,21 +38,21 @@ pub struct Repository {
     pub name: String,
     pub full_name: String,
     pub description: Option<String>,
-    pub private: bool,
-    pub fork: bool,
+    pub private: Option<bool>,
+    pub fork: Option<bool>,
     pub html_url: Option<String>,
     pub clone_url: Option<String>,
     pub default_branch: Option<String>,
     pub language: Option<String>,
-    pub stargazers_count: i32,
-    pub watchers_count: i32,
-    pub forks_count: i32,
-    pub open_issues_count: i32,
+    pub stargazers_count: Option<i32>,
+    pub watchers_count: Option<i32>,
+    pub forks_count: Option<i32>,
+    pub open_issues_count: Option<i32>,
     pub size: Option<i32>,
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
     pub pushed_at: Option<DateTime<Utc>>,
-    pub last_synced_at: DateTime<Utc>,
+    pub last_synced_at: Option<DateTime<Utc>>,
     pub owner_id: Option<Uuid>,
     pub organization_id: Option<Uuid>,
 }
@@ -63,7 +63,7 @@ pub struct OrganizationMember {
     pub organization_id: Uuid,
     pub user_id: Uuid,
     pub role: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -72,5 +72,5 @@ pub struct RepositoryCollaborator {
     pub repository_id: Uuid,
     pub user_id: Uuid,
     pub permission: String,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
 }

@@ -3,6 +3,8 @@ use dotenv::dotenv;
 use std::env;
 
 mod db;
+mod error;
+mod api;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,8 +20,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create database pool");
 
     // Start HTTP server
-    HttpServer::new(move || App::new().app_data(web::Data::new(pool.clone())))
-        .bind(("127.0.0.1", 8000))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .configure(api::configure_routes)
+    })
+    .bind(("127.0.0.1", 8000))?
+    .run()
+    .await
 }

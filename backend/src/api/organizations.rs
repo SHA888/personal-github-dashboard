@@ -24,7 +24,11 @@ pub fn configure_organizations_routes(
             .app_data(app_state.clone())
             .route("", web::get().to(list_organizations))
             .route("/{org}", web::get().to(get_organization))
-            .route("/sync", web::post().to(sync_organizations)),
+            .route("/sync", web::post().to(sync_organizations))
+            .route(
+                "/sync-all",
+                web::post().to(sync_all_organizations_and_repos),
+            ),
     );
 }
 
@@ -178,6 +182,80 @@ async fn sync_organizations(app_state: web::Data<AppState>) -> HttpResponse {
         })),
         Err(e) => {
             log::error!("Failed to sync organizations: {}", e);
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to sync organizations",
+                "message": e.to_string(),
+            }))
+        }
+    }
+}
+
+async fn sync_all_organizations_and_repos(app_state: web::Data<AppState>) -> HttpResponse {
+    // First sync organizations
+    match app_state.github.fetch_user_organizations().await {
+        Ok(orgs) => {
+            let mut synced_orgs = Vec::new();
+            let mut synced_repos = Vec::new();
+
+            // For each organization, sync its repositories
+            for org in orgs {
+                let org_name = org.login.clone();
+                match app_state.github.sync_organization(&org_name).await {
+                    Ok(org_id) => {
+                        synced_orgs.push(org_name.clone());
+
+                        // Now sync repositories for this organization
+                        match app_state
+                            .github
+                            .fetch_organization_repositories(&org_name)
+                            .await
+                        {
+                            Ok(repos) => {
+                                for (owner, repo) in repos {
+                                    match app_state.github.sync_repository(&owner, &repo).await {
+                                        Ok(_) => {
+                                            synced_repos.push(format!("{}/{}", owner, repo));
+                                        }
+                                        Err(e) => {
+                                            log::error!(
+                                                "Failed to sync repository {}/{}: {}",
+                                                owner,
+                                                repo,
+                                                e
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Failed to fetch repositories for {}: {}", org_name, e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to sync organization {}: {}", org_name, e);
+                    }
+                }
+            }
+
+            // Also sync user's personal repositories
+            match app_state.github.sync_user_repositories().await {
+                Ok(_) => {
+                    log::info!("Successfully synced user's personal repositories");
+                }
+                Err(e) => {
+                    log::error!("Failed to sync user's personal repositories: {}", e);
+                }
+            }
+
+            HttpResponse::Ok().json(json!({
+                "message": "Sync completed",
+                "synced_organizations": synced_orgs,
+                "synced_repositories": synced_repos
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to fetch organizations: {}", e);
             HttpResponse::InternalServerError().json(json!({
                 "error": "Failed to sync organizations",
                 "message": e.to_string(),

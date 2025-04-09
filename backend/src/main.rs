@@ -2,9 +2,10 @@ use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 
+mod api;
 mod db;
 mod error;
-mod api;
+mod github;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

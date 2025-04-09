@@ -1,5 +1,8 @@
 use chrono::{DateTime, Utc};
+use octocrab::models::orgs::Organization as GitHubOrg;
+use octocrab::models::Repository as GitHubRepo;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use uuid::Uuid;
 
@@ -53,8 +56,6 @@ pub struct Repository {
     pub updated_at: Option<DateTime<Utc>>,
     pub pushed_at: Option<DateTime<Utc>>,
     pub last_synced_at: Option<DateTime<Utc>>,
-    pub owner_id: Option<Uuid>,
-    pub organization_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
@@ -73,4 +74,51 @@ pub struct RepositoryCollaborator {
     pub user_id: Uuid,
     pub permission: String,
     pub created_at: Option<DateTime<Utc>>,
+}
+
+impl From<GitHubOrg> for Organization {
+    fn from(org: GitHubOrg) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            github_id: org.id.0 as i64,
+            login: org.login,
+            name: org.name,
+            description: org.description,
+            avatar_url: Some(org.avatar_url.to_string()),
+            html_url: org.html_url.map(|url| url.to_string()),
+            created_at: org.created_at,
+            updated_at: org.created_at,
+            last_synced_at: Some(Utc::now()),
+        }
+    }
+}
+
+impl From<GitHubRepo> for Repository {
+    fn from(repo: GitHubRepo) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            github_id: repo.id.0 as i64,
+            name: repo.name.clone(),
+            full_name: repo.full_name.unwrap_or_else(|| repo.name.clone()),
+            description: repo.description,
+            private: repo.private,
+            fork: repo.fork,
+            html_url: repo.html_url.map(|url| url.to_string()),
+            clone_url: repo.clone_url.map(|url| url.to_string()),
+            default_branch: repo.default_branch,
+            language: repo.language.and_then(|v| match v {
+                Value::String(s) => Some(s),
+                _ => None,
+            }),
+            stargazers_count: repo.stargazers_count.map(|c| c as i32),
+            watchers_count: repo.watchers_count.map(|c| c as i32),
+            forks_count: repo.forks_count.map(|c| c as i32),
+            open_issues_count: repo.open_issues_count.map(|c| c as i32),
+            size: repo.size.map(|s| s as i32),
+            created_at: repo.created_at,
+            updated_at: repo.updated_at,
+            pushed_at: repo.pushed_at,
+            last_synced_at: Some(Utc::now()),
+        }
+    }
 }

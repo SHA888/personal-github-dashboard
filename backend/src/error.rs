@@ -4,31 +4,24 @@ use std::fmt;
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
-    pub error: ErrorDetails,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ErrorDetails {
-    pub code: String,
-    pub message: String,
+    pub error: String,
 }
 
 #[derive(Debug)]
 pub enum AppError {
-    Database(sqlx::Error),
     NotFound(String),
-    #[allow(dead_code)]
-    BadRequest(String),
-    InternalServerError(String),
+    DatabaseError(String),
+    GitHubError(String),
+    InternalError(String),
 }
 
 impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AppError::Database(err) => write!(f, "Database error: {}", err),
             AppError::NotFound(msg) => write!(f, "Not found: {}", msg),
-            AppError::BadRequest(msg) => write!(f, "Bad request: {}", msg),
-            AppError::InternalServerError(msg) => write!(f, "Internal server error: {}", msg),
+            AppError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
+            AppError::GitHubError(msg) => write!(f, "GitHub error: {}", msg),
+            AppError::InternalError(msg) => write!(f, "Internal error: {}", msg),
         }
     }
 }
@@ -36,36 +29,30 @@ impl fmt::Display for AppError {
 impl ResponseError for AppError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            AppError::Database(err) => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: ErrorDetails {
-                    code: "DATABASE_ERROR".to_string(),
-                    message: err.to_string(),
-                },
-            }),
             AppError::NotFound(msg) => HttpResponse::NotFound().json(ErrorResponse {
-                error: ErrorDetails {
-                    code: "NOT_FOUND".to_string(),
-                    message: msg.to_string(),
-                },
+                error: msg.to_string(),
             }),
-            AppError::BadRequest(msg) => HttpResponse::BadRequest().json(ErrorResponse {
-                error: ErrorDetails {
-                    code: "BAD_REQUEST".to_string(),
-                    message: msg.to_string(),
-                },
+            AppError::DatabaseError(msg) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: msg.to_string(),
+                })
+            }
+            AppError::GitHubError(msg) => HttpResponse::InternalServerError().json(ErrorResponse {
+                error: msg.to_string(),
             }),
-            AppError::InternalServerError(msg) => HttpResponse::InternalServerError().json(ErrorResponse {
-                error: ErrorDetails {
-                    code: "INTERNAL_SERVER_ERROR".to_string(),
-                    message: msg.to_string(),
-                },
-            }),
+            AppError::InternalError(msg) => {
+                HttpResponse::InternalServerError().json(ErrorResponse {
+                    error: msg.to_string(),
+                })
+            }
         }
     }
 }
 
+// Add the From implementation for sqlx::Error
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
-        AppError::Database(err)
+        // You might want more sophisticated mapping here based on the sqlx error type
+        AppError::DatabaseError(err.to_string())
     }
 }

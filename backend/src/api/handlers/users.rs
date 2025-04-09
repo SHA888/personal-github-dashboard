@@ -32,11 +32,9 @@ pub async fn list_users(
     let offset = query.offset.unwrap_or(0);
 
     // Get total count
-    let total = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM users"
-    )
-    .fetch_one(&**pool)
-    .await?;
+    let total = sqlx::query_scalar!("SELECT COUNT(*) FROM users")
+        .fetch_one(&**pool)
+        .await?;
 
     // Get users
     let users = sqlx::query_as!(

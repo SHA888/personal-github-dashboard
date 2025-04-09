@@ -32,18 +32,21 @@ pub async fn list_repositories(
     let offset = query.offset.unwrap_or(0);
 
     // Get total count
-    let total = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM repositories"
-    )
-    .fetch_one(&**pool)
-    .await?;
+    let total = sqlx::query_scalar!("SELECT COUNT(*) FROM repositories")
+        .fetch_one(&**pool)
+        .await?;
 
-    // Get repositories
+    // Get repositories with explicit columns matching the final struct definition
     let repositories = sqlx::query_as!(
         Repository,
         r#"
-        SELECT * FROM repositories
-        ORDER BY name ASC
+        SELECT
+            id, github_id, name, full_name, description, private, fork,
+            html_url, clone_url, default_branch, language, stargazers_count,
+            watchers_count, forks_count, open_issues_count, size, created_at,
+            updated_at, pushed_at, last_synced_at
+        FROM repositories
+        ORDER BY name ASC NULLS LAST, full_name ASC
         LIMIT $1 OFFSET $2
         "#,
         limit,
@@ -66,10 +69,16 @@ pub async fn get_repository(
     pool: web::Data<DbPool>,
     id: web::Path<uuid::Uuid>,
 ) -> Result<HttpResponse, AppError> {
+    // Get repository with explicit columns matching the final struct definition
     let repository = sqlx::query_as!(
         Repository,
         r#"
-        SELECT * FROM repositories
+        SELECT
+            id, github_id, name, full_name, description, private, fork,
+            html_url, clone_url, default_branch, language, stargazers_count,
+            watchers_count, forks_count, open_issues_count, size, created_at,
+            updated_at, pushed_at, last_synced_at
+        FROM repositories
         WHERE id = $1
         "#,
         id.into_inner()

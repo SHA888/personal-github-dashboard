@@ -152,7 +152,7 @@ pub async fn sync_my_organizations(pool: web::Data<DbPool>) -> Result<HttpRespon
     }
 
     if errors.is_empty() {
-        Ok(HttpResponse::Ok().json(synced_orgs)) // Return list of synced orgs
+        Ok(HttpResponse::Ok().json(synced_orgs))
     } else {
         // Return an error response if any sync failed
         Ok(HttpResponse::InternalServerError()

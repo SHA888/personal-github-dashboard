@@ -1,10 +1,11 @@
 use octocrab::models::orgs::Organization;
 use octocrab::models::Author;
 use octocrab::models::Repository;
-use octocrab::{Error as OctocrabError, Octocrab, Page};
+use octocrab::{Error as OctocrabError, Octocrab};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct UserOrgMembership {
     organization: Organization,
     #[serde(flatten)]
@@ -17,16 +18,16 @@ pub struct GitHubAPIService {
 
 impl GitHubAPIService {
     pub fn new(token: String) -> Self {
-        Self {
-            client: Octocrab::builder()
-                .personal_token(token)
-                .build()
-                .expect("Failed to create GitHub client"),
-        }
+        let client = octocrab::Octocrab::builder()
+            .personal_token(token)
+            .build()
+            .expect("Failed to create Octocrab client");
+        Self { client }
     }
 
     pub async fn get_organization(&self, org_name: &str) -> Result<Organization, OctocrabError> {
-        self.client.orgs(org_name).get().await
+        let org = self.client.orgs(org_name).get().await?;
+        Ok(org)
     }
 
     #[allow(dead_code)]
@@ -36,14 +37,13 @@ impl GitHubAPIService {
     ) -> Result<Vec<Repository>, OctocrabError> {
         let mut repos = Vec::new();
         let mut page = 1u32;
-
         loop {
             let response = self
                 .client
                 .orgs(org_name)
                 .list_repos()
-                .page(page)
                 .per_page(100)
+                .page(page)
                 .send()
                 .await?;
 
@@ -51,11 +51,9 @@ impl GitHubAPIService {
             if page_repos.is_empty() {
                 break;
             }
-
             repos.append(&mut page_repos);
             page += 1;
         }
-
         Ok(repos)
     }
 
@@ -64,17 +62,9 @@ impl GitHubAPIService {
     }
 
     pub async fn list_my_organizations(&self) -> Result<Vec<Organization>, OctocrabError> {
-        let first_page: Page<UserOrgMembership> = self
-            .client
-            .get("/user/memberships/orgs", None::<&()>)
-            .await?;
+        let first_page: octocrab::Page<Organization> =
+            self.client.get("/user/orgs", None::<&()>).await?;
 
-        let memberships = first_page.items;
-
-        let organizations = memberships
-            .into_iter()
-            .map(|mem| mem.organization)
-            .collect();
-        Ok(organizations)
+        Ok(first_page.items)
     }
 }

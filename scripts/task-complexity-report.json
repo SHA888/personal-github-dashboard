@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-14T02:01:35.289Z",
+    "tasksAnalyzed": 10,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": true
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Setup Project Structure and Environment",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the task into subtasks for setting up a monorepo, initializing frontend and backend with respective frameworks, configuring linting and formatting tools, creating Docker files, and setting up CI/CD workflows.",
+      "reasoning": "This task involves multiple setup activities, including monorepo configuration, frontend and backend initialization, and CI/CD setup, each requiring attention to detail and adherence to best practices."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Implement GitHub OAuth Authentication",
+      "complexityScore": 9,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Divide the task into subtasks for registering the OAuth application, implementing backend OAuth flow, creating middleware, setting up JWT, developing secure storage, and building the UI components.",
+      "reasoning": "The task is complex due to the integration of external APIs, secure token management, and the need for both backend and frontend implementations."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Set Up Database and API Integration",
+      "complexityScore": 9,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Break down the task into subtasks for database schema design, Redis configuration, GitHub API service layer creation, rate limiting implementation, and database migration script development.",
+      "reasoning": "This task is challenging due to the need for database setup, caching, API integration, and ensuring scalability and performance."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Develop Repository Overview Feature",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Split the task into subtasks for API endpoint creation, React component development, sorting and filtering implementation, pagination, and repository card design.",
+      "reasoning": "The task requires both backend and frontend development, with moderate complexity in implementing UI features and API interactions."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Implement Activity Analytics Visualization",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Divide the task into subtasks for setting up the visualization library, backend data aggregation, creating specific charts, implementing interactivity, and ensuring responsiveness.",
+      "reasoning": "The task is complex due to the need for data processing, visualization, and ensuring a seamless user experience."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Build Notification Center",
+      "complexityScore": 7,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the task into subtasks for backend notification fetching, UI component development, filtering implementation, read/unread functionality, and background job setup.",
+      "reasoning": "The task involves backend and frontend work, with moderate complexity in implementing real-time updates and user preferences."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Performance Metrics Dashboard",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Split the task into subtasks for algorithm development, CI/CD integration, dependency analysis, and UI component creation for displaying metrics.",
+      "reasoning": "The task is complex due to the need for data analysis, integration with external APIs, and creating an intuitive dashboard."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement Theme Support and Customizable Layouts",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the task into subtasks for theme context implementation, dark/light theme creation, layout customization system development, drag-and-drop functionality, and preference persistence.",
+      "reasoning": "The task is moderately complex, focusing on UI/UX improvements and user customization features."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implement Security Features",
+      "complexityScore": 9,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Divide the task into subtasks for secure API key storage, rate limiting middleware setup, data encryption, security header configuration, CSRF protection, and audit logging.",
+      "reasoning": "The task is highly complex due to the critical nature of security measures and the need for robust implementation."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Set Up Deployment Pipeline",
+      "complexityScore": 8,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the task into subtasks for Docker configuration finalization, multi-stage builds, GitHub Actions workflow setup, environment configuration, and monitoring and backup setup.",
+      "reasoning": "The task is complex due to the need for optimizing deployment processes and ensuring reliability in production environments."
+    }
+  ]
+}

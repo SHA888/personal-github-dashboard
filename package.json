@@ -1,0 +1,50 @@
+{
+  "name": "personal-github-dashboard",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && cargo watch -x run",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && cargo build --release",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend && cargo test",
+    "lint": "npm run lint:frontend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.0",
+    "prettier": "^3.0.0",
+    "task-master-ai": "^0.11.1"
+  },
+  "dependencies": {
+    "task-master": "^1.0.4",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "boxen": "^8.0.1",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "cli-table3": "^0.6.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "fastmcp": "^1.20.5",
+    "figlet": "^1.8.0",
+    "fuse.js": "^7.0.0",
+    "gradient-string": "^3.0.0",
+    "helmet": "^8.1.0",
+    "inquirer": "^12.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "lru-cache": "^10.2.0",
+    "openai": "^4.89.0",
+    "ora": "^8.2.0"
+  },
+  "type": "module"
+}

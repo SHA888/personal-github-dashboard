@@ -99,6 +99,37 @@ REACT_APP_WS_URL=ws://localhost:8080/api/v1/ws
 npm start
 ```
 
+## Using Docker for Local Development
+
+Alternatively, you can use Docker Compose to set up and run the entire development environment (frontend, backend, database, Redis) with a single command.
+
+1.  **Install Docker and Docker Compose:** Follow the official [Docker documentation](https://docs.docker.com/get-docker/).
+2.  **Create a `.env` file:** In the project root directory, create a file named `.env` and add your GitHub Personal Access Token:
+    ```env
+    GITHUB_TOKEN=your_github_personal_access_token
+    ```
+    Ensure this file is added to your `.gitignore`.
+3.  **Run Docker Compose:** Open a terminal in the project root directory and run:
+    ```bash
+    docker-compose up --build
+    ```
+    This command will build the Docker images for the frontend and backend (if they don't exist or have changed) and start all the services defined in `docker-compose.yml`.
+
+    - The frontend will be accessible at `http://localhost:3000`.
+    - The backend API will be accessible at `http://localhost:8080`.
+    - PostgreSQL will be running on port `5432`.
+    - Redis will be running on port `6379`.
+
+4.  **Running Migrations (First Time):** The backend service in Docker Compose doesn't automatically run database migrations. After starting the containers for the first time, you might need to run migrations manually. Open another terminal:
+    ```bash
+    docker-compose exec backend sqlx database create
+    docker-compose exec backend sqlx migrate run
+    ```
+5.  **Stopping the Environment:** Press `Ctrl+C` in the terminal where `docker-compose up` is running. To remove the containers and volumes, run:
+    ```bash
+    docker-compose down -v
+    ```
+
 ## Development Workflow
 
 ### Backend Development

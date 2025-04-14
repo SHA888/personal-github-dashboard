@@ -1,6 +1,4 @@
-use sqlx::postgres::PgPoolOptions;
-use sqlx::Pool;
-use sqlx::Postgres;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use std::time::Duration;
 
 pub type DbPool = Pool<Postgres>;

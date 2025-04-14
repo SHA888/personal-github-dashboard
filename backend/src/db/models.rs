@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
-use octocrab::models::orgs::Organization as GitHubOrg;
-use octocrab::models::Repository as GitHubRepo;
+use octocrab::models::{orgs::Organization as GitHubOrg, Repository as GitHubRepo};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::FromRow;

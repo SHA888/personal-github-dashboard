@@ -1,236 +1,130 @@
-# MyGitBoard Development Milestones
+# Personal GitHub Dashboard Development Milestones
 
-This document tracks the progress and milestones for implementing MyGitBoard, a personal GitHub dashboard for aggregating and visualizing activity across repositories and organizations.
+## Overview
+Personal GitHub Dashboard is a hybrid application that provides GitHub data visualization and insights in both web and desktop environments. The application leverages modern web technologies for the browser-based version while offering enhanced offline capabilities and system integration through a Tauri-based desktop client.
 
-## Current Status
+## Architecture Milestones
 
-### Backend
-- ✅ Basic Actix Web server setup
-- ✅ PostgreSQL database connection
-- ✅ GitHub API token integration
-- ✅ Database schema implementation
-- ✅ Basic API endpoints implementation
-- ✅ Error handling middleware
-- ✅ Health check endpoint
-- ✅ Organization support
-- ❌ WebSocket support for real-time updates
-- ❌ Advanced analytics processing
+### Phase 1: Core Infrastructure
+- [x] Initialize project structure
+- [x] Set up basic Rust backend with Actix-web
+- [x] Configure PostgreSQL and Redis
+- [ ] Integrate Tauri framework for desktop capabilities
+- [ ] Implement environment detection (web vs desktop)
+- [ ] Set up shared React frontend structure
 
-### Frontend
-- ✅ React application setup
-- ✅ TypeScript configuration
-- ✅ Basic UI components
-- ❌ State management with Redux
-- ❌ API integration
-- ❌ WebSocket integration
-- ❌ Advanced visualizations
+### Phase 2: Authentication & Data Layer
+- [ ] Implement dual-mode authentication:
+  - Web: Session-based auth with GitHub OAuth
+  - Desktop: PAT-based auth with secure storage
+- [ ] Develop unified GitHub API integration:
+  - Web: Server-side API calls with Redis caching
+  - Desktop: Client-side Octokit with local storage
+- [ ] Create data synchronization system between modes
 
-## Phase 1: Core Infrastructure (Week 1-2)
+### Phase 3: Frontend Development
+- [ ] Design and implement shared UI components:
+  - Repository list and filters
+  - Activity dashboards
+  - Analytics visualizations
+- [ ] Develop mode-specific features:
+  - Web: Real-time updates and collaboration
+  - Desktop: Offline mode and Logseq integration
+- [ ] Implement responsive layouts for web/desktop
 
-### Backend Tasks
-1. ✅ Database Schema Implementation
-   - ✅ Create repositories table
-   - ✅ Create activity table
-   - ✅ Create tasks table
-   - ✅ Create organizations table
-   - ✅ Implement migrations
-   - ✅ Add indexes and relationships
-   - ✅ Fix migration version conflicts
+### Phase 4: Desktop Integration
+- [ ] Implement Logseq integration:
+  - Local graph storage setup
+  - Note reading/writing functionality
+  - Optional graph visualization
+- [ ] Configure Tauri plugins:
+  - Secure storage for tokens and cache
+  - File system access for Logseq
+  - System notifications
+- [ ] Set up cross-platform builds
 
-2. ✅ Basic API Endpoints
-   - ✅ Repository listing endpoint
-   - ✅ Repository details endpoint
-   - ✅ Activity endpoint
-   - ✅ Health check endpoint
-   - ✅ Error handling middleware
-   - ✅ Organization endpoints
+### Phase 5: Data Persistence
+- [ ] Web Mode:
+  - PostgreSQL schema and migrations
+  - Redis caching layer
+  - API rate limiting and optimization
+- [ ] Desktop Mode:
+  - Local secure storage structure
+  - Offline data synchronization
+  - Cache management
 
-3. ✅ Enhanced GitHub API Integration
-   - ✅ Repository data fetching with pagination
-   - ✅ Organization data fetching
-   - ✅ Activity data aggregation
-   - ✅ Rate limit handling
-   - [ ] Caching layer with Redis
+### Phase 6: Testing & Deployment
+- [ ] Implement comprehensive testing:
+  - Shared component tests
+  - Web-specific backend tests
+  - Desktop-specific Tauri tests
+- [ ] Set up deployment pipelines:
+  - Web: Server deployment workflow
+  - Desktop: Cross-platform build pipeline
+- [ ] Configure auto-updates for desktop client
 
-### Frontend Tasks
-1. ✅ Project Setup
-   - ✅ Create React application
-   - ✅ Configure TypeScript
-   - ✅ Set up Vite build system
-   - ✅ Configure routing
-   - ✅ Set up Tailwind CSS
+## Feature Milestones
 
-2. [ ] Core UI Components
-   - [ ] Dashboard layout
-   - [ ] Repository list with filtering
-   - [ ] Activity timeline
-   - [ ] Organization view
-   - [ ] Loading states and error handling
+### Core Features (Both Modes)
+- [ ] GitHub repository visualization
+- [ ] Commit activity analytics
+- [ ] PR and Issue tracking
+- [ ] Organization insights
+- [ ] Custom dashboard layouts
 
-3. [ ] API Integration
-   - [ ] API client setup with Axios
-   - [ ] Error handling
-   - [ ] Data fetching hooks
-   - [ ] State management with Redux
-
-## Phase 2: Core Features (Week 3-4)
-
-### Backend Tasks
-1. [ ] Data Processing Pipeline
-   - [ ] Repository data enrichment
-   - [ ] Activity data aggregation
-   - [ ] Organization data processing
-   - [ ] Background job system
-
-2. [ ] Real-time Updates
-   - [ ] WebSocket implementation
-   - [ ] GitHub webhook integration
-   - [ ] Event broadcasting
-   - [ ] Authentication and security
-
-3. [ ] Analytics System
-   - [ ] Commit activity analysis
-   - [ ] Issue/PR tracking
-   - [ ] Organization metrics
-   - [ ] Custom report generation
-
-### Frontend Tasks
-1. [ ] Dashboard Features
-   - [ ] Repository activity visualization
-   - [ ] Organization overview
-   - [ ] Custom report builder
-   - [ ] Data export functionality
-
-2. [ ] Real-time Updates
-   - [ ] WebSocket connection
-   - [ ] Live activity feed
-   - [ ] Notification system
-   - [ ] Error recovery
-
-3. [ ] Analytics Visualization
-   - [ ] Commit activity charts
-   - [ ] Issue/PR trends
-   - [ ] Organization metrics
-   - [ ] Custom report views
-
-## Phase 3: Premium Features (Week 5-6)
-
-### Backend Tasks
-1. [ ] SaaS Infrastructure
-   - [ ] Multi-tenant support
-   - [ ] User management
-   - [ ] Subscription handling
-   - [ ] Usage tracking
-
-2. [ ] Advanced Analytics
-   - [ ] Machine learning insights
-   - [ ] Predictive analytics
-   - [ ] Custom metric support
-   - [ ] Advanced filtering
-
-3. [ ] Performance Optimization
-   - [ ] Query optimization
-   - [ ] Caching improvements
-   - [ ] Rate limiting
-   - [ ] Load testing
-
-### Frontend Tasks
-1. [ ] Premium Features
-   - [ ] Organization dashboard
-   - [ ] Advanced analytics
-   - [ ] Custom reports
-   - [ ] Real-time updates
-
-2. [ ] User Management
-   - [ ] Authentication flow
-   - [ ] Subscription management
-   - [ ] User preferences
-   - [ ] Team collaboration
-
-## Phase 4: Deployment and Monitoring (Week 7-8)
-
-### Infrastructure Tasks
-1. [ ] Deployment Setup
-   - [ ] CI/CD pipeline
-   - [ ] Environment configuration
-   - [ ] Database setup
-   - [ ] SSL configuration
-   - [ ] Load balancing
-
-2. [ ] Monitoring Setup
-   - [ ] Logging system
-   - [ ] Metrics collection
-   - [ ] Alerting system
-   - [ ] Performance monitoring
-   - [ ] Usage analytics
-
-3. [ ] Security and Compliance
-   - [ ] Security audit
-   - [ ] Data encryption
-   - [ ] Access control
-   - [ ] Compliance checks
-   - [ ] Backup strategy
-
-### Documentation Tasks
-1. [ ] User Documentation
-   - [ ] Setup guide
-   - [ ] User manual
-   - [ ] API documentation
-   - [ ] Troubleshooting guide
-   - [ ] Premium features guide
-
-2. [ ] Developer Documentation
-   - [ ] Architecture overview
-   - [ ] Development guide
-   - [ ] Deployment guide
-   - [ ] Contributing guide
-   - [ ] API reference
-
-## Progress Tracking
-
-### Week 1 (Current)
-- ✅ Backend database schema
-- ✅ Basic API endpoints
-- ✅ Error handling middleware
-- ✅ Health check endpoint
-- ✅ Frontend project setup
-- [ ] GitHub API integration
-
-### Week 2
-- [ ] Enhanced GitHub API integration
-- [ ] Frontend API integration
-- [ ] Basic analytics
-- [ ] Initial testing
-
-### Week 3
-- [ ] Data processing pipeline
+### Web-Specific Features
 - [ ] Real-time updates
-- [ ] Basic visualizations
-- [ ] Performance optimization
+- [ ] Multi-user collaboration
+- [ ] Extended data retention
+- [ ] API usage analytics
 
-### Week 4
-- [ ] Advanced analytics
-- [ ] Premium features
-- [ ] Security enhancements
-- [ ] Testing coverage
+### Desktop-Specific Features
+- [ ] Offline mode
+- [ ] Logseq note integration
+- [ ] Local data backup
+- [ ] System notifications
+- [ ] Graph visualization
 
-### Week 5
-- [ ] SaaS infrastructure
-- [ ] User management
-- [ ] Subscription system
-- [ ] Advanced monitoring
+## Technical Requirements
 
-### Week 6
-- [ ] Documentation completion
-- [ ] Performance testing
-- [ ] Security audit
-- [ ] Final polish
+### Web Application
+- Rust + Actix-web backend
+- PostgreSQL database
+- Redis caching
+- GitHub OAuth integration
 
-## Notes
-- Each task should have clear acceptance criteria
-- Regular progress reviews every week
-- Adjust timeline based on actual progress
-- Prioritize core features for MVP
-- Maintain documentation as features are implemented
-- Focus on scalability for premium features
-- Ensure security best practices throughout development
+### Desktop Application
+- Tauri v1.6+
+- Secure local storage
+- Octokit/REST API
+- Logseq integration
+
+### Shared Components
+- React frontend
+- TypeScript
+- Chart.js visualizations
+- TailwindCSS styling
+
+## Release Strategy
+
+### 1.0 Release (Web)
+- Core dashboard functionality
+- GitHub OAuth integration
+- Basic analytics and visualization
+
+### 1.5 Release (Desktop Beta)
+- Initial Tauri desktop client
+- Basic offline capabilities
+- Logseq integration prototype
+
+### 2.0 Release (Hybrid)
+- Full hybrid functionality
+- Seamless mode switching
+- Complete feature parity where applicable
+
+## Maintenance Goals
+- Regular security updates
+- Performance optimization
+- User feedback integration
+- Feature parity maintenance
+- Cross-platform compatibility

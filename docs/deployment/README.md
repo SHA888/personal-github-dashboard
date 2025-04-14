@@ -1,252 +1,249 @@
 # Deployment Guide
 
-This guide provides instructions for deploying the GitHub Dashboard on a VPS, with a focus on resource efficiency and optimal performance.
+This guide provides comprehensive instructions for deploying the Personal GitHub Dashboard in a production environment.
 
 ## Prerequisites
 
-### VPS Requirements
-- Ubuntu 20.04+ or similar Linux distribution
-- 1GB RAM minimum (2GB recommended)
-- 10GB storage
-- Root access or sudo privileges
+- Docker and Docker Compose
+- Domain name with SSL certificate
+- PostgreSQL 15+ database server
+- Redis 7+ server
+- Node.js 18+ (for build process)
+- Rust 1.75+ (for build process)
 
-### Software Requirements
-- Nginx
-- PostgreSQL
-- Node.js (for frontend)
-- Rust toolchain (for backend)
-- Certbot (for SSL)
+## Environment Configuration
 
-## Deployment Steps
+### Backend Environment Variables
 
-### 1. System Setup
+Create a `.env` file in the backend directory:
 
-```bash
-# Update system
-sudo apt update
-sudo apt upgrade -y
+```env
+# Server Configuration
+PORT=3000
+HOST=0.0.0.0
+RUST_LOG=info
+RUST_BACKTRACE=1
 
-# Install required packages
-sudo apt install -y nginx postgresql certbot python3-certbot-nginx
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost:5432/personal_github_dashboard
+DATABASE_POOL_SIZE=5
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+REDIS_POOL_SIZE=5
+
+# GitHub Configuration
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+GITHUB_CALLBACK_URL=https://your-domain.com/api/auth/github/callback
+
+# Security
+JWT_SECRET=your_secure_jwt_secret
+CORS_ORIGIN=https://your-domain.com
 ```
 
-### 2. Database Setup
+### Frontend Environment Variables
 
-```bash
-# Create database and user
-sudo -u postgres psql
-CREATE DATABASE github_dashboard;
-CREATE USER dashboard WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE github_dashboard TO dashboard;
+Create a `.env` file in the frontend directory:
+
+```env
+VITE_API_URL=https://your-domain.com/api
+VITE_WS_URL=wss://your-domain.com/ws
+VITE_GITHUB_CLIENT_ID=your_client_id
 ```
 
-### 3. Backend Deployment
+## Build Process
 
-```bash
-# Build release binary
-cd backend
-cargo build --release
+1. Build the frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
 
-# Create systemd service
-sudo nano /etc/systemd/system/github-dashboard.service
-```
+2. Build the backend:
+   ```bash
+   cd backend
+   cargo build --release
+   ```
 
-Service file content:
-```ini
-[Unit]
-Description=GitHub Dashboard Backend
-After=network.target
+## Database Setup
 
-[Service]
-User=www-data
-Group=www-data
-WorkingDirectory=/opt/github-dashboard/backend
-ExecStart=/opt/github-dashboard/backend/target/release/backend
-Restart=always
-Environment=RUST_LOG=info
-Environment=DATABASE_URL=postgresql://dashboard:secure_password@localhost/github_dashboard
+1. Create the production database:
+   ```bash
+   sqlx database create
+   ```
 
-[Install]
-WantedBy=multi-user.target
-```
+2. Run migrations:
+   ```bash
+   sqlx migrate run
+   ```
 
-### 4. Frontend Deployment
+## Docker Deployment
 
-```bash
-# Build production bundle
-cd frontend
-npm install
-npm run build
+1. Build the Docker images:
+   ```bash
+   docker-compose -f docker-compose.prod.yml build
+   ```
 
-# Copy to Nginx directory
-sudo cp -r build/* /var/www/github-dashboard/
-```
+2. Start the services:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
 
-### 5. Nginx Configuration
+## Nginx Configuration
 
-```bash
-# Create Nginx configuration
-sudo nano /etc/nginx/sites-available/github-dashboard
-```
+Example Nginx configuration for reverse proxy:
 
-Nginx configuration:
 ```nginx
 server {
-    listen 80;
+    listen 443 ssl http2;
     server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
 
     # Frontend
     location / {
-        root /var/www/github-dashboard;
+        root /var/www/personal-github-dashboard;
         try_files $uri $uri/ /index.html;
     }
 
     # Backend API
     location /api {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
+
+    # WebSocket
+    location /ws {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
 }
 ```
 
-### 6. SSL Setup
+## Monitoring & Logging
 
-```bash
-# Obtain SSL certificate
-sudo certbot --nginx -d your-domain.com
-```
+### Application Monitoring
 
-## Resource Optimization
+1. Set up Prometheus metrics endpoint:
+   - Backend metrics available at `/metrics`
+   - Configure Prometheus to scrape this endpoint
 
-### Backend Optimization
+2. Configure logging:
+   - Backend logs to stdout/stderr
+   - Use docker logging driver or external logging service
 
-1. **Memory Usage**
-   - Monitor with `htop`
-   - Set appropriate worker count
-   - Configure connection pooling
+### Health Checks
 
-2. **Database Optimization**
-   - Regular vacuuming
-   - Appropriate indexes
-   - Query optimization
+- Backend health check endpoint: `/api/health`
+- Database health check: `/api/health/db`
+- Redis health check: `/api/health/redis`
 
-3. **Caching Strategy**
-   - Implement response caching
-   - Use memory-efficient cache
-   - Set appropriate TTLs
+## Backup Procedures
 
-### Frontend Optimization
+### Database Backups
 
-1. **Asset Optimization**
-   - Enable gzip compression
-   - Use CDN for static assets
-   - Implement browser caching
-
-2. **Performance Monitoring**
-   - Set up error tracking
-   - Monitor load times
-   - Track resource usage
-
-## Maintenance
-
-### Regular Tasks
-
-1. **System Updates**
+1. Automated daily backups:
    ```bash
-   sudo apt update
-   sudo apt upgrade
+   pg_dump -U user personal_github_dashboard > backup_$(date +%Y%m%d).sql
    ```
 
-2. **Database Maintenance**
-   ```bash
-   sudo -u postgres vacuumdb --analyze github_dashboard
-   ```
+2. Configure backup retention policy:
+   - Keep daily backups for 7 days
+   - Keep weekly backups for 1 month
+   - Keep monthly backups for 1 year
 
-3. **Log Rotation**
-   ```bash
-   sudo nano /etc/logrotate.d/github-dashboard
-   ```
+### Application Data
 
-### Monitoring
+1. Back up environment configuration files
+2. Back up SSL certificates
+3. Back up custom configurations
 
-1. **Resource Usage**
-   - Use `htop` for CPU/memory
-   - Monitor disk space
-   - Check network usage
+## Security Considerations
 
-2. **Application Health**
-   - Check service status
-   - Monitor error logs
-   - Track response times
+1. Enable rate limiting:
+   - Configure in `backend/config/rate_limit.rs`
+   - Adjust limits based on usage patterns
+
+2. Set up firewalls:
+   - Allow only necessary ports (80, 443)
+   - Restrict database access
+
+3. Regular updates:
+   - Keep dependencies updated
+   - Apply security patches promptly
+
+## Scaling Considerations
+
+### Horizontal Scaling
+
+1. Backend scaling:
+   - Use load balancer
+   - Configure session sharing
+   - Scale API servers independently
+
+2. Database scaling:
+   - Configure read replicas
+   - Consider sharding for large datasets
+
+3. Redis scaling:
+   - Set up Redis cluster
+   - Configure persistence
+
+## Maintenance Procedures
+
+### Regular Maintenance
+
+1. Monitor system resources:
+   - CPU usage
+   - Memory usage
+   - Disk space
+   - Network bandwidth
+
+2. Clean up old data:
+   - Archive old logs
+   - Remove unused Docker images
+   - Clean up temporary files
+
+### Updating the Application
+
+1. Create backup before updating
+2. Follow semantic versioning
+3. Test updates in staging environment
+4. Use blue-green deployment for zero downtime
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **High Resource Usage**
-   - Check running processes
-   - Review database queries
-   - Monitor API calls
+1. Connection issues:
+   - Check network connectivity
+   - Verify DNS settings
+   - Check firewall rules
 
-2. **Database Issues**
-   - Check connection limits
-   - Review query performance
-   - Monitor disk space
+2. Performance issues:
+   - Monitor database queries
+   - Check Redis cache hit rate
+   - Review application logs
 
-3. **Application Errors**
-   - Check service logs
-   - Review error tracking
-   - Monitor API responses
+3. Memory issues:
+   - Check container limits
+   - Monitor memory leaks
+   - Review garbage collection
 
-### Recovery Steps
+## Support and Maintenance
 
-1. **Service Restart**
-   ```bash
-   sudo systemctl restart github-dashboard
-   ```
+For production support:
 
-2. **Database Recovery**
-   ```bash
-   sudo -u postgres psql github_dashboard
-   ```
-
-3. **Log Analysis**
-   ```bash
-   sudo journalctl -u github-dashboard
-   ```
-
-## Security Considerations
-
-### System Security
-
-1. **Firewall Configuration**
-   ```bash
-   sudo ufw allow 80
-   sudo ufw allow 443
-   sudo ufw enable
-   ```
-
-2. **Regular Updates**
-   - System packages
-   - Application dependencies
-   - Security patches
-
-### Application Security
-
-1. **Environment Variables**
-   - Secure storage
-   - Limited access
-   - Regular rotation
-
-2. **Access Control**
-   - Rate limiting
-   - Authentication
-   - Authorization
-
-## Conclusion
-
-This deployment guide focuses on efficient resource usage and optimal performance for VPS deployment. Regular maintenance and monitoring are essential for smooth operation.
+1. Check the [GitHub Issues](https://github.com/SHA888/personal-github-dashboard/issues)
+2. Review error logs
+3. Contact maintainers for critical issues

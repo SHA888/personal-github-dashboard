@@ -31,7 +31,7 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 ### Prerequisites
 
 - Node.js 18+
-- Rust 1.70+
+- Rust 1.75+
 - Docker and Docker Compose
 - GitHub API token (for development)
 
@@ -50,41 +50,37 @@ docker-compose up -d
 
 3. Set up environment variables:
 ```bash
-# Frontend
-cp frontend/.env.example frontend/.env
-# Backend
-cp backend/.env.example backend/.env
+# Copy example environment files
+cp .env.example .env
 ```
 
-4. Install frontend dependencies:
+4. Install dependencies:
 ```bash
-cd frontend
+# Install project dependencies
 npm install
-cd ..
 ```
 
-5. Install Rust dependencies and run migrations:
-```bash
-cd backend
-cargo install sqlx-cli
-sqlx database create
-sqlx migrate run
-cd ..
-```
-
-6. Start the development servers:
+5. Start the development servers:
 ```bash
 # Start both frontend and backend
 npm run dev
-
-# Or individually:
-npm run dev:frontend
-npm run dev:backend
 ```
 
 The application will be available at:
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:3000
+
+## Project Structure
+```
+personal-github-dashboard/
+├── backend/        # Rust backend (Actix Web)
+│   ├── src/       # Source code
+│   ├── migrations/# Database migrations
+│   └── .env       # Environment configuration
+├── frontend/      # TypeScript/React frontend
+├── docs/         # Comprehensive documentation
+└── README.md
+```
 
 ## Available Scripts
 
@@ -94,20 +90,21 @@ The application will be available at:
 - `npm run lint` - Run linting for frontend
 - `npm run format` - Format all code with Prettier
 
-## Database Migrations
+## API Endpoints
 
-```bash
-cd backend
+### Health Check
+- `GET /api/health` - Check service health status
 
-# Create a new migration
-sqlx migrate add <migration_name>
+### Analytics
+- `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
+- `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
 
-# Run migrations
-sqlx migrate run
+### Data Synchronization
+- `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync
 
-# Revert last migration
-sqlx migrate revert
-```
+## Documentation
+
+For comprehensive documentation, including setup instructions, architecture details, API reference, and deployment guide, please visit our [Documentation](./docs/README.md).
 
 ## Contributing
 
@@ -116,6 +113,8 @@ sqlx migrate revert
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+Please read our [Development Guide](./docs/development/README.md) for detailed contribution guidelines.
 
 ## License
 

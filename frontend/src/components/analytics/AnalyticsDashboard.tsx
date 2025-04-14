@@ -6,14 +6,6 @@ import ActivityTrends from "./ActivityTrends";
 import AnalyticsLayout from "./AnalyticsLayout";
 import { Filters } from "../../services/api";
 
-const DashboardPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-}));
-
 interface Filters {
   timeRange: string;
   owner: string;

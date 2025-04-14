@@ -69,7 +69,7 @@ cargo build
 #### Environment Configuration
 Create `.env` file in the backend directory:
 ```env
-GITHUB_TOKEN=your_github_personal_access_token
+GITHUB_PERSONAL_ACCESS_TOKEN=your_github_personal_access_token
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/github_dashboard
 PORT=8080
 ```
@@ -106,7 +106,7 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
 1.  **Install Docker and Docker Compose:** Follow the official [Docker documentation](https://docs.docker.com/get-docker/).
 2.  **Create a `.env` file:** In the project root directory, create a file named `.env` and add your GitHub Personal Access Token:
     ```env
-    GITHUB_TOKEN=your_github_personal_access_token
+    GITHUB_PERSONAL_ACCESS_TOKEN=your_github_personal_access_token
     ```
     Ensure this file is added to your `.gitignore`.
 3.  **Run Docker Compose:** Open a terminal in the project root directory and run:

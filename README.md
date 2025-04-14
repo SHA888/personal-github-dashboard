@@ -154,7 +154,7 @@ For comprehensive documentation, including setup instructions, architecture deta
    ```
    - Create a `.env` file in `backend/` with:
      ```
-     GITHUB_TOKEN=your_personal_access_token
+     GITHUB_PERSONAL_ACCESS_TOKEN=your_personal_access_token
      DATABASE_URL=postgresql://user:password@localhost:5432/personal_github_dashboard
      REDIS_URL=redis://localhost:6379
      PORT=8080

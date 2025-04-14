@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/github_dashboard
       REDIS_URL: redis://redis:6379
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}
       PORT: 8080
     depends_on:
       - postgres

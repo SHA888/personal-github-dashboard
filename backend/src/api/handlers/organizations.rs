@@ -105,8 +105,8 @@ pub async fn sync_organization_by_name(
     org_name: web::Path<String>,
 ) -> Result<HttpResponse, AppError> {
     // Get GitHub token from environment
-    let token = std::env::var("GITHUB_TOKEN")
-        .map_err(|_| AppError::InternalError("GITHUB_TOKEN not set".to_string()))?;
+    let token = std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
+        .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
     let api_service = GitHubAPIService::new(token);
@@ -145,8 +145,8 @@ pub async fn sync_organization_by_name(
 }
 
 pub async fn sync_my_organizations(pool: web::Data<DbPool>) -> Result<HttpResponse, AppError> {
-    let token = std::env::var("GITHUB_TOKEN")
-        .map_err(|_| AppError::InternalError("GITHUB_TOKEN not set".to_string()))?;
+    let token = std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
+        .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
     let api_service = GitHubAPIService::new(token);

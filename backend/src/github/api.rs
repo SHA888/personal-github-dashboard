@@ -1,7 +1,7 @@
-use octocrab::models::orgs::Organization;
-use octocrab::models::Author;
-use octocrab::models::Repository;
-use octocrab::{Error as OctocrabError, Octocrab};
+use octocrab::{
+    models::{orgs::Organization, Author, Repository},
+    Error as OctocrabError, Octocrab,
+};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]

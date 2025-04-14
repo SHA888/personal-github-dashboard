@@ -1,8 +1,9 @@
-use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
-use actix_web::Error;
+use actix_web::{
+    dev::{Service, ServiceRequest, ServiceResponse, Transform},
+    Error,
+};
 use futures::future::{ok, Ready};
-use std::future::Future;
-use std::pin::Pin;
+use std::{future::Future, pin::Pin};
 
 pub struct RateLimiter;
 

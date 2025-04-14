@@ -1,8 +1,11 @@
-use crate::db::models::{Organization, Repository};
-use crate::db::DbPool;
-use crate::error::AppError;
-use octocrab::models::orgs::Organization as GitHubOrg;
-use octocrab::models::Repository as GitHubRepo;
+use crate::{
+    db::{
+        models::{Organization, Repository},
+        DbPool,
+    },
+    error::AppError,
+};
+use octocrab::models::{orgs::Organization as GitHubOrg, Repository as GitHubRepo};
 
 #[derive(Clone)]
 pub struct GitHubSyncService {

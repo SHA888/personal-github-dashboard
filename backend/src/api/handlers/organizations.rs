@@ -1,6 +1,9 @@
+#[allow(unused_imports)]
 use crate::db::{DbPool, Organization};
-use crate::error::AppError;
-use crate::github::{GitHubAPIService, GitHubSyncService};
+use crate::{
+    error::AppError,
+    github::{GitHubAPIService, GitHubSyncService},
+};
 use actix_web::{web, HttpResponse};
 use futures::future::join_all;
 use serde::Serialize;
@@ -34,7 +37,18 @@ pub async fn list_organizations(
     let organizations = sqlx::query_as!(
         Organization,
         r#"
-        SELECT * FROM organizations
+        SELECT
+            id,
+            github_id,
+            login,
+            name,
+            description,
+            avatar_url,
+            html_url,
+            created_at,
+            updated_at,
+            last_synced_at
+        FROM organizations
         ORDER BY name ASC NULLS LAST, login ASC
         LIMIT $1 OFFSET $2
         "#,
@@ -61,7 +75,18 @@ pub async fn get_organization(
     let organization = sqlx::query_as!(
         Organization,
         r#"
-        SELECT * FROM organizations
+        SELECT
+            id,
+            github_id,
+            login,
+            name,
+            description,
+            avatar_url,
+            html_url,
+            created_at,
+            updated_at,
+            last_synced_at
+        FROM organizations
         WHERE id = $1
         "#,
         id.into_inner()

@@ -1,5 +1,7 @@
-use crate::db::{DbPool, Repository};
-use crate::error::AppError;
+use crate::{
+    db::{DbPool, Repository},
+    error::AppError,
+};
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
 

@@ -1,6 +1,8 @@
-use crate::db::{DbPool, Repository};
-use crate::error::AppError;
-use crate::github::{GitHubAPIService, GitHubSyncService};
+use crate::{
+    db::{DbPool, Repository},
+    error::AppError,
+    github::{GitHubAPIService, GitHubSyncService},
+};
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
 

@@ -16,12 +16,10 @@
     "test:backend": "cd backend && cargo test",
     "lint": "npm run lint:frontend",
     "lint:frontend": "cd frontend && npm run lint",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "prepare": "husky install"
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "husky": "^8.0.0",
     "prettier": "^3.0.0",
     "task-master-ai": "^0.11.1"
   },

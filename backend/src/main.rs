@@ -13,6 +13,7 @@ use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 use utils::config::Config;
+use reqwest::Client;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -32,6 +33,12 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to create pool");
 
+    // Initialize HTTP client
+    let http_client = Client::builder()
+        .cookie_store(true) // Enable cookie handling if needed later
+        .build()
+        .expect("Failed to create HTTP client");
+
     // Get port from configuration
     let bind_addr = format!("127.0.0.1:{}", config.port);
 
@@ -45,14 +52,17 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header();
 
         let app_config = config.clone(); // Clone config for use in the closure
+        let db_pool_clone = db_pool.clone();
+        let http_client_clone = http_client.clone();
 
         App::new()
             .wrap(cors)
             .wrap(middleware::logging::RequestLogger::default())
             .wrap(middleware::error_handler::ErrorHandler::default())
             .configure(routes::configure)
-            .app_data(db_pool.clone())
+            .app_data(db_pool_clone)
             .app_data(actix_web::web::Data::new(app_config)) // Add config as app data
+            .app_data(actix_web::web::Data::new(http_client_clone)) // Add Reqwest client
     })
     .bind(&bind_addr)?
     .run()

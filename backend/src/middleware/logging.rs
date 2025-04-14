@@ -58,12 +58,7 @@ where
 
         Box::pin(async move {
             let res = fut.await?;
-            log::info!(
-                "{} {} - {}",
-                method,
-                uri,
-                res.response().status().as_u16()
-            );
+            log::info!("{} {} - {}", method, uri, res.response().status().as_u16());
             Ok(res)
         })
     }

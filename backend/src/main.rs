@@ -1,15 +1,15 @@
-mod models;
-mod routes;
+mod api;
+mod db;
+mod error;
+mod github;
 mod handlers;
 mod middleware;
+mod models;
+mod routes;
 mod utils;
-mod error;
-mod db;
-mod api;
-mod github;
 
-use actix_web::{App, HttpServer};
 use actix_cors::Cors;
+use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 

@@ -1,9 +1,9 @@
 // Routes module for API endpoint definitions
 
 pub mod auth;
-pub mod repositories;
-pub mod notifications;
 pub mod metrics;
+pub mod notifications;
+pub mod repositories;
 
 use actix_web::web;
 

@@ -71,7 +71,7 @@ impl GitHubAPIService {
     pub async fn list_my_repositories(&self) -> Result<Vec<Repository>, OctocrabError> {
         let mut repos = Vec::new();
         let mut page = 1u8;
-        
+
         loop {
             let response = self
                 .client

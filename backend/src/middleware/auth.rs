@@ -53,8 +53,6 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // TODO: Implement authentication logic
         let fut = self.service.call(req);
-        Box::pin(async move {
-            fut.await
-        })
+        Box::pin(async move { fut.await })
     }
 }

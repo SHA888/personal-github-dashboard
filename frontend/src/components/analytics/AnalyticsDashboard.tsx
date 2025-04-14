@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Box, Grid, Paper, Typography, CircularProgress } from "@mui/material";
+import { Box } from '@mui/material';
+import { Grid, Paper, Typography, CircularProgress } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import RepositoryActivity from "./RepositoryActivity";
 import ActivityTrends from "./ActivityTrends";

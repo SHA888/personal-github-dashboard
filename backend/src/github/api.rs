@@ -67,4 +67,28 @@ impl GitHubAPIService {
 
         Ok(first_page.items)
     }
+
+    pub async fn list_my_repositories(&self) -> Result<Vec<Repository>, OctocrabError> {
+        let mut repos = Vec::new();
+        let mut page = 1u8;
+        
+        loop {
+            let response = self
+                .client
+                .current()
+                .list_repos_for_authenticated_user()
+                .per_page(100)
+                .page(page)
+                .send()
+                .await?;
+
+            let mut page_repos = response.items;
+            if page_repos.is_empty() {
+                break;
+            }
+            repos.append(&mut page_repos);
+            page = page.saturating_add(1);
+        }
+        Ok(repos)
+    }
 }

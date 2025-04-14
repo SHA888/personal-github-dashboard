@@ -1,4 +1,4 @@
-mod api;
+// mod api;
 mod db;
 mod error;
 mod github;
@@ -11,9 +11,9 @@ mod utils;
 use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
+use reqwest::Client;
 use std::env;
 use utils::config::Config;
-use reqwest::Client;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -49,7 +49,8 @@ async fn main() -> std::io::Result<()> {
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
-            .allow_any_header();
+            .allow_any_header()
+            .supports_credentials(); // Enable credentials for auth cookies
 
         let app_config = config.clone(); // Clone config for use in the closure
         let db_pool_clone = db_pool.clone();
@@ -59,6 +60,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(middleware::logging::RequestLogger::default())
             .wrap(middleware::error_handler::ErrorHandler::default())
+            .wrap(middleware::auth::AuthMiddleware::default()) // Add auth middleware
             .configure(routes::configure)
             .app_data(db_pool_clone)
             .app_data(actix_web::web::Data::new(app_config)) // Add config as app data

@@ -1,6 +1,10 @@
+use crate::{
+    error::AppError,
+    utils::{config::Config, jwt},
+};
 use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
-    Error,
+    Error, HttpMessage,
 };
 use futures::future::{ok, Ready};
 use std::{future::Future, pin::Pin};
@@ -52,8 +56,75 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // TODO: Implement authentication logic
-        let fut = self.service.call(req);
-        Box::pin(async move { fut.await })
+        // Skip auth for public endpoints
+        if is_public_route(req.path()) {
+            let fut = self.service.call(req);
+            return Box::pin(async move { fut.await });
+        }
+
+        // Get JWT from cookie
+        let token = match get_token_from_request(&req) {
+            Some(token) => token,
+            None => {
+                return Box::pin(async move {
+                    Err(Error::from(AppError::Unauthorized(
+                        "No authentication token provided".to_string(),
+                    )))
+                });
+            }
+        };
+
+        // Get config from app data
+        let config = match req.app_data::<actix_web::web::Data<Config>>() {
+            Some(config) => config,
+            None => {
+                return Box::pin(async move {
+                    Err(Error::from(AppError::InternalError(
+                        "Server configuration not found".to_string(),
+                    )))
+                });
+            }
+        };
+
+        // Validate JWT
+        match jwt::validate_token(&token, &config.jwt_secret) {
+            Ok(claims) => {
+                // Add validated user ID to request extensions
+                req.extensions_mut().insert(claims);
+                let fut = self.service.call(req);
+                Box::pin(async move { fut.await })
+            }
+            Err(e) => Box::pin(async move { Err(Error::from(e)) }),
+        }
     }
+}
+
+// Helper function to get token from cookie or Authorization header
+fn get_token_from_request(req: &ServiceRequest) -> Option<String> {
+    // First try to get from cookie
+    if let Some(cookie) = req.cookie("auth_token") {
+        return Some(cookie.value().to_string());
+    }
+
+    // Then try Authorization header
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        let auth_str = auth_header.to_str().ok()?;
+        if auth_str.starts_with("Bearer ") {
+            return Some(auth_str[7..].to_string());
+        }
+    }
+
+    None
+}
+
+// Helper function to identify public routes that don't need auth
+fn is_public_route(path: &str) -> bool {
+    const PUBLIC_ROUTES: [&str; 4] = [
+        "/api/v1/health",
+        "/api/v1/auth/github",
+        "/api/v1/auth/github/callback",
+        "/api/v1/auth/logout",
+    ];
+
+    PUBLIC_ROUTES.iter().any(|route| path.starts_with(route))
 }

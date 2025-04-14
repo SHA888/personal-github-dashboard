@@ -81,4 +81,4 @@ pub async fn get_user(
         Some(user) => Ok(HttpResponse::Ok().json(user)),
         None => Err(AppError::NotFound("User not found".to_string())),
     }
-} 
+}

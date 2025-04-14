@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod github;
+pub mod jwt;
 pub mod time;
 pub mod validation;
 

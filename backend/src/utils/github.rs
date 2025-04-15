@@ -1,3 +1,4 @@
+#![allow(dead_code)] // Allow dead code for now
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 
@@ -25,4 +26,6 @@ impl GithubClient {
             .json::<T>()
             .await
     }
+
+    // Add more methods for POST, PATCH, etc., as needed
 }

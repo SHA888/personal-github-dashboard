@@ -56,8 +56,8 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // Check if the route is public
-        if self.is_public_route(&req) {
+        // Check if the route is public by calling the helper function
+        if is_public_route(req.path()) {
             return Box::pin(self.service.call(req));
         }
 

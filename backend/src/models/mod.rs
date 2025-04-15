@@ -4,8 +4,12 @@ mod notification;
 mod repository;
 mod user;
 
-pub use notification::{
-    Notification, NotificationFrequency, NotificationSettings, NotificationType,
+#[allow(unused_imports)] pub use notification::{
+    Notification, NotificationSettings,
+    NotificationType, NotificationFrequency,
 };
-pub use repository::{/* Repository, */ RepositoryMetrics, RepositoryMetricsAggregation};
-pub use user::User;
+#[allow(unused_imports)] pub use repository::{ // Removed unused Repository import
+    /* Repository, */ RepositoryMetrics,
+    RepositoryMetricsAggregation,
+};
+#[allow(unused_imports)] pub use user::User;

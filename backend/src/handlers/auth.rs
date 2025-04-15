@@ -266,7 +266,8 @@ pub async fn get_current_user(
     // Get user ID from claims first to avoid holding RefCell across await
     let user_id = {
         let extensions = req.extensions();
-        let claims = extensions.get::<jwt::Claims>()
+        let claims = extensions
+            .get::<jwt::Claims>()
             .ok_or_else(|| AppError::Unauthorized("Missing JWT claims".to_string()))?;
         claims.sub // Assuming `sub` field holds the user ID (Uuid)
     };

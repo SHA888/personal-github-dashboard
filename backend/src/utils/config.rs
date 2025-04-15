@@ -13,6 +13,8 @@ pub struct Config {
     // JWT Configuration
     pub jwt_secret: String,
     pub jwt_expires_in: String,
+    // Frontend Configuration
+    pub frontend_url: String,
 }
 
 impl Config {
@@ -29,6 +31,8 @@ impl Config {
             // JWT Configuration
             jwt_secret: env::var("JWT_SECRET")?,
             jwt_expires_in: env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string()),
+            // Frontend Configuration
+            frontend_url: env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string()),
         })
     }
 
@@ -47,6 +51,9 @@ impl Config {
             || self.jwt_secret == "generate_a_strong_random_secret_replace_this"
         {
             return Err("JWT_SECRET is not properly set".to_string());
+        }
+        if self.frontend_url.is_empty() {
+            return Err("FRONTEND_URL is not properly set".to_string());
         }
         Ok(())
     }

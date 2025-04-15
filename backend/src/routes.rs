@@ -14,6 +14,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             )
             .route("/auth/logout", web::post().to(handlers::auth::logout))
             .route("/auth/test", web::get().to(handlers::auth::test_auth))
+            .route("/auth/me", web::get().to(handlers::auth::get_current_user))
             // User Routes
             .route("/users", web::get().to(handlers::users::list_users))
             .route("/users/{id}", web::get().to(handlers::users::get_user))

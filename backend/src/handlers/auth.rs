@@ -6,6 +6,8 @@ use actix_web::{web, HttpMessage, HttpResponse};
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json;
+use rand::{thread_rng, Rng};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 
 // --- Structs for GitHub API Responses ---
 #[derive(Deserialize, Debug)]
@@ -28,26 +30,64 @@ struct GitHubUserResponse {
 
 // Handler to initiate the GitHub OAuth login flow
 pub async fn github_login(config: web::Data<Config>) -> Result<HttpResponse, AppError> {
-    // TODO: Add CSRF protection using the state parameter
+    // Generate random state parameter for CSRF protection
+    let mut rng = thread_rng();
+    let state: [u8; 32] = rng.gen();
+    let state = URL_SAFE_NO_PAD.encode(state);
+
+    // Create state cookie
+    let state_cookie = actix_web::cookie::Cookie::build("oauth_state", &state)
+        .path("/")
+        .http_only(true)
+        .secure(config.github_callback_url.starts_with("https"))
+        .max_age(actix_web::cookie::time::Duration::minutes(10))
+        .finish();
+
     let auth_url = format!(
-        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=read:user,user:email", // Added user:email scope
+        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=read:user,user:email&state={}", 
         config.github_client_id,
-        config.github_callback_url
+        config.github_callback_url,
+        state
     );
+
     Ok(HttpResponse::Found()
+        .cookie(state_cookie)
         .append_header(("Location", auth_url))
         .finish())
+}
+
+#[derive(serde::Deserialize)]
+pub struct CallbackQuery {
+    code: String,
+    state: String,
 }
 
 // Handler for the GitHub OAuth callback
 pub async fn github_callback(
     query: web::Query<CallbackQuery>,
+    req: actix_web::HttpRequest,
     config: web::Data<Config>,
     pool: web::Data<DbPool>,
-    http_client: web::Data<Client>, // Inject Reqwest client
+    http_client: web::Data<Client>,
 ) -> Result<HttpResponse, AppError> {
+    // Verify state parameter
+    let state_cookie = req.cookie("oauth_state").ok_or_else(|| {
+        AppError::Unauthorized("Missing state cookie".to_string())
+    })?;
+
+    if query.state != state_cookie.value() {
+        return Err(AppError::Unauthorized("Invalid state parameter".to_string()));
+    }
+
+    // Clear the state cookie
+    let expired_state_cookie = actix_web::cookie::Cookie::build("oauth_state", "")
+        .path("/")
+        .http_only(true)
+        .secure(config.github_callback_url.starts_with("https"))
+        .max_age(actix_web::cookie::time::Duration::ZERO)
+        .finish();
+
     let code = &query.code;
-    // TODO: Verify the state parameter (if used)
 
     // --- 1. Exchange code for access token ---
     let token_response = request_github_token(code, &config, &http_client).await?;
@@ -58,33 +98,32 @@ pub async fn github_callback(
     // --- 3. Upsert user in database ---
     let user = upsert_user(&pool, &github_user).await?;
 
-    // --- 4. Generate JWT (Using utils::jwt) ---
+    // --- 4. Generate JWT ---
     let jwt_token = jwt::create_token(
-        user.id, // Use the user's database UUID
+        user.id,
         &config.jwt_secret,
         &config.jwt_expires_in,
     )?;
 
-    // --- 5. Set JWT in secure cookie (Subtask 2.6) ---
-    // TODO: Add cookie expiration based on JWT expiration
-    let cookie = actix_web::cookie::Cookie::build("auth_token", jwt_token)
+    // Parse JWT expiration for cookie
+    let jwt_duration = jwt::parse_duration(&config.jwt_expires_in)
+        .ok_or_else(|| AppError::InternalError("Invalid JWT expiration format".to_string()))?;
+    
+    // --- 5. Set JWT in secure cookie with matching expiration ---
+    let auth_cookie = actix_web::cookie::Cookie::build("auth_token", jwt_token)
         .path("/")
         .http_only(true)
-        .secure(config.github_callback_url.starts_with("https")) // Set Secure flag based on callback URL
+        .secure(config.github_callback_url.starts_with("https"))
+        .max_age(actix_web::cookie::time::Duration::seconds(jwt_duration.num_seconds()))
         .finish();
 
     // --- 6. Redirect back to frontend ---
-    let frontend_dashboard_url = "/"; // Consider making this configurable
+    let frontend_dashboard_url = &config.frontend_url;
     Ok(HttpResponse::Found()
-        .cookie(cookie)
+        .cookie(expired_state_cookie)
+        .cookie(auth_cookie)
         .append_header(("Location", frontend_dashboard_url))
         .finish())
-}
-
-#[derive(serde::Deserialize)]
-pub struct CallbackQuery {
-    code: String,
-    // state: Option<String>, // Optional: Add state for CSRF protection
 }
 
 // --- Helper Functions ---
@@ -202,4 +241,33 @@ pub async fn test_auth(req: actix_web::HttpRequest) -> HttpResponse {
         "message": "You are authenticated!",
         "user_id": claims.sub.to_string()
     }))
+}
+
+// Get current user information
+pub async fn get_current_user(
+    req: actix_web::HttpRequest,
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, AppError> {
+    // Get claims from request extensions (set by auth middleware)
+    let extensions = req.extensions();
+    let claims = extensions.get::<jwt::Claims>().unwrap();
+
+    // Fetch user from database
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT id, github_id, login, name, email, avatar_url, html_url, created_at, updated_at, last_synced_at
+        FROM users
+        WHERE id = $1
+        "#,
+        claims.sub
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| match e {
+        sqlx::Error::RowNotFound => AppError::NotFound("User not found".to_string()),
+        _ => AppError::DatabaseError(format!("Failed to fetch user: {}", e)),
+    })?;
+
+    Ok(HttpResponse::Ok().json(user))
 }

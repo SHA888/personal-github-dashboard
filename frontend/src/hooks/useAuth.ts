@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User } from '../types/user';
+import { useQuery } from 'react-query';
 
 interface AuthState {
     isAuthenticated: boolean;
@@ -78,9 +79,16 @@ export const useAuth = () => {
         checkAuth();
     }, []);
 
+    const { data: user, isLoading: queryLoading } = useQuery(['user'], () => getCurrentUser(), {
+        retry: false,
+        onError: () => {
+            // Handle error silently - user is not authenticated
+        }
+    });
+
     return {
         ...state,
         logout,
         checkAuth,
     };
-}; 
+};

@@ -64,4 +64,4 @@ export const AuthButtons: React.FC = () => {
             Login with GitHub
         </Button>
     );
-}; 
+};

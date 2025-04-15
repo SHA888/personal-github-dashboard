@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, LinearProgress, Grid } from "@mui/material";
+import { Box, Typography, LinearProgress, Grid, CircularProgress } from "@mui/material";
 import RepositoryActivity from "./RepositoryActivity";
 import ActivityTrends from "./ActivityTrends";
 import AnalyticsLayout from "./AnalyticsLayout";
 import { apiService } from "../../services/api";
+import { useQuery } from "react-query";
 
 interface Filters {
   timeRange: string;
@@ -17,6 +18,11 @@ const AnalyticsDashboard: React.FC = () => {
     timeRange: "7d",
     repo: "all",
   });
+
+  const { data: activityResponse, isLoading: isActivityLoading } = useQuery(
+    ['activity'],
+    () => apiService.getRepositoryActivity(filters.owner, filters.repo)
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +42,10 @@ const AnalyticsDashboard: React.FC = () => {
 
     fetchData();
   }, [filters.owner, filters.repo]);
+
+  if (isActivityLoading) {
+    return <CircularProgress />;
+  }
 
   if (loading) {
     return (
@@ -62,6 +72,8 @@ const AnalyticsDashboard: React.FC = () => {
       </Box>
     );
   }
+
+  const activityData = activityResponse?.data || [];
 
   return (
     <AnalyticsLayout>

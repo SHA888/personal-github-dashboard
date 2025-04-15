@@ -99,7 +99,7 @@ export interface RepositoriesResponse {
 interface ApiResponse<T> {
   data: T;
   status: number;
-  statusText: string;
+  message?: string;
 }
 
 interface ErrorResponse {
@@ -234,8 +234,13 @@ class ApiService {
     return {
       data,
       status: response.status,
-      statusText: response.statusText,
+      message: response.statusText,
     };
+  }
+
+  async getOrganizations(): Promise<ApiResponse<Organization[]>> {
+    // Implementation needed
+    throw new Error("Method not implemented");
   }
 }
 

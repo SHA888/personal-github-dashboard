@@ -27,7 +27,7 @@ interface Filters {
   repo: string;
 }
 
-interface ActivityData {
+interface ActivityDataPoint {
   date: string;
   commits: number;
   additions: number;
@@ -39,7 +39,7 @@ interface RepositoryActivityProps {
 }
 
 const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
-  const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const [activityData, setActivityData] = useState<ActivityDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEmptyRepo, setIsEmptyRepo] = useState(false);
@@ -55,7 +55,7 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
           filters.owner,
           filters.repo,
         );
-        setActivityData(response.data as ActivityData[]);
+        setActivityData(response.data as ActivityDataPoint[]);
       } catch (err: any) {
         console.error("Error fetching activity data:", err);
         setError(err.message);
@@ -114,16 +114,16 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
   }
 
   const dailyActivityChartData = {
-    labels: activityData.map((data: ActivityData) => data.date),
+    labels: activityData.map((data: ActivityDataPoint) => data.date),
     datasets: [
       {
         label: "Total Activity",
-        data: activityData.map((data: ActivityData) => data.commits),
+        data: activityData.map((data: ActivityDataPoint) => data.commits),
         backgroundColor: "rgba(75, 192, 192, 0.6)",
       },
       {
         label: "Commits",
-        data: activityData.map((data: ActivityData) => data.commits),
+        data: activityData.map((data: ActivityDataPoint) => data.commits),
         backgroundColor: "rgba(255, 99, 132, 0.6)",
       },
     ],

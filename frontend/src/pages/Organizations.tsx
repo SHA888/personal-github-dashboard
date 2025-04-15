@@ -19,20 +19,16 @@ import {
   ExpandMore,
 } from "@mui/icons-material";
 import { apiService } from "../services/api";
+import { Organization } from '../types/organization';
 
 interface Repository {
   owner: string;
   name: string;
 }
 
-interface Organization {
-  id: number;
-  login: string;
-  description: string | null;
-  avatar_url: string;
-  html_url: string;
-  repos_url: string;
-  type: string;
+interface ApiError {
+  message: string;
+  status: number;
 }
 
 const Organizations: React.FC = () => {
@@ -48,9 +44,10 @@ const Organizations: React.FC = () => {
         const response = await apiService.getOrganizations();
         setOrganizations(response.data as Organization[]);
         setError(null);
-      } catch (err: any) {
-        console.error("Error fetching organizations:", err);
-        setError(err.message || "Failed to load organizations");
+      } catch (err: unknown) {
+        const error = err as ApiError;
+        console.error('Error fetching organizations:', error);
+        setError(error.message || 'Failed to fetch organizations');
       } finally {
         setLoading(false);
       }

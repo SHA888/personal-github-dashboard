@@ -1,89 +1,180 @@
 # Personal GitHub Dashboard - Product Requirements Document
 
 ## Overview
-A personalized dashboard that provides insights and analytics for GitHub repositories and activities.
+A hybrid application that provides insights and analytics for GitHub repositories and activities, available in both web and desktop modes. The application leverages modern web technologies for the browser-based version while offering enhanced offline capabilities and system integration through a Tauri-based desktop client.
 
-## Core Features
+## Core Features (Both Modes)
 
-### 1. Repository Overview
-- Display a list of user's repositories
-- Show key metrics for each repository (stars, forks, issues, PRs)
-- Sort and filter repositories by different criteria
-- Quick access to repository settings and actions
+### 1. Repository Management
+- Display comprehensive list of user's repositories (owned and collaborated)
+- Show key metrics for each repository:
+  - Stars, forks, issues count
+  - Pull request statistics
+  - Language distribution
+  - Contribution graphs
+  - Code frequency charts
+- Advanced search and filtering capabilities
+- Quick access to repository actions
+- Repository health monitoring
+- Language usage analytics
 
-### 2. Activity Analytics
-- Visualize contribution patterns
-- Track issue and PR response times
-- Monitor fork and star trends
-- Display commit frequency heatmap
+### 2. Organization Features
+- Organization membership overview
+- Team memberships and access levels
+- Organization repository list
+- Organization activity feed
+- Multi-organization support
+- Organization-wide statistics
 
-### 3. Notification Center
-- Aggregate notifications from all repositories
-- Filter notifications by type and repository
-- Mark notifications as read/unread
-- Custom notification rules
+### 3. Analytics and Insights
+- Contribution analytics and patterns
+- Code frequency visualization
+- Commit history analysis
+- Language usage statistics
+- Activity heatmaps
+- Issue resolution metrics
+- PR merge rate analysis
+- Repository growth trends
 
-### 4. Performance Metrics
-- Repository health scores
-- Code quality metrics
-- CI/CD pipeline status
-- Dependencies status and updates
+### 4. User Interface
+- Material Design components
+- Dark/light theme support
+- Customizable dashboard layouts
+- Responsive data tables
+- Interactive charts and graphs
+- Custom widget support
+
+## Mode-Specific Features
+
+### Web Mode Features
+- Real-time updates via WebSocket
+- Live notification updates
+- Dynamic data refresh
+- Multi-device access
+- Shared dashboards
+- Team collaboration tools
+- API rate limit pooling
+- Webhook support
+
+### Desktop Mode Features
+- Offline support with local data storage
+- Native system notifications
+- System tray integration
+- Auto-start capability
+- Local caching
+- Background synchronization
+- Reduced API calls
+- Logseq integration:
+  - Automatic note creation
+  - Repository documentation linking
+  - Knowledge graph integration
+  - Bi-directional linking
+  - Tag synchronization
 
 ## Technical Requirements
 
-### Frontend
-- Vite + React.js with TypeScript
+### Frontend (Shared)
+- Vite + React with TypeScript
+- Material-UI components
 - Tailwind CSS for styling
-- Chart.js or D3.js for visualizations
-- React Query for data fetching
-- Vitest for testing
+- React Query for data management
+- Chart.js for visualizations
+- Jest for testing
+- WebSocket support
 
-### Backend
-- Rust with Actix-web framework
-- SQLx for type-safe SQL queries
-- PostgreSQL database
+### Backend Architecture
+#### Web Mode
+- Rust with Actix-web
+- PostgreSQL with SQLx
 - Redis for caching
-- Database migrations with SQLx
+- GitHub API integration
+- WebSocket server
+- Session management
+
+#### Desktop Mode
+- Tauri framework
+- Local SQLite storage
+- Secure credential storage
+- Direct GitHub API access
+- Logseq API integration
+- File system access
 
 ### Authentication
-- GitHub OAuth integration
-- JWT for session management
-- Secure credential storage
-- CORS and security headers
+- Web: GitHub OAuth with JWT
+- Desktop: Personal Access Token (PAT)
+- Secure token storage
+- Rate limiting
+- CORS protection
 
-### Deployment
+### Data Management
+- Efficient caching strategy
+- Background synchronization
+- Pagination support
+- Search functionality
+- Data encryption
+- Error recovery
+
+## Deployment Requirements
+
+### Web Deployment
 - Docker containerization
-- CI/CD with GitHub Actions
-- Cloud hosting (e.g., Railway for Rust)
-- Automated database migrations
+- PostgreSQL database setup
+- Redis cache configuration
+- Nginx reverse proxy
+- SSL/TLS encryption
+- Automated backups
+- Monitoring setup
 
-## User Experience
-- Responsive design for mobile and desktop
-- Dark/light theme support
-- Customizable dashboard layouts
-- Real-time updates where applicable
+### Desktop Deployment
+- Cross-platform builds (Windows, macOS, Linux)
+- Auto-update system
+- Crash reporting
+- Analytics collection
+- Local backup system
 
 ## Security Requirements
-- Secure API key storage
-- Rate limiting
-- Data encryption
+- Secure token storage
+- Rate limit handling
+- Data encryption at rest
+- API key protection
+- SQL injection prevention
 - Regular security audits
-- SQL injection prevention through SQLx
-- Rust's memory safety guarantees
+- Update verification
+- Sandboxed execution
 
-## Future Enhancements
-- Team collaboration features
-- Custom webhook integrations
-- Advanced analytics and reporting
-- Integration with other development tools
-- WebAssembly optimizations for data processing
-- Real-time updates via WebSocket
+## Performance Requirements
+- API response time < 100ms
+- Frontend load time < 2s
+- Offline functionality
+- Efficient data sync
+- Memory optimization
+- Cache management
+- Background processing
 
 ## Success Metrics
-- User engagement metrics
+- User engagement statistics
+- Feature usage analytics
 - Performance benchmarks
-  - API response times under 100ms
-  - Frontend load time under 2s
-  - Zero memory safety issues
-- Error rates and uptime
+- Error rate monitoring
 - User satisfaction surveys
+- Sync success rates
+- Cache hit ratios
+
+## Future Enhancements
+- Advanced analytics features
+- Custom dashboard layouts
+- Team collaboration tools
+- CI/CD pipeline integration
+- External tool integrations
+- Machine learning insights
+- Code review workflow
+- Project management tools
+
+## Maintenance Goals
+- Regular security updates
+- Performance optimization
+- User feedback integration
+- Feature parity maintenance
+- Cross-platform compatibility
+- Documentation updates
+- Dependency management

@@ -1,4 +1,4 @@
-# Personal GitHub Dashboard System Architecture
+# Personal GitHub Dashboard Architecture
 
 This document outlines the architecture of the Personal GitHub Dashboard, an open-source project designed for tracking and analyzing GitHub activity across repositories and organizations.
 
@@ -203,6 +203,52 @@ personal-github-dashboard/
 - Query optimization
 - Partitioning strategy
 
+## Desktop Architecture
+
+### Overview
+The desktop application is built using Tauri, providing a native cross-platform experience while leveraging our existing React frontend. This architecture enables offline capabilities and system-level integration.
+
+### Key Components
+- **Tauri Core**: Manages window management, system tray, and native APIs
+- **Local Storage**: SQLite database for offline data persistence
+- **Background Service**: Handles periodic synchronization with GitHub
+- **System Integration**: Native notifications and auto-start capability
+- **Secure Storage**: Protected storage for GitHub PAT and user credentials
+
+### Desktop-Specific Features
+1. **Offline Mode**
+   - Local SQLite database for data persistence
+   - Background sync when online
+   - Conflict resolution for data updates
+
+2. **System Integration**
+   - System tray with quick actions
+   - Native notifications for important updates
+   - Auto-start capability
+   - Custom URL scheme handling
+
+3. **Security**
+   - Secure storage for GitHub PAT
+   - Encrypted local database
+   - Sandboxed execution environment
+
+4. **Performance Optimizations**
+   - Local caching strategy
+   - Efficient data synchronization
+   - Resource usage monitoring
+
+### Desktop-Web Sync Architecture
+```
+┌─────────────────┐         ┌──────────────┐
+│  Desktop Client │ ←─────→ │  Web Backend │
+└───────┬─────────┘         └──────┬───────┘
+        │                          │
+        ▼                          ▼
+┌─────────────────┐         ┌──────────────┐
+│ Local SQLite DB │         │  PostgreSQL  │
+└─────────────────┘         └──────────────┘
+```
+
 ## Deployment Architecture
 
 ### VPS Requirements
@@ -217,6 +263,12 @@ personal-github-dashboard/
 - Error logging
 - Usage analytics
 - Alerting system
+
+### Desktop Distribution
+- **Platforms**: Windows, macOS, Linux
+- **Auto-updates**: Implemented through GitHub releases
+- **Installation**: Platform-specific installers
+- **Security**: Code signing for trusted distribution
 
 ## Security
 

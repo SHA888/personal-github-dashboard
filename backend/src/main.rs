@@ -12,7 +12,7 @@ use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use reqwest::Client;
-use std::env;
+// use std::env; // Commented out unused import
 use utils::config::Config;
 
 #[actix_web::main]
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Initialize database connection
-    let db_pool = sqlx::PgPool::connect(&config.database_url)
+    let db_pool = db::create_pool(&config.database_url)
         .await
         .expect("Failed to create pool");
 
@@ -58,9 +58,9 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(cors)
-            .wrap(middleware::logging::RequestLogger::default())
-            .wrap(middleware::error_handler::ErrorHandler::default())
-            .wrap(middleware::auth::AuthMiddleware::default()) // Add auth middleware
+            .wrap(middleware::logging::RequestLogger)
+            .wrap(middleware::error_handler::ErrorHandler)
+            .wrap(middleware::auth::AuthMiddleware) // Add auth middleware
             .configure(routes::configure)
             .app_data(db_pool_clone)
             .app_data(actix_web::web::Data::new(app_config)) // Add config as app data

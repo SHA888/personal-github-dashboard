@@ -54,6 +54,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // TODO: Implement rate limiting logic
         let fut = self.service.call(req);
-        Box::pin(async move { fut.await })
+        // If allowed, call the next service
+        Box::pin(fut)
     }
 }

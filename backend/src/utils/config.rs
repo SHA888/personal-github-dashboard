@@ -32,7 +32,8 @@ impl Config {
             jwt_secret: env::var("JWT_SECRET")?,
             jwt_expires_in: env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string()),
             // Frontend Configuration
-            frontend_url: env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:3000".to_string()),
+            frontend_url: env::var("FRONTEND_URL")
+                .unwrap_or_else(|_| "http://localhost:3000".to_string()),
         })
     }
 

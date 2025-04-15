@@ -1,10 +1,11 @@
 // Models module for database entities and domain types
 
-pub mod notification;
-pub mod repository;
-pub mod user;
+mod notification;
+mod repository;
+mod user;
 
-// Re-export common types
-pub use notification::Notification;
-pub use repository::Repository;
+pub use notification::{
+    Notification, NotificationFrequency, NotificationSettings, NotificationType,
+};
+pub use repository::{/* Repository, */ RepositoryMetrics, RepositoryMetricsAggregation};
 pub use user::User;

@@ -1,16 +1,19 @@
 use actix_web::{web, HttpResponse};
+use uuid::Uuid;
 
-pub async fn list_notifications() -> HttpResponse {
-    // TODO: Implement notifications listing
-    HttpResponse::NotImplemented().finish()
+// TODO: Implement notification handlers
+
+#[allow(unused_variables)]
+pub async fn list_notifications(_user_id: web::Path<Uuid>) -> HttpResponse {
+    HttpResponse::NotImplemented().body("List notifications endpoint not implemented yet")
 }
 
-pub async fn get_notification(notification_id: web::Path<i32>) -> HttpResponse {
-    // TODO: Implement notification retrieval
-    HttpResponse::NotImplemented().finish()
+#[allow(unused_variables)]
+pub async fn get_notification(_notification_id: web::Path<Uuid>) -> HttpResponse {
+    HttpResponse::NotImplemented().body("Get notification endpoint not implemented yet")
 }
 
-pub async fn mark_read(notification_id: web::Path<i32>) -> HttpResponse {
-    // TODO: Implement mark as read
-    HttpResponse::NotImplemented().finish()
+#[allow(unused_variables)]
+pub async fn mark_read(_notification_id: web::Path<Uuid>) -> HttpResponse {
+    HttpResponse::NotImplemented().body("Mark notification read endpoint not implemented yet")
 }

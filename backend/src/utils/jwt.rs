@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use chrono::{Duration, TimeZone, Utc}; // Use TimeZone for parsing duration string
+use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -64,18 +64,17 @@ pub fn validate_token(token: &str, secret: &str) -> Result<Claims, AppError> {
 }
 
 // Helper function to parse duration strings like "24h", "7d", "30m"
-fn parse_duration(duration_str: &str) -> Option<Duration> {
-    let duration_str = duration_str.trim();
-    let value_str = duration_str
+pub fn parse_duration(duration_str: &str) -> Option<Duration> {
+    let num_str: String = duration_str
         .chars()
-        .take_while(|c| c.is_digit(10))
-        .collect::<String>();
-    let unit_str = duration_str
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    let unit_str: String = duration_str
         .chars()
-        .skip_while(|c| c.is_digit(10))
-        .collect::<String>();
+        .skip_while(|c| c.is_ascii_digit())
+        .collect();
 
-    let value = value_str.parse::<i64>().ok()?;
+    let value = num_str.parse::<i64>().ok()?;
 
     match unit_str.as_str() {
         "s" => Duration::try_seconds(value),

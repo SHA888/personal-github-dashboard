@@ -56,10 +56,9 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        // Skip auth for public endpoints
-        if is_public_route(req.path()) {
-            let fut = self.service.call(req);
-            return Box::pin(async move { fut.await });
+        // Check if the route is public
+        if self.is_public_route(&req) {
+            return Box::pin(self.service.call(req));
         }
 
         // Get JWT from cookie
@@ -92,7 +91,7 @@ where
                 // Add validated user ID to request extensions
                 req.extensions_mut().insert(claims);
                 let fut = self.service.call(req);
-                Box::pin(async move { fut.await })
+                Box::pin(fut)
             }
             Err(e) => Box::pin(async move { Err(Error::from(e)) }),
         }
@@ -107,10 +106,11 @@ fn get_token_from_request(req: &ServiceRequest) -> Option<String> {
     }
 
     // Then try Authorization header
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        let auth_str = auth_header.to_str().ok()?;
-        if auth_str.starts_with("Bearer ") {
-            return Some(auth_str[7..].to_string());
+    if let Some(auth_header) = req.headers().get(actix_web::http::header::AUTHORIZATION) {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(stripped) = auth_str.strip_prefix("Bearer ") {
+                return Some(stripped.to_string());
+            }
         }
     }
 

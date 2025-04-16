@@ -1,5 +1,5 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
-import { Organization, Repository } from '../types/github'; // Assuming types are defined here
+import axios, { AxiosError, AxiosInstance } from 'axios';
+import { Organization, Repository, User } from '../types/github'; // Assuming types are defined here
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -108,7 +108,11 @@ interface LoginResponse {
   redirectUrl: string;
 }
 
-interface UserResponse extends User {} // Assuming User type is defined elsewhere
+interface UserResponse extends User {
+  // Additional user response fields if needed
+  accessToken?: string;
+  refreshToken?: string;
+}
 
 interface ActivityFilters {
   timeRange?: string;
@@ -116,19 +120,24 @@ interface ActivityFilters {
   repo?: string;
 }
 
+interface RepositoryActivityData {
+  date: string;
+  commits: number;
+  additions: number;
+  deletions: number;
+}
+
 interface RepositoryActivityResponse {
-  // Define the expected structure of repository activity data
-  // Example:
-  data: Array<{ date: string; commits: number; additions: number; deletions: number }>;
+  data: RepositoryActivityData[];
 }
 
 class ApiService {
   private handleError(error: AxiosError): ApiError {
     if (error.response) {
       return {
-        message: (error.response.data as any).message || 'An error occurred',
+        message: error.response.data?.message || 'An error occurred',
         status: error.response.status,
-        code: (error.response.data as any).code,
+        code: error.response.data?.code,
       };
     }
     return {
@@ -286,9 +295,7 @@ class ApiService {
   }
 
   // --- Analytics --- //
-  async getRepositoryActivity(
-    filters: ActivityFilters = {},
-  ): Promise<RepositoryActivityResponse> {
+  async getRepositoryActivity(filters: ActivityFilters = {}): Promise<RepositoryActivityResponse> {
     const response = await apiClient.get<RepositoryActivityResponse>(
       `/analytics/repository-activity`,
       { params: filters }, // Pass filters as query parameters
@@ -298,3 +305,22 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+
+export const fetchRepositoryMetrics = async (
+  owner: string,
+  repo: string,
+): Promise<ApiResponse<Repository>> => {
+  const response = await apiClient.get<Repository>(`/repositories/${owner}/${repo}/metrics`);
+  return {
+    data: response.data,
+    status: response.status,
+  };
+};
+
+export const fetchUserActivity = async (username: string): Promise<ApiResponse<User>> => {
+  const response = await apiClient.get<User>(`/users/${username}/activity`);
+  return {
+    data: response.data,
+    status: response.status,
+  };
+};

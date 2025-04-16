@@ -1,17 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { fetchRepositoryActivity } from '../../store/slices/analyticsSlice';
-import { RootState, AppDispatch } from '../../store';
+import { AppDispatch } from '../../store';
 import ActivityTrends from './ActivityTrends';
 import RepositoryActivity from './RepositoryActivity';
 
-const Dashboard: React.FC = () => {
+interface ActivityTrendsData {
+  labels: string[];
+  datasets: Array<{
+    label: string;
+    data: number[];
+    borderColor: string;
+    tension: number;
+  }>;
+}
+
+interface RepositoryActivityItem {
+  name: string;
+  commits: number;
+  issues: number;
+  prs: number;
+}
+
+interface DashboardProps {
+  loading: boolean;
+  error: Error | null;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ loading, error }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error } = useSelector((state: RootState) => state.analytics);
   // Placeholder data until API is fully integrated
-  const [activityTrendsData, setActivityTrendsData] = useState<any>(null);
-  const [repositoryActivityData, setRepositoryActivityData] = useState<any>(null);
+  const [activityTrendsData, setActivityTrendsData] = useState<ActivityTrendsData | null>(null);
+  const [repositoryActivityData, setRepositoryActivityData] = useState<
+    RepositoryActivityItem[] | null
+  >(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,7 +78,7 @@ const Dashboard: React.FC = () => {
   }
 
   if (error) {
-    return <Typography color="error">{error}</Typography>;
+    return <Typography color="error">{error.message}</Typography>;
   }
 
   return (

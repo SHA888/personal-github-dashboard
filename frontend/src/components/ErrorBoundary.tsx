@@ -1,5 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Box, Typography, Button } from '@mui/material';
 
 interface Props {
   children: ReactNode;
@@ -21,7 +21,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    console.error('Uncaught error:', error, errorInfo);
   }
 
   public render() {
@@ -29,11 +29,11 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
             p: 3,
           }}
         >
@@ -41,13 +41,9 @@ class ErrorBoundary extends Component<Props, State> {
             Something went wrong
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            {this.state.error?.message || "An unexpected error occurred"}
+            {this.state.error?.message || 'An unexpected error occurred'}
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => window.location.reload()}
-          >
+          <Button variant="contained" color="primary" onClick={() => window.location.reload()}>
             Refresh Page
           </Button>
         </Box>

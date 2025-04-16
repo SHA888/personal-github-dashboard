@@ -1,94 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { apiService } from '../services/api';
+import { AxiosError } from 'axios';
 import { User } from '../types/user';
-import { useQuery } from 'react-query';
-
-interface AuthState {
-    isAuthenticated: boolean;
-    user: User | null;
-    isLoading: boolean;
-    error: string | null;
-}
 
 export const useAuth = () => {
-    const [state, setState] = useState<AuthState>({
-        isAuthenticated: false,
-        user: null,
-        isLoading: true,
-        error: null,
-    });
+  const queryClient = useQueryClient();
 
-    const checkAuth = async () => {
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/me`, {
-                credentials: 'include', // Important for sending cookies
-            });
+  // Fetch current user data
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    // error, // Commented out unused variable
+    isError: isUserError,
+  } = useQuery<User, AxiosError>('currentUser', apiService.getCurrentUser, {
+    retry: false, // Don't retry on initial fetch; handled by redirects
+    refetchOnWindowFocus: false, // Avoid unnecessary refetches
+    staleTime: Infinity, // User data rarely changes without action
+    onError: (err) => {
+      if (err.response?.status === 401) {
+        // Handle unauthorized globally if needed, or let components handle
+        console.log('User is not authenticated.');
+      }
+    },
+  });
 
-            if (response.ok) {
-                const user = await response.json();
-                setState({
-                    isAuthenticated: true,
-                    user,
-                    isLoading: false,
-                    error: null,
-                });
-            } else {
-                setState({
-                    isAuthenticated: false,
-                    user: null,
-                    isLoading: false,
-                    error: null,
-                });
-            }
-        } catch (error) {
-            setState({
-                isAuthenticated: false,
-                user: null,
-                isLoading: false,
-                error: 'Failed to check authentication status',
-            });
-        }
-    };
+  // GitHub Login Mutation (redirects)
+  const githubLoginMutation = useMutation(() => apiService.githubLogin(), {
+    onSuccess: (data) => {
+      // Redirect the user to the GitHub authorization URL
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      }
+    },
+    onError: (/* error */) => {
+      // Handle login initiation error (e.g., show a notification)
+      console.error('GitHub login initiation failed');
+    },
+  });
 
-    const logout = async () => {
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-            });
+  // Logout Mutation
+  const logoutMutation = useMutation(() => apiService.logout(), {
+    onSuccess: () => {
+      // Clear user data from cache and redirect
+      queryClient.setQueryData('currentUser', null);
+      queryClient.removeQueries('currentUser');
+      // Optionally redirect to login page or home page
+      window.location.href = '/'; // Redirect to home after logout
+    },
+    onError: (/* error */) => {
+      // Handle logout error
+      console.error('Logout failed');
+    },
+  });
 
-            if (response.ok) {
-                setState({
-                    isAuthenticated: false,
-                    user: null,
-                    isLoading: false,
-                    error: null,
-                });
-            } else {
-                throw new Error('Logout failed');
-            }
-        } catch (error) {
-            setState(prev => ({
-                ...prev,
-                error: 'Failed to logout',
-            }));
-            throw error;
-        }
-    };
+  // Derived state for authentication status
+  const isAuthenticated = !!user && !isUserError;
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
+  return {
+    user: isAuthenticated ? user : null,
+    isLoading: isUserLoading,
+    isAuthenticated,
+    githubLogin: githubLoginMutation.mutate,
+    isLoggingIn: githubLoginMutation.isLoading,
+    logout: logoutMutation.mutate,
+    isLoggingOut: logoutMutation.isLoading,
+  };
+};
 
-    const { data: user, isLoading: queryLoading } = useQuery(['user'], () => getCurrentUser(), {
-        retry: false,
-        onError: () => {
-            // Handle error silently - user is not authenticated
-        }
-    });
+// Placeholder hook for fetching user data from backend
+export const useUser = () => {
+  // const { data: user, isLoading: queryLoading } = useQuery('user', apiService.getCurrentUser); // Commented out
 
-    return {
-        ...state,
-        logout,
-        checkAuth,
-    };
+  return {
+    user: null, // Replace with actual user data
+    // isLoading: queryLoading,
+    isLoading: false, // Placeholder
+  };
 };

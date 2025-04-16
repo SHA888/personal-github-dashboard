@@ -8,6 +8,7 @@ pub struct ErrorResponse {
     pub error: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Display)]
 pub enum AppError {
     #[display(fmt = "Internal Server Error: {}", _0)]
@@ -68,6 +69,7 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
+#[allow(dead_code)]
 fn json_error(error: &str, message: &str) -> serde_json::Value {
     serde_json::json!({
         "error": error,

@@ -1,13 +1,13 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
-import { WebSocketProvider } from "./components/WebSocketProvider";
-import "./App.css";
-import Dashboard from "./components/analytics/Dashboard";
-import Repositories from "./pages/Repositories";
-import Organizations from "./pages/Organizations";
-import Security from "./pages/Security";
-import Settings from "./pages/Settings";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import { WebSocketProvider } from './components/WebSocketProvider';
+import './App.css';
+import Dashboard from './components/analytics/Dashboard';
+import Repositories from './pages/Repositories';
+import Organizations from './pages/Organizations';
+import Security from './pages/Security';
+import Settings from './pages/Settings';
 
 const App: React.FC = () => {
   return (

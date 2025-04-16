@@ -1,81 +1,49 @@
-import { Box } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { Grid, Paper, Typography, CircularProgress } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import RepositoryActivity from "./RepositoryActivity";
-import ActivityTrends from "./ActivityTrends";
-import AnalyticsLayout from "./AnalyticsLayout";
-import { Filters } from "../../services/api";
+import React from 'react';
+import { Box, Typography, Grid } from '@mui/material';
+import ActivityTrends from './ActivityTrends';
+import RepositoryActivity from './RepositoryActivity';
 
-interface Filters {
-  timeRange: string;
-  owner: string;
-  repo: string;
-}
+// Placeholder data - replace with actual API data
+const activityTrendsData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [
+    {
+      label: 'Commits',
+      data: [65, 59, 80, 81, 56, 55],
+      borderColor: 'rgb(75, 192, 192)',
+      tension: 0.1,
+    },
+    {
+      label: 'Issues Opened',
+      data: [28, 48, 40, 19, 86, 27],
+      borderColor: 'rgb(255, 99, 132)',
+      tension: 0.1,
+    },
+  ],
+};
+
+const repositoryActivityData = [
+  { name: 'Repo A', commits: 120, issues: 30, prs: 15 },
+  { name: 'Repo B', commits: 85, issues: 12, prs: 8 },
+  { name: 'Repo C', commits: 200, issues: 55, prs: 25 },
+];
 
 const AnalyticsDashboard: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filters] = useState<Filters>({
-    timeRange: "7d",
-    repo: "all",
-  });
-
-  useEffect(() => {
-    // Initial data fetch
-    const fetchData = async () => {
-      try {
-        // Fetch initial data here
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading analytics data:", error);
-        setError("Failed to load analytics data");
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <Typography color="error">{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <AnalyticsLayout>
-      <Box sx={{ flexGrow: 1, p: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <RepositoryActivity filters={filters} />
-          </Grid>
-          <Grid item xs={12}>
-            <ActivityTrends filters={filters} />
-          </Grid>
+    <Box sx={{ flexGrow: 1, padding: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Analytics Dashboard
+      </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <ActivityTrends data={activityTrendsData} />
         </Grid>
-      </Box>
-    </AnalyticsLayout>
+        <Grid item xs={12} md={6}>
+          <RepositoryActivity data={repositoryActivityData} />
+        </Grid>
+        {/* Add more analytics components here */}
+      </Grid>
+    </Box>
   );
 };
 

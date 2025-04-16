@@ -75,6 +75,20 @@ pub struct RepositoryCollaborator {
     pub created_at: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct RepositoryMetrics {
+    pub id: Uuid,
+    pub repository_id: Uuid,
+    pub stargazers_count: i32,
+    pub watchers_count: i32,
+    pub forks_count: i32,
+    pub open_issues_count: i32,
+    pub open_pull_requests_count: i32,
+    pub commit_count: i32,
+    pub contributor_count: i32,
+    pub recorded_at: DateTime<Utc>,
+}
+
 impl From<GitHubOrg> for Organization {
     fn from(org: GitHubOrg) -> Self {
         Self {

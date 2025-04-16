@@ -1,7 +1,8 @@
 use crate::{
     db::{DbPool, Repository},
     error::AppError,
-    github::{GitHubAPIService, GitHubSyncService},
+    github::GitHubSyncService,
+    services::github_api::GitHubService,
 };
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
@@ -99,7 +100,7 @@ pub async fn sync_repositories(pool: web::Data<DbPool>) -> Result<HttpResponse, 
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
-    let api_service = GitHubAPIService::new(token);
+    let api_service = GitHubService::new(token);
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // Fetch repositories for the authenticated user

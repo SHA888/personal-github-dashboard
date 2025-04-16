@@ -1,97 +1,69 @@
-import React, { useState, useEffect } from "react";
-import { Box, Typography, LinearProgress, Grid, CircularProgress } from "@mui/material";
-import RepositoryActivity from "./RepositoryActivity";
-import ActivityTrends from "./ActivityTrends";
-import AnalyticsLayout from "./AnalyticsLayout";
-import { apiService } from "../../services/api";
-import { useQuery } from "react-query";
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { fetchRepositoryActivity } from '../../store/slices/analyticsSlice';
+import { RootState, AppDispatch } from '../../store';
+import ActivityTrends from './ActivityTrends';
+import RepositoryActivity from './RepositoryActivity';
 
-interface Filters {
-  timeRange: string;
-  repo: string;
-}
-
-const AnalyticsDashboard: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filters] = useState<Filters>({
-    timeRange: "7d",
-    repo: "all",
-  });
-
-  const { data: activityResponse, isLoading: isActivityLoading } = useQuery(
-    ['activity'],
-    () => apiService.getRepositoryActivity(filters.owner, filters.repo)
-  );
+const Dashboard: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error } = useSelector((state: RootState) => state.analytics);
+  // Placeholder data until API is fully integrated
+  const [activityTrendsData, setActivityTrendsData] = useState<any>(null);
+  const [repositoryActivityData, setRepositoryActivityData] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        const [activityResponse] = await Promise.all([
-          apiService.getRepositoryActivity(filters.owner, filters.repo),
+        // Fetch repository activity data
+        // const activityResponse = await dispatch(fetchRepositoryActivity()).unwrap(); // Commented out unused variable
+        await dispatch(fetchRepositoryActivity()).unwrap();
+
+        // TODO: Fetch activity trends data
+        // For now, use placeholder data
+        setActivityTrendsData({
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [
+            {
+              label: 'Commits',
+              data: [65, 59, 80, 81, 56, 55],
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1,
+            },
+          ],
+        });
+
+        // TODO: Process activityResponse into repositoryActivityData format
+        // const activityData = processActivityData(activityResponse); // Commented out unused variable
+        // For now, use placeholder data
+        setRepositoryActivityData([
+          { name: 'Repo A', commits: 120, issues: 30, prs: 15 },
+          { name: 'Repo B', commits: 85, issues: 12, prs: 8 },
         ]);
-        setError(null);
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to fetch analytics data");
-      } finally {
-        setLoading(false);
+        console.error('Failed to fetch analytics data:', err);
+        // Error state is handled by the slice
       }
     };
 
     fetchData();
-  }, [filters.owner, filters.repo]);
+  }, [dispatch]);
 
-  if (isActivityLoading) {
+  if (loading) {
     return <CircularProgress />;
   }
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <LinearProgress />
-      </Box>
-    );
-  }
-
   if (error) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <Typography color="error">{error}</Typography>
-      </Box>
-    );
+    return <Typography color="error">{error}</Typography>;
   }
-
-  const activityData = activityResponse?.data || [];
 
   return (
-    <AnalyticsLayout>
-      <Box sx={{ flexGrow: 1, p: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Repository Analytics
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <RepositoryActivity filters={filters} />
-          </Grid>
-          <Grid item xs={12}>
-            <ActivityTrends filters={filters} />
-          </Grid>
-        </Grid>
-      </Box>
-    </AnalyticsLayout>
+    <Box>
+      {activityTrendsData && <ActivityTrends data={activityTrendsData} />}
+      {repositoryActivityData && <RepositoryActivity data={repositoryActivityData} />}
+    </Box>
   );
 };
 
-export default AnalyticsDashboard;
+export default Dashboard;

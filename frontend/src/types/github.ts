@@ -11,7 +11,7 @@ export interface Repository {
 
 export interface Notification {
   id: string;
-  type: "issue" | "pr" | "mention" | "review";
+  type: 'issue' | 'pr' | 'mention' | 'review';
   title: string;
   repository: string;
   unread: boolean;

@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useWebSocket } from "../services/websocket";
+import React, { useEffect, useState } from 'react';
+import { useWebSocket } from '../services/websocket';
 
 interface WebSocketProviderProps {
   children: React.ReactNode;
 }
 
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
-  children,
-}) => {
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
   const { connect, disconnect, isConnected, error } = useWebSocket();
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
@@ -16,16 +14,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     connect();
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && !isConnected) {
+      if (document.visibilityState === 'visible' && !isConnected) {
         connect();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       disconnect();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [connect, disconnect, isConnected]);
 
@@ -46,11 +44,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         <div className="fixed top-0 left-0 right-0 bg-yellow-100 text-yellow-800 p-2 text-center">
           {error ? (
             <span>
-              WebSocket connection error.{" "}
-              {retryCount < maxRetries ? "Retrying..." : "Max retries reached."}
+              WebSocket connection error.{' '}
+              {retryCount < maxRetries ? 'Retrying...' : 'Max retries reached.'}
             </span>
           ) : (
-            "Connecting to WebSocket..."
+            'Connecting to WebSocket...'
           )}
         </div>
       )}

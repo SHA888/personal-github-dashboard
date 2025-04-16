@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface WebSocketState {
   socket: WebSocket | null;
@@ -15,33 +15,32 @@ export const useWebSocket = create<WebSocketState>((set, get) => ({
   error: null,
   connect: () => {
     const baseUrl =
-      import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
-      "http://localhost:8080";
+      import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080';
 
-    const wsUrl = baseUrl.replace(/^http/, "ws") + "/ws";
+    const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
 
-    console.log("Connecting to WebSocket:", wsUrl);
+    console.log('Connecting to WebSocket:', wsUrl);
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
       set({ isConnected: true, error: null });
-      console.log("WebSocket connected");
+      console.log('WebSocket connected');
     };
 
     socket.onclose = (event) => {
       set({ isConnected: false, socket: null });
-      console.log("WebSocket disconnected", event.code, event.reason);
+      console.log('WebSocket disconnected', event.code, event.reason);
 
       // Attempt to reconnect after 5 seconds
       setTimeout(() => {
-        console.log("Attempting to reconnect...");
+        console.log('Attempting to reconnect...');
         get().connect();
       }, 5000);
     };
 
     socket.onerror = (error) => {
-      set({ error: "WebSocket error", isConnected: false });
-      console.error("WebSocket error:", error);
+      set({ error: 'WebSocket error', isConnected: false });
+      console.error('WebSocket error:', error);
     };
 
     set({ socket });
@@ -58,7 +57,7 @@ export const useWebSocket = create<WebSocketState>((set, get) => ({
     if (socket && isConnected) {
       socket.send(message);
     } else {
-      console.error("Cannot send message: WebSocket is not connected");
+      console.error('Cannot send message: WebSocket is not connected');
     }
   },
 }));

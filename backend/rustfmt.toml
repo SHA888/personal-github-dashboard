@@ -3,4 +3,5 @@ tab_spaces = 4
 newline_style = "Auto"
 use_small_heuristics = "Default"
 reorder_imports = true
-imports_granularity = "Crate"
+# imports_granularity requires nightly Rust
+# imports_granularity = "Crate"

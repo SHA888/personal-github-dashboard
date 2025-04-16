@@ -1,7 +1,6 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export interface Repository {
   id: number;
@@ -32,23 +31,13 @@ class RepositoryService {
     return response;
   }
 
-  async getRepository(
-    owner: string,
-    name: string,
-  ): Promise<{ data: Repository }> {
-    const response = await axios.get(
-      `${API_BASE_URL}/repositories/${owner}/${name}`,
-    );
+  async getRepository(owner: string, name: string): Promise<{ data: Repository }> {
+    const response = await axios.get(`${API_BASE_URL}/repositories/${owner}/${name}`);
     return response;
   }
 
-  async getRepositoryActivity(
-    owner: string,
-    name: string,
-  ): Promise<{ data: CommitActivity[] }> {
-    const response = await axios.get(
-      `${API_BASE_URL}/repositories/${owner}/${name}/activity`,
-    );
+  async getRepositoryActivity(owner: string, name: string): Promise<{ data: CommitActivity[] }> {
+    const response = await axios.get(`${API_BASE_URL}/repositories/${owner}/${name}/activity`);
     return response;
   }
 

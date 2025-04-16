@@ -1,7 +1,6 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export interface RepositoryAnalytics {
   total_commits: number;
@@ -23,12 +22,9 @@ class AnalyticsService {
     repo: string,
     timeRange: string,
   ): Promise<{ data: RepositoryAnalytics }> {
-    const response = await axios.get(
-      `${API_BASE_URL}/analytics/repos/${owner}/${repo}`,
-      {
-        params: { timeRange },
-      },
-    );
+    const response = await axios.get(`${API_BASE_URL}/analytics/repos/${owner}/${repo}`, {
+      params: { timeRange },
+    });
     return response;
   }
 
@@ -37,12 +33,9 @@ class AnalyticsService {
     repo: string,
     timeRange: string,
   ): Promise<{ data: ActivityTrends }> {
-    const response = await axios.get(
-      `${API_BASE_URL}/analytics/activity/${owner}/${repo}`,
-      {
-        params: { timeRange },
-      },
-    );
+    const response = await axios.get(`${API_BASE_URL}/analytics/activity/${owner}/${repo}`, {
+      params: { timeRange },
+    });
     return response;
   }
 }

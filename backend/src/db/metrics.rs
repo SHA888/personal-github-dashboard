@@ -1,6 +1,6 @@
+use crate::db::models::RepositoryMetrics;
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::models::RepositoryMetrics;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 

@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  LinearProgress,
-  Grid,
-  Card,
-  CardContent,
-  styled,
-} from "@mui/material";
-import { Bar } from "react-chartjs-2";
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, LinearProgress, Grid, Card, CardContent, styled } from '@mui/material';
+import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,22 +9,15 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { apiService } from "../../services/api";
+} from 'chart.js';
+import { apiService } from '../../services/api';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const StatCard = styled(Card)({
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
 });
 
 interface Filters {
@@ -72,15 +57,12 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
     const fetchActivityData = async () => {
       try {
         setLoading(true);
-        const response = await apiService.getRepositoryAnalytics(
-          filters.owner,
-          filters.repo,
-        );
+        const response = await apiService.getRepositoryAnalytics(filters.owner, filters.repo);
         setActivityData(response.data);
         setError(null);
       } catch (error) {
-        console.error("Error fetching repository activity:", error);
-        setError("Failed to load repository activity data");
+        console.error('Error fetching repository activity:', error);
+        setError('Failed to load repository activity data');
       } finally {
         setLoading(false);
       }
@@ -102,39 +84,34 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
   }
 
   const commitActivityChartData = {
-    labels: activityData.commit_activity.daily.map(
-      (_, index) => `Day ${index + 1}`,
-    ),
+    labels: activityData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
     datasets: [
       {
-        label: "Daily Commits",
+        label: 'Daily Commits',
         data: activityData.commit_activity.daily,
-        backgroundColor: "rgba(75, 192, 192, 0.6)",
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
       },
     ],
   };
 
   const issueMetricsChartData = {
-    labels: ["Open", "Closed"],
+    labels: ['Open', 'Closed'],
     datasets: [
       {
-        label: "Issues",
-        data: [
-          activityData.issue_metrics.open,
-          activityData.issue_metrics.closed,
-        ],
-        backgroundColor: ["rgba(255, 99, 132, 0.6)", "rgba(54, 162, 235, 0.6)"],
+        label: 'Issues',
+        data: [activityData.issue_metrics.open, activityData.issue_metrics.closed],
+        backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)'],
       },
     ],
   };
 
   const prMetricsChartData = {
-    labels: ["Open", "Merged"],
+    labels: ['Open', 'Merged'],
     datasets: [
       {
-        label: "Pull Requests",
+        label: 'Pull Requests',
         data: [activityData.pr_metrics.open, activityData.pr_metrics.merged],
-        backgroundColor: ["rgba(255, 206, 86, 0.6)", "rgba(75, 192, 192, 0.6)"],
+        backgroundColor: ['rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)'],
       },
     ],
   };
@@ -187,8 +164,7 @@ const RepositoryActivity: React.FC<RepositoryActivityProps> = ({ filters }) => {
                 }}
               />
               <Typography variant="body2" sx={{ mt: 2 }}>
-                Average Resolution Time:{" "}
-                {activityData.issue_metrics.average_resolution_time}
+                Average Resolution Time: {activityData.issue_metrics.average_resolution_time}
               </Typography>
             </CardContent>
           </StatCard>

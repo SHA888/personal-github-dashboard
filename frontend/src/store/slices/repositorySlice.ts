@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { apiService, Repository } from "../../services/api";
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { apiService, Repository } from '../../services/api';
 
 interface RepositoryState {
   repositories: Repository[];
@@ -15,30 +15,27 @@ const initialState: RepositoryState = {
   error: null,
 };
 
-export const fetchRepositories = createAsyncThunk(
-  "repository/fetchRepositories",
-  async () => {
-    const response = await apiService.listRepositories();
-    return response.data.repositories;
-  },
-);
+export const fetchRepositories = createAsyncThunk('repository/fetchRepositories', async () => {
+  const response = await apiService.listRepositories();
+  return response.data.repositories;
+});
 
 export const fetchRepositoryDetails = createAsyncThunk(
-  "repository/fetchRepositoryDetails",
+  'repository/fetchRepositoryDetails',
   async (id: number) => {
     return await apiService.getRepositoryDetails(id);
   },
 );
 
 export const addRepository = createAsyncThunk(
-  "repository/addRepository",
+  'repository/addRepository',
   async ({ owner, repo }: { owner: string; repo: string }) => {
     return await apiService.addRepository(owner, repo);
   },
 );
 
 export const removeRepository = createAsyncThunk(
-  "repository/removeRepository",
+  'repository/removeRepository',
   async (id: number) => {
     await apiService.removeRepository(id);
     return id;
@@ -46,7 +43,7 @@ export const removeRepository = createAsyncThunk(
 );
 
 const repositorySlice = createSlice({
-  name: "repository",
+  name: 'repository',
   initialState,
   reducers: {
     clearError: (state) => {
@@ -66,7 +63,7 @@ const repositorySlice = createSlice({
       })
       .addCase(fetchRepositories.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch repositories";
+        state.error = action.error.message || 'Failed to fetch repositories';
       })
       // Fetch Repository Details
       .addCase(fetchRepositoryDetails.pending, (state) => {
@@ -79,8 +76,7 @@ const repositorySlice = createSlice({
       })
       .addCase(fetchRepositoryDetails.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch repository details";
+        state.error = action.error.message || 'Failed to fetch repository details';
       })
       // Add Repository
       .addCase(addRepository.pending, (state) => {
@@ -93,7 +89,7 @@ const repositorySlice = createSlice({
       })
       .addCase(addRepository.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to add repository";
+        state.error = action.error.message || 'Failed to add repository';
       })
       // Remove Repository
       .addCase(removeRepository.pending, (state) => {
@@ -102,16 +98,14 @@ const repositorySlice = createSlice({
       })
       .addCase(removeRepository.fulfilled, (state, action) => {
         state.loading = false;
-        state.repositories = state.repositories.filter(
-          (repo) => repo.id !== action.payload,
-        );
+        state.repositories = state.repositories.filter((repo) => repo.id !== action.payload);
         if (state.selectedRepository?.id === action.payload) {
           state.selectedRepository = null;
         }
       })
       .addCase(removeRepository.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to remove repository";
+        state.error = action.error.message || 'Failed to remove repository';
       });
   },
 });

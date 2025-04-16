@@ -6,6 +6,7 @@ mod handlers;
 mod middleware;
 mod models;
 mod routes;
+mod services;
 mod utils;
 
 use actix_cors::Cors;

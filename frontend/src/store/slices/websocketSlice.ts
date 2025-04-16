@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface WebSocketMessage {
   type: string;
@@ -21,7 +21,7 @@ const initialState: WebSocketState = {
 };
 
 const websocketSlice = createSlice({
-  name: "websocket",
+  name: 'websocket',
   initialState,
   reducers: {
     setSocket: (state, action: PayloadAction<WebSocket>) => {

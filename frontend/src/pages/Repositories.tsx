@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Box,
   Typography,
@@ -9,10 +9,10 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
-} from "@mui/material";
-import { Code as CodeIcon } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { apiService } from "../services/api";
+} from '@mui/material';
+import { Code as CodeIcon } from '@mui/icons-material';
+import { useEffect, useState } from 'react';
+import { apiService } from '../services/api';
 
 interface Repository {
   id: number;
@@ -48,8 +48,8 @@ const Repositories: React.FC = () => {
         setRepositories(repos);
         setError(null);
       } catch (err: Error) {
-        console.error("Error fetching repositories:", err);
-        setError(err.message || "Failed to load repositories");
+        console.error('Error fetching repositories:', err);
+        setError(err.message || 'Failed to load repositories');
       } finally {
         setLoading(false);
       }
@@ -60,12 +60,7 @@ const Repositories: React.FC = () => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="200px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
       </Box>
     );
@@ -107,10 +102,7 @@ const Repositories: React.FC = () => {
                   <ListItemIcon>
                     <CodeIcon />
                   </ListItemIcon>
-                  <ListItemText
-                    primary={repo.name}
-                    secondary={`Owner: ${repo.owner}`}
-                  />
+                  <ListItemText primary={repo.name} secondary={`Owner: ${repo.owner}`} />
                 </ListItem>
               ))}
             </List>

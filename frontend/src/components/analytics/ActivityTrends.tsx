@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  LinearProgress,
-  Card,
-  CardContent,
-  styled,
-  Grid,
-} from "@mui/material";
-import { Line } from "react-chartjs-2";
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, LinearProgress, Card, CardContent, styled, Grid } from '@mui/material';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,23 +10,15 @@ import {
   Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { apiService } from "../../services/api";
+} from 'chart.js';
+import { apiService } from '../../services/api';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const StatCard = styled(Card)({
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
 });
 
 interface Filters {
@@ -64,15 +48,12 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
     const fetchTrendData = async () => {
       try {
         setLoading(true);
-        const response = await apiService.getRepositoryAnalytics(
-          filters.owner,
-          filters.repo,
-        );
+        const response = await apiService.getRepositoryAnalytics(filters.owner, filters.repo);
         setTrendData(response.data);
         setError(null);
       } catch (error) {
-        console.error("Error fetching trend data:", error);
-        setError("Failed to load trend data");
+        console.error('Error fetching trend data:', error);
+        setError('Failed to load trend data');
       } finally {
         setLoading(false);
       }
@@ -94,42 +75,36 @@ const Trends: React.FC<TrendsProps> = ({ filters }) => {
   }
 
   const dailyCommitChartData = {
-    labels: trendData.commit_activity.daily.map(
-      (_, index) => `Day ${index + 1}`,
-    ),
+    labels: trendData.commit_activity.daily.map((_, index) => `Day ${index + 1}`),
     datasets: [
       {
-        label: "Daily Commits",
+        label: 'Daily Commits',
         data: trendData.commit_activity.daily,
-        borderColor: "rgb(75, 192, 192)",
+        borderColor: 'rgb(75, 192, 192)',
         tension: 0.1,
       },
     ],
   };
 
   const weeklyCommitChartData = {
-    labels: trendData.commit_activity.weekly.map(
-      (_, index) => `Week ${index + 1}`,
-    ),
+    labels: trendData.commit_activity.weekly.map((_, index) => `Week ${index + 1}`),
     datasets: [
       {
-        label: "Weekly Commits",
+        label: 'Weekly Commits',
         data: trendData.commit_activity.weekly,
-        borderColor: "rgb(255, 99, 132)",
+        borderColor: 'rgb(255, 99, 132)',
         tension: 0.1,
       },
     ],
   };
 
   const monthlyCommitChartData = {
-    labels: trendData.commit_activity.monthly.map(
-      (_, index) => `Month ${index + 1}`,
-    ),
+    labels: trendData.commit_activity.monthly.map((_, index) => `Month ${index + 1}`),
     datasets: [
       {
-        label: "Monthly Commits",
+        label: 'Monthly Commits',
         data: trendData.commit_activity.monthly,
-        borderColor: "rgb(54, 162, 235)",
+        borderColor: 'rgb(54, 162, 235)',
         tension: 0.1,
       },
     ],

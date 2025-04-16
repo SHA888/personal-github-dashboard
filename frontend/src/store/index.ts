@@ -1,7 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
-import repositoryReducer from "./slices/repositorySlice";
-import analyticsReducer from "./slices/analyticsSlice";
-import websocketReducer from "./slices/websocketSlice";
+import { configureStore } from '@reduxjs/toolkit';
+import repositoryReducer from './slices/repositorySlice';
+import analyticsReducer from './slices/analyticsSlice';
+import websocketReducer from './slices/websocketSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,11 +13,11 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types
-        ignoredActions: ["websocket/setSocket"],
+        ignoredActions: ['websocket/setSocket'],
         // Ignore these field paths in all actions
-        ignoredActionPaths: ["payload.socket"],
+        ignoredActionPaths: ['payload.socket'],
         // Ignore these paths in the state
-        ignoredPaths: ["websocket.socket"],
+        ignoredPaths: ['websocket.socket'],
       },
     }),
 });

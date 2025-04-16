@@ -1,9 +1,6 @@
 #[allow(unused_imports)]
 use crate::db::{DbPool, Organization};
-use crate::{
-    error::AppError,
-    github::{GitHubAPIService, GitHubSyncService},
-};
+use crate::{error::AppError, github::GitHubSyncService, services::github_api::GitHubService};
 use actix_web::{web, HttpResponse};
 use futures::future::join_all;
 use serde::Serialize;
@@ -109,7 +106,7 @@ pub async fn sync_organization_by_name(
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
-    let api_service = GitHubAPIService::new(token);
+    let api_service = GitHubService::new(token);
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // --- Authorization Check ---
@@ -149,7 +146,7 @@ pub async fn sync_my_organizations(pool: web::Data<DbPool>) -> Result<HttpRespon
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
-    let api_service = GitHubAPIService::new(token);
+    let api_service = GitHubService::new(token);
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // Fetch organizations for the authenticated user

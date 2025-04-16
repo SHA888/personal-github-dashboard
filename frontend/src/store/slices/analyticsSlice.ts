@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { apiService, ActivityData } from "../../services/api";
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { apiService, ActivityData } from '../../services/api';
 
 interface AnalyticsState {
   data: ActivityData | null;
@@ -12,11 +12,11 @@ const initialState: AnalyticsState = {
   data: null,
   loading: false,
   error: null,
-  timeRange: "weekly",
+  timeRange: 'weekly',
 };
 
 export const fetchAnalytics = createAsyncThunk(
-  "analytics/fetchAnalytics",
+  'analytics/fetchAnalytics',
   async ({ owner, repo }: { owner: string; repo: string }) => {
     const response = await apiService.getRepositoryAnalytics(owner, repo);
     return response.data;
@@ -24,23 +24,15 @@ export const fetchAnalytics = createAsyncThunk(
 );
 
 export const fetchActivityTrends = createAsyncThunk(
-  "analytics/fetchActivityTrends",
-  async ({
-    owner,
-    repo,
-    timeRange,
-  }: {
-    owner: string;
-    repo: string;
-    timeRange: string;
-  }) => {
+  'analytics/fetchActivityTrends',
+  async ({ owner, repo, timeRange }: { owner: string; repo: string; timeRange: string }) => {
     const response = await apiService.getActivityTrends(owner, repo, timeRange);
     return response.data;
   },
 );
 
 const analyticsSlice = createSlice({
-  name: "analytics",
+  name: 'analytics',
   initialState,
   reducers: {
     setTimeRange: (state, action) => {
@@ -63,7 +55,7 @@ const analyticsSlice = createSlice({
       })
       .addCase(fetchAnalytics.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch analytics";
+        state.error = action.error.message || 'Failed to fetch analytics';
       })
       // Fetch Activity Trends
       .addCase(fetchActivityTrends.pending, (state) => {
@@ -76,7 +68,7 @@ const analyticsSlice = createSlice({
       })
       .addCase(fetchActivityTrends.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch activity trends";
+        state.error = action.error.message || 'Failed to fetch activity trends';
       });
   },
 });

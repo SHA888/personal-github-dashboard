@@ -6,5 +6,7 @@ pub fn format_timestamp(dt: DateTime<Utc>) -> String {
 }
 
 pub fn parse_timestamp(s: &str) -> Option<DateTime<Utc>> {
-    DateTime::parse_from_rfc3339(s).ok().map(|dt| dt.with_timezone(&Utc))
+    DateTime::parse_from_rfc3339(s)
+        .ok()
+        .map(|dt| dt.with_timezone(&Utc))
 }

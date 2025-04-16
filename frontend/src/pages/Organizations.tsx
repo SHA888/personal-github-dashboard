@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/api';
 import { Organization } from '../types/github';
 import {

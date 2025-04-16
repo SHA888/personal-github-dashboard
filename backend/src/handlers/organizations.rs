@@ -1,8 +1,9 @@
 #[allow(unused_imports)]
 use crate::db::{DbPool, Organization};
 use crate::{error::AppError, github::GitHubSyncService, services::github_api::GitHubService};
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, Responder};
 use futures::future::join_all;
+use log::error;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -106,7 +107,11 @@ pub async fn sync_organization_by_name(
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
-    let api_service = GitHubService::new(token);
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let api_service = GitHubService::new(token, redis_url).await.map_err(|e| {
+        error!("Failed to create GitHub service: {}", e);
+        AppError::InternalError(format!("Failed to create GitHub service: {}", e))
+    })?;
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // --- Authorization Check ---
@@ -146,7 +151,11 @@ pub async fn sync_my_organizations(pool: web::Data<DbPool>) -> Result<HttpRespon
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
     // Initialize services
-    let api_service = GitHubService::new(token);
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let api_service = GitHubService::new(token, redis_url).await.map_err(|e| {
+        error!("Failed to create GitHub service: {}", e);
+        AppError::InternalError(format!("Failed to create GitHub service: {}", e))
+    })?;
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // Fetch organizations for the authenticated user

@@ -4,7 +4,8 @@ use crate::{
     github::GitHubSyncService,
     services::github_api::GitHubService,
 };
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, Responder};
+use log::error;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -99,8 +100,11 @@ pub async fn sync_repositories(pool: web::Data<DbPool>) -> Result<HttpResponse, 
     let token = std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
         .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
 
-    // Initialize services
-    let api_service = GitHubService::new(token);
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let api_service = GitHubService::new(token, redis_url).await.map_err(|e| {
+        error!("Failed to create GitHub service: {}", e);
+        AppError::InternalError("Failed to create GitHub service".to_string())
+    })?;
     let sync_service = GitHubSyncService::new(pool.get_ref().clone());
 
     // Fetch repositories for the authenticated user

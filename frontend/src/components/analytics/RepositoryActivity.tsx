@@ -1,13 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import {
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
-} from '@mui/material';
+import { Typography, Paper, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
 import { RootState } from '../../store';
 import { RepositoryActivityData } from '../../store/slices/analyticsSlice'; // Assuming type defined here
 

@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO repository_metrics (\n            repository_id,\n            stargazers_count,\n            watchers_count,\n            forks_count,\n            open_issues_count,\n            open_pull_requests_count,\n            commit_count,\n            contributor_count,\n            recorded_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        RETURNING *\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "repository_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "stargazers_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "watchers_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "forks_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "open_issues_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "open_pull_requests_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "commit_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "contributor_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "recorded_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6780da8638b4fcf4d192ac63d34817b5cb601381a472237ddd6fefb3b9121d88"
+}

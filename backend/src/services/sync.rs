@@ -1,33 +1,31 @@
-use crate::{
-    db::{
-        models::{Organization, Repository},
-        DbPool,
-    },
-    error::AppError,
-};
-use octocrab::models::{orgs::Organization as GitHubOrg, Repository as GitHubRepo};
+use crate::db::{Organization, Repository};
+use crate::error::AppError;
+use crate::services::github_api::GitHubService;
+use octocrab::models::orgs::Organization as GithubOrg;
+use octocrab::models::Repository as GithubRepo;
+use sqlx::PgPool;
 use time::OffsetDateTime;
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub struct GitHubSyncService {
-    pool: DbPool,
+    pool: PgPool,
+    github: GitHubService,
 }
 
-#[allow(dead_code)]
 impl GitHubSyncService {
-    pub fn new(pool: DbPool) -> Self {
-        Self { pool }
+    pub fn new(pool: PgPool, github: GitHubService) -> Self {
+        Self { pool, github }
     }
 
-    pub async fn sync_organization(&self, org: GitHubOrg) -> Result<Organization, AppError> {
+    pub async fn sync_organization(&self, org: GithubOrg) -> Result<Organization, AppError> {
         let org_model = Organization::from(org);
 
-        sqlx::query_as!(
+        let organization = sqlx::query_as!(
             Organization,
             r#"
             INSERT INTO organizations (
-                id, github_id, login, name, description,
-                avatar_url, created_at, updated_at
+                id, github_id, login, name, description, avatar_url,
+                created_at, updated_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (github_id) DO UPDATE SET
@@ -36,15 +34,7 @@ impl GitHubSyncService {
                 description = EXCLUDED.description,
                 avatar_url = EXCLUDED.avatar_url,
                 updated_at = EXCLUDED.updated_at
-            RETURNING
-                id,
-                github_id,
-                login as "login!: String",
-                name,
-                description,
-                avatar_url,
-                created_at as "created_at!: OffsetDateTime",
-                updated_at as "updated_at!: OffsetDateTime"
+            RETURNING id, github_id, login as "login!: String", name, description, avatar_url, created_at as "created_at!: OffsetDateTime", updated_at as "updated_at!: OffsetDateTime"
             "#,
             org_model.id,
             org_model.github_id,
@@ -56,14 +46,15 @@ impl GitHubSyncService {
             org_model.updated_at
         )
         .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::DatabaseError(e.to_string()))
+        .await?;
+
+        Ok(organization)
     }
 
-    pub async fn sync_repository(&self, repo: GitHubRepo) -> Result<Repository, AppError> {
+    pub async fn sync_repository(&self, repo: GithubRepo) -> Result<Repository, AppError> {
         let repo_model = Repository::from(repo);
 
-        sqlx::query_as!(
+        let repository = sqlx::query_as!(
             Repository,
             r#"
             INSERT INTO repositories (
@@ -77,16 +68,7 @@ impl GitHubSyncService {
                 is_private = EXCLUDED.is_private,
                 is_fork = EXCLUDED.is_fork,
                 updated_at = EXCLUDED.updated_at
-            RETURNING
-                id,
-                github_id,
-                owner_id,
-                name as "name!: String",
-                description,
-                is_private as "is_private!: bool",
-                is_fork as "is_fork!: bool",
-                created_at as "created_at!: OffsetDateTime",
-                updated_at as "updated_at!: OffsetDateTime"
+            RETURNING id, github_id, owner_id, name as "name!: String", description, is_private as "is_private!: bool", is_fork as "is_fork!: bool", created_at as "created_at!: OffsetDateTime", updated_at as "updated_at!: OffsetDateTime"
             "#,
             repo_model.id,
             repo_model.github_id,
@@ -99,7 +81,28 @@ impl GitHubSyncService {
             repo_model.updated_at
         )
         .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::DatabaseError(e.to_string()))
+        .await?;
+
+        Ok(repository)
+    }
+
+    pub async fn sync_user_organizations(&self) -> Result<(), AppError> {
+        let orgs = self.github.list_my_organizations().await?;
+
+        for org in orgs {
+            self.sync_organization(org).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn sync_user_repositories(&self) -> Result<(), AppError> {
+        let repos = self.github.list_my_repositories().await?;
+
+        for repo in repos {
+            self.sync_repository(repo).await?;
+        }
+
+        Ok(())
     }
 }

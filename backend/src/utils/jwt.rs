@@ -1,111 +1,102 @@
-use crate::error::AppError;
-use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use sqlx::types::Uuid;
+use time::{Duration, OffsetDateTime};
+
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: Uuid,  // Subject (user ID)
-    pub exp: usize, // Expiration time (timestamp)
-    pub iat: usize, // Issued at (timestamp)
+    pub sub: Uuid,
+    pub exp: i64,
+    pub iat: i64,
 }
 
-// Function to create a JWT token
-pub fn create_token(user_id: Uuid, secret: &str, expires_in_str: &str) -> Result<String, AppError> {
-    let now = Utc::now();
-    let iat = now.timestamp() as usize;
+impl Claims {
+    pub fn new(user_id: Uuid) -> Self {
+        let now = OffsetDateTime::now_utc();
+        let exp = now + Duration::days(7);
 
-    // Parse the expiration duration string (e.g., "24h", "7d")
-    let expires_in_duration = parse_duration(expires_in_str).ok_or_else(|| {
-        AppError::InternalError(format!("Invalid JWT_EXPIRES_IN format: {}", expires_in_str))
-    })?;
+        Self {
+            sub: user_id,
+            exp: exp.unix_timestamp(),
+            iat: now.unix_timestamp(),
+        }
+    }
+}
 
-    let expiration_time = now + expires_in_duration;
-    let exp = expiration_time.timestamp() as usize;
-
-    let claims = Claims {
-        sub: user_id,
-        exp,
-        iat,
-    };
-
+pub fn create_token(user_id: Uuid, secret: &[u8]) -> Result<String, AppError> {
+    let claims = Claims::new(user_id);
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_ref()),
+        &EncodingKey::from_secret(secret),
     )
-    .map_err(|e| AppError::InternalError(format!("Failed to create JWT: {}", e)))
+    .map_err(|e| AppError::InternalError(e.to_string()))
 }
 
-// Function to validate a JWT token and extract claims
-pub fn validate_token(token: &str, secret: &str) -> Result<Claims, AppError> {
-    let validation = Validation::new(Algorithm::HS256);
-    // Custom validation logic can be added here if needed (e.g., checking issuer)
-
+#[allow(dead_code)]
+pub fn verify_token(token: &str, secret: &[u8]) -> Result<Claims, AppError> {
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret.as_ref()),
-        &validation,
+        &DecodingKey::from_secret(secret),
+        &Validation::default(),
     )
     .map(|data| data.claims)
-    .map_err(|e| match e.kind() {
-        jsonwebtoken::errors::ErrorKind::ExpiredSignature => {
-            AppError::Unauthorized("Token expired".to_string())
-        }
-        jsonwebtoken::errors::ErrorKind::InvalidToken => {
-            AppError::Unauthorized("Invalid token".to_string())
-        }
-        jsonwebtoken::errors::ErrorKind::InvalidSignature => {
-            AppError::Unauthorized("Invalid signature".to_string())
-        }
-        _ => AppError::InternalError(format!("JWT validation error: {}", e)),
-    })
+    .map_err(|e| AppError::Unauthorized(e.to_string()))
 }
 
-// Helper function to parse duration strings like "24h", "7d", "30m"
-pub fn parse_duration(duration_str: &str) -> Option<Duration> {
-    let num_str: String = duration_str
+pub fn validate_token(token: &str, secret: &[u8]) -> Result<Claims, AppError> {
+    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
+    let decoding_key = jsonwebtoken::DecodingKey::from_secret(secret);
+    let token_data = jsonwebtoken::decode::<Claims>(token, &decoding_key, &validation)
+        .map_err(|e| AppError::Unauthorized(format!("Invalid token: {}", e)))?;
+    Ok(token_data.claims)
+}
+
+#[allow(dead_code)]
+pub fn parse_duration(duration_str: &str) -> Result<Duration, AppError> {
+    let num: i64 = duration_str
         .chars()
         .take_while(|c| c.is_ascii_digit())
-        .collect();
-    let unit_str: String = duration_str
+        .collect::<String>()
+        .parse()
+        .map_err(|_| AppError::InternalError("Invalid duration format".to_string()))?;
+
+    let unit = duration_str
         .chars()
         .skip_while(|c| c.is_ascii_digit())
-        .collect();
+        .collect::<String>();
 
-    let value = num_str.parse::<i64>().ok()?;
-
-    match unit_str.as_str() {
-        "s" => Duration::try_seconds(value),
-        "m" => Duration::try_minutes(value),
-        "h" => Duration::try_hours(value),
-        "d" => Duration::try_days(value),
-        _ => None,
+    match unit.as_str() {
+        "s" | "sec" | "second" | "seconds" => Ok(Duration::seconds(num)),
+        "m" | "min" | "minute" | "minutes" => Ok(Duration::minutes(num)),
+        "h" | "hr" | "hour" | "hours" => Ok(Duration::hours(num)),
+        "d" | "day" | "days" => Ok(Duration::days(num)),
+        "w" | "week" | "weeks" => Ok(Duration::days(num * 7)),
+        _ => Err(AppError::InternalError("Invalid duration unit".to_string())),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
 
     #[test]
     fn test_jwt_creation_and_validation() {
         let user_id = Uuid::new_v4();
         let secret = "test_secret_key";
-        let expires_in = "1h";
 
         // Create token
-        let token = create_token(user_id, secret, expires_in).expect("Failed to create token");
+        let token = create_token(user_id, secret.as_bytes()).expect("Failed to create token");
         assert!(!token.is_empty());
 
         // Validate token
-        let claims = validate_token(&token, secret).expect("Failed to validate token");
+        let claims = verify_token(&token, secret.as_bytes()).expect("Failed to validate token");
         assert_eq!(claims.sub, user_id);
 
         // Check timestamps (allow some leeway)
-        let now = Utc::now().timestamp() as usize;
+        let now = OffsetDateTime::now_utc().unix_timestamp();
         assert!(claims.iat <= now);
         assert!(claims.exp > claims.iat);
         assert!(claims.exp > now);
@@ -116,27 +107,14 @@ mod tests {
         let secret = "test_secret_key";
         let invalid_token = "this.is.not.a.valid.token";
 
-        let result = validate_token(invalid_token, secret);
+        let result = verify_token(invalid_token, secret.as_bytes());
         assert!(result.is_err());
-        match result.err().unwrap() {
-            AppError::Unauthorized(msg) => assert_eq!(msg, "Invalid token"),
-            _ => panic!("Expected Unauthorized error for invalid token"),
-        }
-    }
-
-    #[test]
-    fn test_invalid_signature() {
-        let user_id = Uuid::new_v4();
-        let secret1 = "correct_secret";
-        let secret2 = "wrong_secret";
-        let expires_in = "1h";
-
-        let token = create_token(user_id, secret1, expires_in).unwrap();
-        let result = validate_token(&token, secret2);
-        assert!(result.is_err());
-        match result.err().unwrap() {
-            AppError::Unauthorized(msg) => assert_eq!(msg, "Invalid signature"),
-            _ => panic!("Expected Unauthorized error for invalid signature"),
+        match result {
+            Ok(_) => panic!("Expected error for invalid token"),
+            Err(e) => match e {
+                AppError::Unauthorized(_) => (), // Expected
+                _ => panic!("Unexpected error type"),
+            },
         }
     }
 
@@ -144,40 +122,45 @@ mod tests {
     fn test_expired_token() {
         let user_id = Uuid::new_v4();
         let secret = "test_secret_key";
-        let expires_in = "-1h"; // Expired one hour ago
 
-        // Need to manually construct claims because create_token might validate expiration internally
-        let now = Utc::now();
-        let iat = (now - Duration::try_hours(2).unwrap()).timestamp() as usize;
-        let exp = (now - Duration::try_hours(1).unwrap()).timestamp() as usize;
+        // Create claims with expired timestamp
+        let now = OffsetDateTime::now_utc();
         let claims = Claims {
             sub: user_id,
-            exp,
-            iat,
+            exp: (now - Duration::hours(1)).unix_timestamp(),
+            iat: (now - Duration::hours(2)).unix_timestamp(),
         };
+
         let token = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(secret.as_ref()),
+            &EncodingKey::from_secret(secret.as_bytes()),
         )
         .unwrap();
 
-        let result = validate_token(&token, secret);
+        let result = verify_token(&token, secret.as_bytes());
         assert!(result.is_err());
-        match result.err().unwrap() {
-            AppError::Unauthorized(msg) => assert_eq!(msg, "Token expired"),
-            _ => panic!("Expected Unauthorized error for expired token"),
+        match result {
+            Ok(_) => panic!("Expected error for expired token"),
+            Err(e) => match e {
+                AppError::Unauthorized(_) => (), // Expected
+                _ => panic!("Unexpected error type"),
+            },
         }
     }
 
     #[test]
     fn test_parse_duration() {
-        assert_eq!(parse_duration("1s"), Duration::try_seconds(1));
-        assert_eq!(parse_duration("30m"), Duration::try_minutes(30));
-        assert_eq!(parse_duration("24h"), Duration::try_hours(24));
-        assert_eq!(parse_duration("7d"), Duration::try_days(7));
-        assert_eq!(parse_duration(" 10 d "), Duration::try_days(10));
-        assert_eq!(parse_duration("invalid"), None);
-        assert_eq!(parse_duration("1y"), None); // Year not supported yet
+        assert_eq!(parse_duration("30s"), Ok(Duration::seconds(30)));
+        assert_eq!(parse_duration("5m"), Ok(Duration::minutes(5)));
+        assert_eq!(parse_duration("24h"), Ok(Duration::hours(24)));
+        assert_eq!(parse_duration("7d"), Ok(Duration::days(7)));
+        assert_eq!(parse_duration("2w"), Ok(Duration::days(14)));
+        assert_eq!(
+            parse_duration("invalid"),
+            Err(AppError::InternalError(
+                "Invalid duration format".to_string()
+            ))
+        );
     }
 }

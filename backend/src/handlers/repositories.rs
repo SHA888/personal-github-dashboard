@@ -1,12 +1,13 @@
 use crate::{
     db::{DbPool, Repository},
     error::AppError,
-    github::GitHubSyncService,
     services::github_api::GitHubService,
+    services::sync::GitHubSyncService,
 };
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse};
 use log::error;
 use serde::Serialize;
+use time::OffsetDateTime;
 
 #[derive(Serialize)]
 pub struct ListResponse<T> {
@@ -29,6 +30,7 @@ pub struct QueryParams {
     pub offset: Option<i64>,
 }
 
+#[get("/repositories")]
 pub async fn list_repositories(
     pool: web::Data<DbPool>,
     query: web::Query<QueryParams>,
@@ -46,12 +48,10 @@ pub async fn list_repositories(
         Repository,
         r#"
         SELECT
-            id, github_id, name, full_name, description, private, fork,
-            html_url, clone_url, default_branch, language, stargazers_count,
-            watchers_count, forks_count, open_issues_count, size, created_at,
-            updated_at, pushed_at, last_synced_at
+            id, github_id, owner_id, name as "name!: String", description, is_private as "is_private!: bool", is_fork as "is_fork!: bool",
+            created_at as "created_at!: OffsetDateTime", updated_at as "updated_at!: OffsetDateTime"
         FROM repositories
-        ORDER BY name ASC NULLS LAST, full_name ASC
+        ORDER BY name ASC
         LIMIT $1 OFFSET $2
         "#,
         limit,
@@ -70,6 +70,7 @@ pub async fn list_repositories(
     }))
 }
 
+#[get("/repositories/{id}")]
 pub async fn get_repository(
     pool: web::Data<DbPool>,
     id: web::Path<uuid::Uuid>,
@@ -78,10 +79,8 @@ pub async fn get_repository(
         Repository,
         r#"
         SELECT
-            id, github_id, name, full_name, description, private, fork,
-            html_url, clone_url, default_branch, language, stargazers_count,
-            watchers_count, forks_count, open_issues_count, size, created_at,
-            updated_at, pushed_at, last_synced_at
+            id, github_id, owner_id, name as "name!: String", description, is_private as "is_private!: bool", is_fork as "is_fork!: bool",
+            created_at as "created_at!: OffsetDateTime", updated_at as "updated_at!: OffsetDateTime"
         FROM repositories
         WHERE id = $1
         "#,
@@ -96,38 +95,12 @@ pub async fn get_repository(
     }
 }
 
-pub async fn sync_repositories(pool: web::Data<DbPool>) -> Result<HttpResponse, AppError> {
-    let token = std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
-        .map_err(|_| AppError::InternalError("GITHUB_PERSONAL_ACCESS_TOKEN not set".to_string()))?;
-
-    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
-    let api_service = GitHubService::new(token, redis_url).await.map_err(|e| {
-        error!("Failed to create GitHub service: {}", e);
-        AppError::InternalError("Failed to create GitHub service".to_string())
-    })?;
-    let sync_service = GitHubSyncService::new(pool.get_ref().clone());
-
-    // Fetch repositories for the authenticated user
-    let github_repos = api_service
-        .list_my_repositories()
-        .await
-        .map_err(|e| AppError::GitHubError(format!("Failed to list repositories: {}", e)))?;
-
-    // Sync each repository
-    let mut synced_repos = Vec::new();
-    let mut errors = Vec::new();
-
-    for repo in github_repos {
-        match sync_service.sync_repository(repo).await {
-            Ok(repo) => synced_repos.push(repo),
-            Err(e) => errors.push(e.to_string()),
-        }
-    }
-
-    if errors.is_empty() {
-        Ok(HttpResponse::Ok().json(synced_repos))
-    } else {
-        Ok(HttpResponse::InternalServerError()
-            .json(serde_json::json!({ "synced": synced_repos, "errors": errors })))
-    }
+#[post("/repositories/sync")]
+pub async fn sync_repositories(
+    pool: web::Data<DbPool>,
+    github: web::Data<GitHubService>,
+) -> Result<HttpResponse, AppError> {
+    let sync_service = GitHubSyncService::new(pool.get_ref().clone(), github.get_ref().clone());
+    sync_service.sync_user_repositories().await?;
+    Ok(HttpResponse::Ok().finish())
 }

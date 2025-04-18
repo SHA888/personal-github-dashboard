@@ -1,8 +1,8 @@
+use octocrab::models::Author as GithubUser;
 use octocrab::models::{orgs::Organization as GithubOrganization, Repository as GithubRepository};
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Uuid, FromRow};
 use time::OffsetDateTime;
-use octocrab::models::Author as GithubUser;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
@@ -113,7 +113,7 @@ impl From<GithubUser> for User {
             id: Uuid::new_v4(),
             github_id: user.id.0 as i64,
             login: user.login,
-            name: None, // Author doesn't have name field
+            name: None,  // Author doesn't have name field
             email: None, // Author doesn't have email field
             avatar_url: Some(user.avatar_url.to_string()),
             access_token: None, // This will be set separately

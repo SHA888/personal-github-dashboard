@@ -10,77 +10,71 @@ mod services;
 mod utils;
 
 use actix_cors::Cors;
-use actix_web::{App, HttpServer};
-use dotenv::dotenv;
-use reqwest::Client;
-use std::env;
+use actix_web::web;
+use actix_web::{middleware::Logger, App, HttpServer};
+use db::DbPool;
+use redis::Client as RedisClient;
+use services::github_api::GitHubService;
 use utils::config::Config;
+
+// Define AppState
+pub struct AppState {
+    pub pool: DbPool,
+    pub redis: RedisClient,
+    pub github: GitHubService,
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Load environment variables
-    dotenv().ok();
-    env_logger::init();
+    // Load environment variables from .env file
+    dotenv::dotenv().ok();
 
-    // Load and validate configuration
-    let config = Config::from_env().expect("Failed to load configuration from environment");
+    // Initialize logger
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    if let Err(err) = config.validate() {
-        panic!("Configuration error: {}", err);
-    }
+    // Load configuration
+    let config = Config::from_env().expect("Failed to load configuration");
 
-    // Initialize database connection
-    let db_pool = db::create_pool(&config.database_url)
+    // Create database pool
+    let pool = db::create_pool(&config.database_url)
         .await
-        .expect("Failed to create pool");
+        .expect("Failed to create database pool");
 
-    // Initialize HTTP client
-    let http_client = Client::builder()
-        .cookie_store(true) // Enable cookie handling if needed later
-        .build()
-        .expect("Failed to create HTTP client");
+    // Create Redis client
+    let redis_client =
+        redis::Client::open(config.redis_url.as_str()).expect("Failed to create Redis client");
 
-    // Get Redis URL from configuration
-    let redis_url = env::var("REDIS_URL").expect("REDIS_URL must be set");
-
-    // Initialize GitHub service
+    // Create GitHub service
     let github_service = services::github_api::GitHubService::new(
         config.github_personal_access_token.clone(),
-        redis_url,
+        config.redis_url.clone(),
     )
     .await
     .expect("Failed to create GitHub service");
 
-    // Get port from configuration
-    let bind_addr = format!("127.0.0.1:{}", config.port);
+    // Create app state
+    let app_state = web::Data::new(AppState {
+        pool: pool.clone(),
+        redis: redis_client,
+        github: github_service,
+    });
 
-    println!("Starting server on {}", bind_addr);
+    // Create app config
+    let app_config = config.clone(); // Clone config for use in the closure
 
     // Start HTTP server
+    let bind_addr = format!("{}:{}", config.server_host, config.server_port);
+    log::info!("Starting server at http://{}", bind_addr);
+
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
-            .supports_credentials(); // Enable credentials for auth cookies
-
-        let app_config = config.clone(); // Clone config for use in the closure
-        let db_pool_clone = db_pool.clone();
-        let http_client_clone = http_client.clone();
-        let github_service_clone = github_service.clone();
-
         App::new()
-            .wrap(cors)
-            .wrap(middleware::logging::RequestLogger)
-            .wrap(middleware::error_handler::ErrorHandler)
-            .wrap(middleware::auth::AuthMiddleware) // Add auth middleware
-            .configure(routes::configure)
-            .app_data(db_pool_clone)
-            .app_data(actix_web::web::Data::new(app_config)) // Add config as app data
-            .app_data(actix_web::web::Data::new(http_client_clone)) // Add Reqwest client
-            .app_data(actix_web::web::Data::new(github_service_clone)) // Add GitHub service
+            .wrap(Logger::default())
+            .wrap(Cors::permissive()) // TODO: Configure CORS properly
+            .app_data(app_state.clone())
+            .app_data(web::Data::new(app_config.clone()))
+            .configure(routes::configure_routes)
     })
-    .bind(&bind_addr)?
+    .bind(bind_addr)?
     .run()
     .await
 }

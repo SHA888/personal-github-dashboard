@@ -10,6 +10,6 @@ pub mod validation;
 // #[allow(unused_imports)] pub use config::Config; // Commented out - likely used implicitly
 // #[allow(unused_imports)] pub use github::GithubClient; // Commented out - needed for API calls
 #[allow(unused_imports)]
-pub use jwt::{create_token, validate_token, Claims};
+pub use jwt::{create_token, verify_token, Claims};
 // #[allow(unused_imports)] pub use time::format_timestamp; // Commented out - potentially useful later
 // #[allow(unused_imports)] pub use validation::validate_input; // Commented out - potentially useful later

@@ -28,6 +28,9 @@ pub enum AppError {
 
     #[display(fmt = "GitHub API Error: {}", _0)]
     GitHubError(String),
+
+    #[display(fmt = "Rate Limit Exceeded: {}", _0)]
+    RateLimitExceeded(String),
 }
 
 impl ResponseError for AppError {
@@ -57,6 +60,10 @@ impl ResponseError for AppError {
                 "error": "GitHub API Error",
                 "message": msg
             })),
+            AppError::RateLimitExceeded(msg) => HttpResponse::TooManyRequests().json(json!({
+                "error": "Rate Limit Exceeded",
+                "message": msg
+            })),
         }
     }
 }
@@ -66,6 +73,32 @@ impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         // You might want more sophisticated mapping here based on the sqlx error type
         AppError::DatabaseError(err.to_string())
+    }
+}
+
+impl From<octocrab::Error> for AppError {
+    fn from(err: octocrab::Error) -> Self {
+        match err {
+            octocrab::Error::GitHub { source, .. } => {
+                let message = source.message;
+                if source.documentation_url.is_some() && message.contains("rate limit") {
+                    AppError::RateLimitExceeded(message)
+                } else if message.contains("Not Found") {
+                    AppError::NotFound(message)
+                } else if message.contains("Unauthorized") || message.contains("Bad credentials") {
+                    AppError::Unauthorized(message)
+                } else {
+                    AppError::GitHubError(message)
+                }
+            }
+            _ => AppError::InternalError(format!("GitHub API error: {}", err)),
+        }
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(err: reqwest::Error) -> Self {
+        AppError::InternalError(format!("HTTP request error: {}", err))
     }
 }
 

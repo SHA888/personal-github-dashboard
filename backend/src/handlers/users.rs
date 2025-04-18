@@ -38,11 +38,11 @@ pub async fn list_users(
         .fetch_one(&**pool)
         .await?;
 
-    // Get users
     let users = sqlx::query_as!(
         User,
         r#"
-        SELECT * FROM users
+        SELECT id, github_id, login, name, email, avatar_url, access_token, created_at, updated_at
+        FROM users
         ORDER BY login ASC
         LIMIT $1 OFFSET $2
         "#,
@@ -69,7 +69,8 @@ pub async fn get_user(
     let user = sqlx::query_as!(
         User,
         r#"
-        SELECT * FROM users
+        SELECT id, github_id, login, name, email, avatar_url, access_token, created_at, updated_at
+        FROM users
         WHERE id = $1
         "#,
         id.into_inner()

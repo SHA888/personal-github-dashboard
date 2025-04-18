@@ -86,7 +86,7 @@ where
         };
 
         // Validate JWT
-        match jwt::validate_token(&token, &config.jwt_secret) {
+        match jwt::validate_token(&token, config.jwt_secret.as_bytes()) {
             Ok(claims) => {
                 // Add validated user ID to request extensions
                 req.extensions_mut().insert(claims);

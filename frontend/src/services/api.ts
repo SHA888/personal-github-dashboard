@@ -124,23 +124,6 @@ interface UserResponse extends User {
   refreshToken?: string;
 }
 
-interface ActivityFilters {
-  timeRange?: string;
-  owner?: string;
-  repo?: string;
-}
-
-interface RepositoryActivityData {
-  date: string;
-  commits: number;
-  additions: number;
-  deletions: number;
-}
-
-interface RepositoryActivityResponse {
-  data: RepositoryActivityData[];
-}
-
 class ApiService {
   private handleError(error: AxiosError): ApiError {
     if (error.response) {
@@ -264,11 +247,6 @@ class ApiService {
     };
   }
 
-  async getOrganizations(): Promise<ApiResponse<Organization[]>> {
-    // Implementation needed
-    throw new Error('Method not implemented');
-  }
-
   // --- Auth --- //
   async githubLogin(): Promise<LoginResponse> {
     const response = await apiClient.get<LoginResponse>('/auth/github');
@@ -302,15 +280,6 @@ class ApiService {
 
   async syncRepositories(): Promise<void> {
     await apiClient.post('/repositories/sync');
-  }
-
-  // --- Analytics --- //
-  async getRepositoryActivity(filters: ActivityFilters = {}): Promise<RepositoryActivityResponse> {
-    const response = await apiClient.get<RepositoryActivityResponse>(
-      `/analytics/repository-activity`,
-      { params: filters }, // Pass filters as query parameters
-    );
-    return response.data;
   }
 }
 

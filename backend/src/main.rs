@@ -2,31 +2,36 @@ use actix_cors::Cors;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{App, HttpServer};
 use cookie::Key;
-use dotenv::dotenv;
 use sqlx::PgPool;
 
+mod handlers;
 mod routes;
+mod utils;
+use crate::utils::config::Config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Load environment variables
-    dotenv().ok();
     env_logger::init();
+    let config = Config::from_env();
 
     // Database pool
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = PgPool::connect(&database_url)
+    let pool = PgPool::connect(&config.database_url)
         .await
         .expect("Failed to connect to Postgres");
 
     // Redis session store
-    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
-    let redis_store = RedisSessionStore::new(redis_url)
+    let redis_store = RedisSessionStore::new(&config.redis_url)
         .await
         .expect("Failed to connect to Redis");
 
     // Server binding
-    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".into());
+    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| {
+        format!(
+            "0.0.0.0:{}",
+            std::env::var("PORT").unwrap_or_else(|_| "8080".into())
+        )
+    });
 
     HttpServer::new(move || {
         let cors = Cors::default()

@@ -1,3 +1,4 @@
+use crate::handlers::auth::{callback, login};
 use actix_web::{web, HttpResponse};
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -20,14 +21,6 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 
 async fn health() -> HttpResponse {
     HttpResponse::Ok().body("OK")
-}
-
-async fn login() -> HttpResponse {
-    HttpResponse::NotImplemented().finish()
-}
-
-async fn callback() -> HttpResponse {
-    HttpResponse::NotImplemented().finish()
 }
 
 async fn get_repositories() -> HttpResponse {

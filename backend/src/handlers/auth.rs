@@ -1,5 +1,6 @@
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
+use actix_session::Session;
 use actix_web::{
     cookie::{Cookie, SameSite},
     web, HttpRequest, HttpResponse,
@@ -38,11 +39,13 @@ pub async fn login() -> HttpResponse {
         .finish()
 }
 
-pub async fn callback(req: HttpRequest) -> HttpResponse {
+pub async fn callback(req: HttpRequest, session: Session) -> HttpResponse {
     // Test mode: skip real OAuth for tests
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
         let secret = std::env::var("JWT_SECRET").unwrap_or_default();
         let jwt = create_jwt("testuser", &secret, 3600).unwrap();
+        // Store JWT in session
+        let _ = session.insert("jwt", &jwt);
         let cookie = Cookie::build("auth_token", jwt)
             .http_only(true)
             .secure(true)
@@ -87,6 +90,8 @@ pub async fn callback(req: HttpRequest) -> HttpResponse {
             if let Ok(user) = gh_user {
                 // Create JWT for user
                 let jwt = create_jwt(&user.login, &Config::from_env().jwt_secret, 3600).unwrap();
+                // Store JWT in session
+                let _ = session.insert("jwt", &jwt);
                 // Set cookie
                 let cookie = Cookie::build("auth_token", jwt)
                     .http_only(true)

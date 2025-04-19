@@ -9,6 +9,7 @@ pub struct Config {
     pub github_client_id: String,
     pub github_client_secret: String,
     pub github_redirect_url: String,
+    pub frontend_url: String,
 }
 
 impl Config {
@@ -24,6 +25,8 @@ impl Config {
                 .expect("GITHUB_CLIENT_SECRET must be set"),
             github_redirect_url: std::env::var("GITHUB_CALLBACK_URL")
                 .expect("GITHUB_CALLBACK_URL must be set"),
+            frontend_url: std::env::var("FRONTEND_URL")
+                .unwrap_or_else(|_| "http://localhost:3000".to_string()),
         }
     }
 }

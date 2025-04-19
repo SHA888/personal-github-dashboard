@@ -50,9 +50,6 @@ async-trait = "0.1"
 actix-web-actors = "4.2"
 actix = "0.13"
 
-# Rate limiting
-actix-ratelimit = "0.3"
-
 # OAuth2
 oauth2 = "4.4"
 
@@ -60,9 +57,6 @@ oauth2 = "4.4"
 url = "2.5"
 
 derive_more = "0.99"
-
-governor = "0.6.0"
-nonzero_ext = "0.3.0"
 
 # Error handling
 thiserror = "1.0"

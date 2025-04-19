@@ -1,4 +1,5 @@
 use crate::handlers::auth::{callback, login, pat_auth};
+use actix_cors::Cors;
 use actix_web::{web, HttpResponse};
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -6,9 +7,13 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/health", web::get().to(health));
 
     // Authentication
-    cfg.route("/auth/login", web::get().to(login));
-    cfg.route("/auth/callback", web::get().to(callback));
-    cfg.route("/auth/pat", web::post().to(pat_auth));
+    cfg.service(
+        web::scope("/auth")
+            .wrap(Cors::default().supports_credentials())
+            .route("/login", web::get().to(login))
+            .route("/callback", web::get().to(callback))
+            .route("/pat", web::post().to(pat_auth)),
+    );
 
     // API endpoints
     cfg.service(

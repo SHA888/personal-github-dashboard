@@ -3,11 +3,14 @@ use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{App, HttpServer};
 use cookie::Key;
 use sqlx::PgPool;
+// removed unused import
 
 mod handlers;
 mod routes;
 mod utils;
 use crate::utils::config::Config;
+
+// Rate limiter removed for now
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,11 +36,14 @@ async fn main() -> std::io::Result<()> {
         )
     });
 
+    // Rate limiter removed for now
+
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin()
+            .allowed_origin(&config.frontend_url)
             .allow_any_method()
             .allow_any_header()
+            .supports_credentials()
             .max_age(3600);
 
         App::new()

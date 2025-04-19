@@ -5,6 +5,7 @@ use actix_web::{
     cookie::{Cookie, SameSite},
     web, HttpRequest, HttpResponse,
 };
+use log::{error, warn};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -62,7 +63,10 @@ pub async fn callback(req: HttpRequest, session: Session) -> HttpResponse {
     // Parse OAuth query parameters
     let query = match web::Query::<OAuthRequest>::from_query(req.query_string()) {
         Ok(q) => q.into_inner(),
-        Err(_) => return HttpResponse::BadRequest().finish(),
+        Err(e) => {
+            warn!("Invalid OAuth query params: {:?}", e);
+            return HttpResponse::BadRequest().json(json!({"error": "Invalid OAuth parameters"}));
+        }
     };
 
     let cfg = Config::from_env();
@@ -106,10 +110,14 @@ pub async fn callback(req: HttpRequest, session: Session) -> HttpResponse {
                     .insert_header(("Location", "/"))
                     .finish();
             }
-            HttpResponse::InternalServerError().body("Failed to fetch GitHub user")
+            error!("Failed to fetch GitHub user: {:?}", gh_user.err());
+            HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to fetch GitHub user"}))
         }
         Err(err) => {
-            HttpResponse::InternalServerError().body(format!("OAuth exchange error: {}", err))
+            error!("OAuth token exchange failed: {:?}", err);
+            HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to exchange OAuth token"}))
         }
     }
 }
@@ -143,7 +151,10 @@ pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
                 "user": user.login,
             }))
         }
-        Err(err) => HttpResponse::Unauthorized().body(format!("Invalid PAT: {}", err)),
+        Err(err) => {
+            warn!("Invalid PAT provided: {:?}", err);
+            HttpResponse::Unauthorized().json(json!({"error": format!("Invalid PAT: {}", err)}))
+        }
     }
 }
 

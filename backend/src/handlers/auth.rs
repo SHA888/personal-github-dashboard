@@ -11,6 +11,7 @@ use oauth2::{
 };
 use octocrab::Octocrab;
 use serde::Deserialize;
+use serde_json::json;
 use time::Duration;
 use uuid::Uuid;
 
@@ -105,6 +106,33 @@ pub async fn callback(req: HttpRequest) -> HttpResponse {
         Err(err) => {
             HttpResponse::InternalServerError().body(format!("OAuth exchange error: {}", err))
         }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct PatRequest {
+    pub pat: String,
+}
+
+/// Authenticate using a personal access token for desktop/CLI usage
+pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
+    let cfg = Config::from_env();
+    // Initialize Octocrab with PAT
+    let octocrab = Octocrab::builder()
+        .personal_token(body.pat.clone())
+        .build()
+        .unwrap();
+    // Fetch user
+    match octocrab.current().user().await {
+        Ok(user) => {
+            // Create JWT
+            let jwt = create_jwt(&user.login, &cfg.jwt_secret, 3600).unwrap();
+            HttpResponse::Ok().json(json!({
+                "jwt": jwt,
+                "user": user.login,
+            }))
+        }
+        Err(err) => HttpResponse::Unauthorized().body(format!("Invalid PAT: {}", err)),
     }
 }
 

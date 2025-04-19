@@ -1,4 +1,4 @@
-use crate::handlers::auth::{callback, login};
+use crate::handlers::auth::{callback, login, pat_auth};
 use actix_web::{web, HttpResponse};
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -8,6 +8,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     // Authentication
     cfg.route("/auth/login", web::get().to(login));
     cfg.route("/auth/callback", web::get().to(callback));
+    cfg.route("/auth/pat", web::post().to(pat_auth));
 
     // API endpoints
     cfg.service(

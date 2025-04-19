@@ -5,12 +5,14 @@ This document provides a comprehensive overview of all features available in the
 ## Core Features
 
 ### Authentication
+
 - GitHub OAuth integration
 - Secure token management
 - Session persistence
 - Auto-refresh of expired tokens
 
 ### Dashboard Overview
+
 - Activity feed of recent events
 - Repository statistics summary
 - Organization overview
@@ -18,6 +20,7 @@ This document provides a comprehensive overview of all features available in the
 - Notification center
 
 ### Repository Management
+
 - List of all repositories (owned and collaborated)
 - Repository search and filtering
 - Repository statistics (stars, forks, issues)
@@ -26,12 +29,14 @@ This document provides a comprehensive overview of all features available in the
 - Code frequency charts
 
 ### Organization Features
+
 - Organization membership overview
 - Organization repository list
 - Team memberships and access levels
 - Organization activity feed
 
 ### Analytics
+
 - Contribution analytics
 - Code frequency charts
 - Commit history visualization
@@ -41,16 +46,19 @@ This document provides a comprehensive overview of all features available in the
 ## Web Mode Specific Features
 
 ### Real-time Updates
+
 - Live notification updates
 - WebSocket-based activity feed
 - Dynamic data refresh
 
 ### Responsive Design
+
 - Mobile-friendly interface
 - Adaptive layouts
 - Touch-optimized interactions
 
 ### Browser Integration
+
 - Browser notifications
 - Bookmark support
 - History management
@@ -58,12 +66,14 @@ This document provides a comprehensive overview of all features available in the
 ## Desktop Mode Specific Features
 
 ### System Integration
+
 - Native notifications
 - System tray integration
 - Offline support
 - Auto-start capability
 
 ### Enhanced Performance
+
 - Local caching
 - Background synchronization
 - Reduced API calls
@@ -71,6 +81,7 @@ This document provides a comprehensive overview of all features available in the
 ## Shared Components
 
 ### User Interface
+
 - Material Design components
 - Dark/light theme support
 - Customizable layouts
@@ -78,12 +89,14 @@ This document provides a comprehensive overview of all features available in the
 - Interactive charts and graphs
 
 ### Data Management
+
 - Efficient caching strategy
 - Background data synchronization
 - Pagination support
 - Search functionality
 
 ### Security Features
+
 - Secure token storage
 - Rate limit handling
 - Error recovery
@@ -92,6 +105,7 @@ This document provides a comprehensive overview of all features available in the
 ## Upcoming Features
 
 ### Planned Enhancements
+
 - Pull request management
 - Issue tracking integration
 - Code review workflow
@@ -99,6 +113,7 @@ This document provides a comprehensive overview of all features available in the
 - CI/CD pipeline integration
 
 ### Beta Features
+
 - Advanced analytics
 - Custom dashboard layouts
 - Team collaboration tools
@@ -107,6 +122,7 @@ This document provides a comprehensive overview of all features available in the
 ## Configuration Options
 
 ### User Preferences
+
 - Default view settings
 - Notification preferences
 - Update frequency
@@ -114,6 +130,7 @@ This document provides a comprehensive overview of all features available in the
 - Language preferences
 
 ### System Settings
+
 - Cache size management
 - Sync frequency
 - Log level configuration
@@ -122,12 +139,14 @@ This document provides a comprehensive overview of all features available in the
 ## Feature Flags
 
 ### Development Flags
+
 - Beta features toggle
 - Experimental features
 - Debug mode
 - Performance monitoring
 
 ### Production Flags
+
 - Feature rollout control
 - A/B testing support
 - Regional feature availability
@@ -136,6 +155,7 @@ This document provides a comprehensive overview of all features available in the
 ## Dependencies
 
 ### Frontend Dependencies
+
 - React
 - TypeScript
 - Material-UI
@@ -143,6 +163,7 @@ This document provides a comprehensive overview of all features available in the
 - Redux
 
 ### Backend Dependencies
+
 - Rust
 - Actix-web
 - PostgreSQL
@@ -152,6 +173,7 @@ This document provides a comprehensive overview of all features available in the
 ## Testing
 
 ### Test Coverage
+
 - Unit tests
 - Integration tests
 - End-to-end tests
@@ -159,6 +181,7 @@ This document provides a comprehensive overview of all features available in the
 - Security tests
 
 ### Testing Tools
+
 - Jest for frontend
 - Rust test framework
 - Selenium for E2E
@@ -167,12 +190,14 @@ This document provides a comprehensive overview of all features available in the
 ## Documentation Structure
 
 ### User Documentation
+
 - Getting started guide
 - Feature tutorials
 - FAQ
 - Troubleshooting guide
 
 ### Developer Documentation
+
 - API reference
 - Architecture overview
 - Contributing guidelines
@@ -181,12 +206,14 @@ This document provides a comprehensive overview of all features available in the
 ## Version History
 
 ### Current Version
+
 - List of active features
 - Recent changes
 - Known issues
 - Compatibility notes
 
 ### Future Roadmap
+
 - Planned features
 - Development priorities
 - Deprecation schedule

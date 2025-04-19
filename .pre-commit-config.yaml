@@ -1,44 +1,37 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-    -   id: trailing-whitespace
+      - id: trailing-whitespace
         files: ^.*$
-    -   id: end-of-file-fixer
+      - id: end-of-file-fixer
         files: ^.*$
-    -   id: check-yaml
+      - id: check-yaml
         files: ^.*\.ya?ml$
-    -   id: mixed-line-ending
+      - id: mixed-line-ending
         files: ^.*$
-    -   id: check-merge-conflict
+      - id: check-merge-conflict
         files: ^.*$
 
--   repo: local
+  - repo: local
     hooks:
-    -   id: rustfmt
+      - id: rustfmt
         name: Rust Format
         entry: bash -c 'cd backend && cargo fmt -- --check'
         language: system
         types: [rust]
         pass_filenames: false
 
-    -   id: rust-lint
+      - id: rust-lint
         name: Rust Lint
         entry: bash -c 'cd backend && cargo clippy -- -D warnings'
         language: system
         types: [rust]
         pass_filenames: false
 
-    -   id: frontend-format
-        name: Frontend Format
-        entry: bash -c 'cd frontend && npm run format'
+      - id: npm-format-lint
+        name: Run npm format & lint
+        entry: bash -c 'npm run format && npm run lint'
         language: system
-        files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
-
-    -   id: frontend-lint
-        name: Frontend Lint
-        entry: bash -c 'cd frontend && npm run lint'
-        language: system
-        files: ^frontend/.*\.(ts|tsx)$
-        pass_filenames: false
+        always_run: true

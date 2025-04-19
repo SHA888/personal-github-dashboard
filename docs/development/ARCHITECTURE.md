@@ -3,6 +3,7 @@
 ## Overview
 
 Personal GitHub Dashboard is designed as a hybrid application that can run in two modes:
+
 1. Web Application Mode (Server-based)
 2. Desktop Application Mode (Tauri-based)
 
@@ -47,6 +48,7 @@ graph TD
 ## Component Architecture
 
 ### 1. Frontend Layer (Shared)
+
 - **Technology**: React + TypeScript
 - **Key Components**:
   - Shared UI components
@@ -55,6 +57,7 @@ graph TD
   - Unified state management
 
 ### 2. Web Backend (Server Mode)
+
 - **Technology**: Rust + Actix-web
 - **Components**:
   - RESTful API endpoints
@@ -64,6 +67,7 @@ graph TD
   - Authentication service
 
 ### 3. Desktop Backend (Tauri Mode)
+
 - **Technology**: Rust + Tauri
 - **Components**:
   - Local storage management
@@ -75,6 +79,7 @@ graph TD
 ## Data Flow
 
 ### Web Mode
+
 1. User interacts with React UI
 2. API request sent to Actix-web backend
 3. Backend processes request:
@@ -85,6 +90,7 @@ graph TD
 5. UI updates with new data
 
 ### Desktop Mode
+
 1. User interacts with React UI
 2. API request handled by Tauri backend
 3. Backend processes request:
@@ -97,12 +103,14 @@ graph TD
 ## Authentication
 
 ### Web Mode
+
 - GitHub OAuth flow
 - Session-based authentication
 - Token storage in database
 - Redis session cache
 
 ### Desktop Mode
+
 - Personal Access Token (PAT)
 - Secure local storage
 - Token encryption
@@ -111,6 +119,7 @@ graph TD
 ## Data Storage
 
 ### Web Mode
+
 - **PostgreSQL Database**:
   - User data
   - GitHub data cache
@@ -122,6 +131,7 @@ graph TD
   - Rate limit tracking
 
 ### Desktop Mode
+
 - **Tauri Secure Store**:
   - User preferences
   - GitHub PAT
@@ -134,12 +144,14 @@ graph TD
 ## Integration Points
 
 ### GitHub API
+
 - Web: Server-side integration with caching
 - Desktop: Direct Octokit integration
 - Shared rate limit handling
 - Error handling strategies
 
 ### Logseq (Desktop Only)
+
 - Local graph access
 - Note reading/writing
 - Markdown processing
@@ -148,6 +160,7 @@ graph TD
 ## Security Considerations
 
 ### Web Mode
+
 - HTTPS enforcement
 - CSRF protection
 - Rate limiting
@@ -155,6 +168,7 @@ graph TD
 - XSS protection
 
 ### Desktop Mode
+
 - Secure storage encryption
 - Local file security
 - API key protection
@@ -163,12 +177,14 @@ graph TD
 ## Performance Optimization
 
 ### Web Mode
+
 - Redis caching
 - Database indexing
 - Query optimization
 - Load balancing ready
 
 ### Desktop Mode
+
 - Local caching
 - Efficient file I/O
 - Memory management
@@ -177,12 +193,14 @@ graph TD
 ## Error Handling
 
 ### Web Mode
+
 - Global error middleware
 - Structured error responses
 - Logging and monitoring
 - Recovery strategies
 
 ### Desktop Mode
+
 - Offline error handling
 - Sync conflict resolution
 - Local storage fallbacks
@@ -191,18 +209,21 @@ graph TD
 ## Testing Strategy
 
 ### Shared Components
+
 - Unit tests for UI
 - Integration tests
 - State management tests
 - API client tests
 
 ### Web-Specific
+
 - API endpoint tests
 - Database operations
 - Cache behavior
 - Load testing
 
 ### Desktop-Specific
+
 - Tauri plugin tests
 - Storage tests
 - Offline functionality
@@ -211,12 +232,14 @@ graph TD
 ## Deployment
 
 ### Web Mode
+
 - Docker containerization
 - Database migrations
 - Cache warming
 - SSL configuration
 
 ### Desktop Mode
+
 - Cross-platform builds
 - Auto-updates
 - Installation packages

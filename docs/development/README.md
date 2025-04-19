@@ -7,18 +7,22 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ### Code Style
 
 #### Rust (Backend)
+
 1. **Formatting**
+
    - Use `cargo fmt` to format code
    - Follow Rust style guide
    - Maximum line length: 100 characters
 
 2. **Naming Conventions**
+
    - Structs and enums: PascalCase
    - Functions and variables: snake_case
    - Constants: SCREAMING_SNAKE_CASE
    - Traits: PascalCase with `Trait` suffix
 
 3. **Documentation**
+
    - Document all public APIs
    - Use `///` for documentation comments
    - Include examples in documentation
@@ -31,18 +35,22 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Use `?` operator appropriately
 
 #### TypeScript/React (Frontend)
+
 1. **Formatting**
+
    - Use Prettier for formatting
    - Follow ESLint rules
    - Maximum line length: 100 characters
 
 2. **Naming Conventions**
+
    - Components: PascalCase
    - Functions and variables: camelCase
    - Constants: SCREAMING_SNAKE_CASE
    - Interfaces: PascalCase with `I` prefix
 
 3. **Component Structure**
+
    - Use functional components
    - Implement proper TypeScript types
    - Follow React hooks best practices
@@ -57,18 +65,21 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ### Git Workflow
 
 1. **Branch Naming**
+
    - Feature branches: `feature/description`
    - Bug fixes: `fix/description`
    - Documentation: `docs/description`
    - Hotfixes: `hotfix/description`
 
 2. **Commit Messages**
+
    - Format: `<type>(<scope>): <description>`
    - Types: feat, fix, docs, style, refactor, test, chore
    - Scope: component, module, or feature
    - Description: concise and clear
 
 3. **Pull Requests**
+
    - Create from feature branch
    - Include description of changes
    - Reference related issues
@@ -85,18 +96,21 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ### Backend Testing
 
 1. **Unit Tests**
+
    - Test all public functions
    - Mock external dependencies
    - Use `#[cfg(test)]` for test modules
    - Follow test naming conventions
 
 2. **Integration Tests**
+
    - Test API endpoints
    - Test database operations
    - Test external service integration
    - Use test database
 
 3. **Test Structure**
+
    ```rust
    #[cfg(test)]
    mod tests {
@@ -114,12 +128,14 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ### Frontend Testing
 
 1. **Unit Tests**
+
    - Test components in isolation
    - Test utility functions
    - Test hooks
    - Use React Testing Library
 
 2. **Integration Tests**
+
    - Test component interactions
    - Test API integration
    - Test state management
@@ -139,11 +155,13 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Development Workflow
 
 ### 1. Setup Development Environment
+
 1. Follow [Setup Guide](../setup/README.md)
 2. Install required tools
 3. Configure IDE/extensions
 
 ### 2. Start New Feature
+
 1. Create feature branch
    ```bash
    git checkout -b feature/new-feature
@@ -155,12 +173,14 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 6. Create pull request
 
 ### 3. Code Review Process
+
 1. Submit pull request
 2. Address review comments
 3. Update documentation
 4. Merge after approval
 
 ### 4. Release Process
+
 1. Update version numbers
 2. Update changelog
 3. Create release branch
@@ -170,7 +190,9 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Documentation Requirements
 
 ### Code Documentation
+
 1. **Backend**
+
    - Document public APIs
    - Document error conditions
    - Include examples
@@ -183,7 +205,9 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Update UI documentation
 
 ### Project Documentation
+
 1. **Architecture**
+
    - Update architecture docs
    - Document design decisions
    - Update diagrams
@@ -198,13 +222,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Performance Guidelines
 
 ### Backend Performance
+
 1. **Database**
+
    - Use proper indexes
    - Optimize queries
    - Use connection pooling
    - Implement caching
 
 2. **API**
+
    - Implement rate limiting
    - Use proper HTTP methods
    - Optimize response size
@@ -217,13 +244,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Handle large datasets
 
 ### Frontend Performance
+
 1. **Rendering**
+
    - Use React.memo
    - Implement proper keys
    - Use lazy loading
    - Optimize re-renders
 
 2. **Assets**
+
    - Optimize images
    - Use proper formats
    - Implement caching
@@ -238,13 +268,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Security Guidelines
 
 ### Backend Security
+
 1. **Authentication**
+
    - Use secure tokens
    - Implement proper validation
    - Handle token expiration
    - Use secure storage
 
 2. **Authorization**
+
    - Implement proper roles
    - Use middleware
    - Validate permissions
@@ -257,13 +290,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Use secure protocols
 
 ### Frontend Security
+
 1. **Authentication**
+
    - Secure token storage
    - Implement proper validation
    - Handle session timeout
    - Use secure cookies
 
 2. **Data Protection**
+
    - Sanitize user input
    - Use proper encoding
    - Implement CSRF protection
@@ -278,13 +314,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Monitoring and Logging
 
 ### Backend Monitoring
+
 1. **Logging**
+
    - Use structured logging
    - Implement proper levels
    - Include context
    - Handle sensitive data
 
 2. **Metrics**
+
    - Track performance
    - Monitor errors
    - Track usage
@@ -297,13 +336,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Handle incidents
 
 ### Frontend Monitoring
+
 1. **Error Tracking**
+
    - Implement error boundaries
    - Track client errors
    - Monitor performance
    - Track user actions
 
 2. **Analytics**
+
    - Track usage
    - Monitor performance
    - Track errors
@@ -318,13 +360,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ## Continuous Integration
 
 ### Backend CI
+
 1. **Build**
+
    - Compile code
    - Run tests
    - Check formatting
    - Run linters
 
 2. **Test**
+
    - Run unit tests
    - Run integration tests
    - Check coverage
@@ -337,13 +382,16 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
    - Deploy to staging
 
 ### Frontend CI
+
 1. **Build**
+
    - Compile code
    - Run tests
    - Check formatting
    - Run linters
 
 2. **Test**
+
    - Run unit tests
    - Run integration tests
    - Check coverage
@@ -360,9 +408,11 @@ This guide provides comprehensive guidelines for contributing to the GitHub Dash
 ### Organization Endpoints
 
 #### GET /api/orgs
+
 Lists all organizations with their repositories count.
 
 **Response:**
+
 ```json
 {
   "organizations": [
@@ -379,9 +429,11 @@ Lists all organizations with their repositories count.
 ```
 
 #### POST /api/orgs/sync
+
 Triggers a sync of all organizations from GitHub.
 
 **Response:**
+
 ```json
 {
   "message": "Organizations synchronized successfully"
@@ -389,9 +441,11 @@ Triggers a sync of all organizations from GitHub.
 ```
 
 #### POST /api/orgs/sync-all
+
 Triggers a full sync of organizations and their repositories.
 
 **Response:**
+
 ```json
 {
   "message": "Sync completed",
@@ -403,6 +457,7 @@ Triggers a full sync of organizations and their repositories.
 ### Implementation Details
 
 #### Organization Sync Process
+
 1. Fetches organizations from GitHub API
 2. Stores organization details in database
 3. For each organization:
@@ -413,6 +468,7 @@ Triggers a full sync of organizations and their repositories.
 5. Provides progress tracking
 
 #### Error Handling
+
 - GitHub API rate limits
 - Network errors
 - Database constraints

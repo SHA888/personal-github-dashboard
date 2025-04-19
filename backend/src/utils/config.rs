@@ -22,8 +22,8 @@ impl Config {
                 .expect("GITHUB_CLIENT_ID must be set"),
             github_client_secret: std::env::var("GITHUB_CLIENT_SECRET")
                 .expect("GITHUB_CLIENT_SECRET must be set"),
-            github_redirect_url: std::env::var("GITHUB_REDIRECT_URL")
-                .expect("GITHUB_REDIRECT_URL must be set"),
+            github_redirect_url: std::env::var("GITHUB_CALLBACK_URL")
+                .expect("GITHUB_CALLBACK_URL must be set"),
         }
     }
 }

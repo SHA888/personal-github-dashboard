@@ -27,6 +27,7 @@ Personal GitHub Dashboard is an open-source project that helps you track and ana
 ## Tech Stack
 
 ### Frontend
+
 - Vite + React
 - TypeScript
 - Tailwind CSS
@@ -34,6 +35,7 @@ Personal GitHub Dashboard is an open-source project that helps you track and ana
 - Vitest for testing
 
 ### Backend
+
 - Rust with Actix-web
 - PostgreSQL with SQLx
 - Redis for caching
@@ -45,6 +47,7 @@ Personal GitHub Dashboard is an open-source project that helps you track and ana
 For a quick start, follow these steps:
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/SHA888/personal-github-dashboard.git
    cd personal-github-dashboard
@@ -53,6 +56,7 @@ For a quick start, follow these steps:
 2. Follow the [Setup Guide](./setup/README.md) for detailed instructions
 
 3. Start the development servers:
+
    ```bash
    npm run dev
    ```
@@ -82,6 +86,7 @@ For production deployment:
 ## Support
 
 If you encounter any issues:
+
 1. Check the [Troubleshooting](./setup/README.md#troubleshooting) section
 2. Search existing GitHub issues
 3. Create a new issue with detailed information
@@ -89,6 +94,7 @@ If you encounter any issues:
 ## Contributing
 
 We welcome contributions! Please read our [Development Guide](./development/README.md) for:
+
 - Code style guidelines
 - Pull request process
 - Testing requirements

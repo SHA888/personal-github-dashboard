@@ -3,16 +3,19 @@
 ## Prerequisites
 
 ### Common Requirements
+
 - Node.js 18+ and npm
 - Rust 1.75+ and Cargo
 - Git
 
 ### Web Mode Requirements
+
 - PostgreSQL 15+
 - Redis 7+
 - Docker (optional, for containerization)
 
 ### Desktop Mode Requirements
+
 - Tauri development dependencies:
   - Windows: Microsoft Visual Studio C++ Build Tools
   - macOS: Xcode Command Line Tools
@@ -22,17 +25,20 @@
 ## Initial Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/SHA888/personal-github-dashboard.git
    cd personal-github-dashboard
    ```
 
 2. **Install Frontend Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Install Rust Dependencies**
+
    ```bash
    # For web backend
    cd backend
@@ -46,6 +52,7 @@
 ## Web Mode Setup
 
 1. **Database Setup**
+
    ```bash
    # Start PostgreSQL and Redis (using Docker)
    docker-compose up -d
@@ -56,6 +63,7 @@
    ```
 
 2. **Environment Configuration**
+
    ```bash
    # Create .env file in backend directory
    cp backend/.env.example backend/.env
@@ -68,12 +76,14 @@
    ```
 
 3. **Database Migrations**
+
    ```bash
    cd backend
    cargo run --bin migrate
    ```
 
 4. **Start Development Servers**
+
    ```bash
    # Terminal 1: Frontend
    npm run dev
@@ -86,6 +96,7 @@
 ## Desktop Mode Setup
 
 1. **Tauri Setup**
+
    ```bash
    # Install Tauri CLI
    cargo install tauri-cli
@@ -95,24 +106,28 @@
    ```
 
 2. **Configure Tauri**
+
    ```bash
    # Edit src-tauri/tauri.conf.json
    # Configure allowed APIs, windows, etc.
    ```
 
 3. **Local Storage Setup**
+
    ```bash
    # Tauri will handle this automatically
    # Configuration in src-tauri/src/main.rs
    ```
 
 4. **Logseq Integration**
+
    ```bash
    # Create Logseq graph directory
    mkdir -p ~/personal-github-dashboard-logseq
    ```
 
 5. **Start Desktop Development**
+
    ```bash
    # Development mode
    npm run tauri dev
@@ -124,6 +139,7 @@
 ## Development Workflow
 
 ### Web Mode Development
+
 1. Make changes to frontend code in `src/`
 2. Make changes to backend code in `backend/`
 3. Run tests: `npm test` and `cargo test`
@@ -131,12 +147,14 @@
 5. Check linting: `npm run lint` and `cargo clippy`
 
 ### Desktop Mode Development
+
 1. Make changes to frontend code in `src/`
 2. Make changes to Tauri backend in `src-tauri/`
 3. Test desktop features: `npm run tauri dev`
 4. Build for platforms: `npm run tauri build`
 
 ### Shared Code Development
+
 1. Keep frontend components mode-agnostic
 2. Use environment detection for mode-specific features
 3. Maintain consistent API interfaces
@@ -145,6 +163,7 @@
 ## Environment Variables
 
 ### Web Mode
+
 ```env
 # Backend (.env)
 DATABASE_URL=postgresql://user:password@localhost:5432/dashboard
@@ -159,6 +178,7 @@ VITE_MODE=web
 ```
 
 ### Desktop Mode
+
 ```env
 # Frontend (.env)
 VITE_MODE=desktop
@@ -169,6 +189,7 @@ VITE_MODE=desktop
 ## Testing
 
 ### Run All Tests
+
 ```bash
 # Frontend tests
 npm test
@@ -181,6 +202,7 @@ cd src-tauri && cargo test
 ```
 
 ### Run Specific Tests
+
 ```bash
 # Frontend component tests
 npm test -- --watch
@@ -195,7 +217,9 @@ cd src-tauri && cargo test --test plugins
 ## Common Issues
 
 ### Web Mode
+
 1. **Database Connection Issues**
+
    - Check PostgreSQL service is running
    - Verify connection string
    - Check network access
@@ -206,7 +230,9 @@ cd src-tauri && cargo test --test plugins
    - Check memory usage
 
 ### Desktop Mode
+
 1. **Tauri Build Issues**
+
    - Check system dependencies
    - Update Rust and Node.js
    - Clear cache: `npm run tauri clean`

@@ -5,18 +5,22 @@ This guide provides detailed instructions for setting up the GitHub Dashboard de
 ## Prerequisites
 
 ### System Requirements
+
 - Operating System: Windows 10/11, macOS, or Linux
 - RAM: 8GB minimum (16GB recommended)
 - Storage: 10GB free space
 - Internet connection for package downloads
 
 ### Required Software
+
 1. **Git**
+
    - Windows: [Git for Windows](https://git-scm.com/download/win)
    - macOS: `brew install git`
    - Linux: `sudo apt install git`
 
 2. **Rust Toolchain**
+
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    rustup default stable
@@ -24,6 +28,7 @@ This guide provides detailed instructions for setting up the GitHub Dashboard de
    ```
 
 3. **Node.js and npm**
+
    - Windows/macOS: [Node.js Downloads](https://nodejs.org/)
    - Linux:
      ```bash
@@ -32,6 +37,7 @@ This guide provides detailed instructions for setting up the GitHub Dashboard de
      ```
 
 4. **PostgreSQL**
+
    - Windows: [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
    - macOS: `brew install postgresql`
    - Linux: `sudo apt install postgresql postgresql-contrib`
@@ -42,6 +48,7 @@ This guide provides detailed instructions for setting up the GitHub Dashboard de
 ## Project Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/yourusername/github-dashboard.git
 cd github-dashboard
@@ -50,13 +57,16 @@ cd github-dashboard
 ### 2. Backend Setup
 
 #### Install Dependencies
+
 ```bash
 cd backend
 cargo build
 ```
 
 #### Database Setup
+
 1. Create PostgreSQL database:
+
    ```bash
    createdb github_dashboard
    ```
@@ -67,7 +77,9 @@ cargo build
    ```
 
 #### Environment Configuration
+
 Create `.env` file in the backend directory:
+
 ```env
 GITHUB_PERSONAL_ACCESS_TOKEN=your_github_personal_access_token
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/github_dashboard
@@ -75,6 +87,7 @@ PORT=8080
 ```
 
 #### Start Development Server
+
 ```bash
 cargo run
 ```
@@ -82,19 +95,23 @@ cargo run
 ### 3. Frontend Setup
 
 #### Install Dependencies
+
 ```bash
 cd frontend
 npm install
 ```
 
 #### Environment Configuration
+
 Create `.env` file in the frontend directory:
+
 ```env
 REACT_APP_API_URL=http://localhost:8080/api/v1
 REACT_APP_WS_URL=ws://localhost:8080/api/v1/ws
 ```
 
 #### Start Development Server
+
 ```bash
 npm start
 ```
@@ -110,9 +127,11 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
     ```
     Ensure this file is added to your `.gitignore`.
 3.  **Run Docker Compose:** Open a terminal in the project root directory and run:
+
     ```bash
     docker-compose up --build
     ```
+
     This command will build the Docker images for the frontend and backend (if they don't exist or have changed) and start all the services defined in `docker-compose.yml`.
 
     - The frontend will be accessible at `http://localhost:3000`.
@@ -133,7 +152,9 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
 ## Development Workflow
 
 ### Backend Development
+
 1. **Code Structure**
+
    ```
    backend/
    ├── src/
@@ -147,11 +168,13 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
    ```
 
 2. **Running Tests**
+
    ```bash
    cargo test
    ```
 
 3. **Code Formatting**
+
    ```bash
    cargo fmt
    ```
@@ -162,7 +185,9 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
    ```
 
 ### Frontend Development
+
 1. **Code Structure**
+
    ```
    frontend/
    ├── src/
@@ -176,11 +201,13 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
    ```
 
 2. **Running Tests**
+
    ```bash
    npm test
    ```
 
 3. **Code Formatting**
+
    ```bash
    npm run format
    ```
@@ -193,12 +220,15 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
 ## Database Management
 
 ### Schema Updates
+
 1. Create new migration:
+
    ```bash
    cargo sqlx migrate add <migration_name>
    ```
 
 2. Apply migrations:
+
    ```bash
    cargo sqlx migrate run
    ```
@@ -209,11 +239,13 @@ Alternatively, you can use Docker Compose to set up and run the entire developme
    ```
 
 ### Database Backup
+
 ```bash
 pg_dump -U postgres github_dashboard > backup.sql
 ```
 
 ### Database Restore
+
 ```bash
 psql -U postgres github_dashboard < backup.sql
 ```
@@ -221,12 +253,15 @@ psql -U postgres github_dashboard < backup.sql
 ## Redis Setup
 
 ### Installation
+
 1. **Windows**:
+
    - Download Redis from [Redis for Windows](https://github.com/microsoftarchive/redis/releases)
    - Run the installer and follow the setup wizard
    - Redis will be installed as a Windows service
 
 2. **macOS**:
+
    ```bash
    brew install redis
    brew services start redis
@@ -241,13 +276,17 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 ### Configuration
+
 1. **Basic Configuration**
+
    - Default port: 6379
    - Default host: localhost
    - No password by default (development only)
 
 2. **Security Configuration**
+
    - Set a password in production:
+
      ```bash
      # Edit Redis configuration
      sudo nano /etc/redis/redis.conf
@@ -256,6 +295,7 @@ psql -U postgres github_dashboard < backup.sql
      requirepass your_secure_password
      bind 127.0.0.1
      ```
+
    - Restart Redis after configuration changes:
      ```bash
      sudo systemctl restart redis-server
@@ -270,13 +310,16 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 ### Connection Testing
+
 1. **Basic Connection Test**:
+
    ```bash
    redis-cli ping
    # Should return: PONG
    ```
 
 2. **With Password**:
+
    ```bash
    redis-cli -a your_secure_password ping
    ```
@@ -290,6 +333,7 @@ psql -U postgres github_dashboard < backup.sql
 ### Troubleshooting
 
 1. **Redis Service Not Running**
+
    ```bash
    # Check Redis status
    sudo systemctl status redis-server
@@ -299,17 +343,20 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 2. **Connection Refused**
+
    - Verify Redis is running
    - Check firewall settings
    - Ensure correct port (6379)
    - Verify bind address in redis.conf
 
 3. **Authentication Failed**
+
    - Verify password in redis.conf
    - Check REDIS_URL format in .env
    - Ensure password is properly escaped in URL
 
 4. **Memory Issues**
+
    - Monitor memory usage:
      ```bash
      redis-cli info memory
@@ -331,6 +378,7 @@ psql -U postgres github_dashboard < backup.sql
 ## GitHub Integration
 
 ### Personal Access Token
+
 1. Go to GitHub Settings > Developer Settings > Personal Access Tokens
 2. Generate new token with required scopes:
    - `repo` (Full control of private repositories)
@@ -338,6 +386,7 @@ psql -U postgres github_dashboard < backup.sql
    - `read:user` (Read user profile data)
 
 ### Webhook Setup
+
 1. Go to repository settings > Webhooks
 2. Add new webhook:
    - Payload URL: `http://your-domain/api/v1/webhooks/github`
@@ -350,16 +399,19 @@ psql -U postgres github_dashboard < backup.sql
 ### Common Issues
 
 1. **Database Connection Failed**
+
    - Check PostgreSQL service is running
    - Verify database credentials in `.env`
    - Ensure database exists
 
 2. **GitHub API Rate Limits**
+
    - Check token permissions
    - Implement caching
    - Monitor rate limit headers
 
 3. **CORS Errors**
+
    - Verify backend CORS configuration
    - Check frontend API URL
    - Ensure proper headers
@@ -372,6 +424,7 @@ psql -U postgres github_dashboard < backup.sql
 ### Debugging Tools
 
 1. **Backend**
+
    - Enable debug logging: `RUST_LOG=debug cargo run`
    - Use `dbg!()` macro for quick debugging
    - Check PostgreSQL logs
@@ -384,12 +437,15 @@ psql -U postgres github_dashboard < backup.sql
 ## Production Deployment
 
 ### Prerequisites
+
 - VPS with Ubuntu 20.04+
 - Domain name with DNS configured
 - SSL certificate (Let's Encrypt)
 
 ### Deployment Steps
+
 1. **Server Setup**
+
    ```bash
    # Install required packages
    sudo apt update
@@ -397,6 +453,7 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 2. **Database Setup**
+
    ```bash
    sudo -u postgres psql
    CREATE DATABASE github_dashboard;
@@ -405,6 +462,7 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 3. **Backend Deployment**
+
    ```bash
    # Build release binary
    cargo build --release
@@ -417,6 +475,7 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 4. **Frontend Deployment**
+
    ```bash
    # Build production bundle
    npm run build
@@ -426,6 +485,7 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 5. **Nginx Configuration**
+
    ```nginx
    server {
        listen 80;
@@ -455,7 +515,9 @@ psql -U postgres github_dashboard < backup.sql
 ## Maintenance
 
 ### Regular Tasks
+
 1. **Database Backup**
+
    ```bash
    # Daily backup
    0 0 * * * pg_dump -U postgres github_dashboard > /backups/daily/backup-$(date +\%Y\%m\%d).sql
@@ -465,6 +527,7 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 2. **Log Rotation**
+
    ```bash
    # Configure logrotate
    sudo nano /etc/logrotate.d/github-dashboard
@@ -477,13 +540,16 @@ psql -U postgres github_dashboard < backup.sql
    ```
 
 ### Monitoring
+
 1. **System Metrics**
+
    - CPU usage
    - Memory usage
    - Disk space
    - Network traffic
 
 2. **Application Metrics**
+
    - API response times
    - Error rates
    - GitHub API rate limits

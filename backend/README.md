@@ -5,6 +5,7 @@ A high-performance backend service built with Rust and Actix Web for the Persona
 ## Overview
 
 The backend is built using:
+
 - Rust with Actix Web framework
 - PostgreSQL for data storage
 - Redis for caching and real-time features
@@ -21,11 +22,13 @@ The backend is built using:
 ## Setup
 
 1. Install dependencies:
+
    ```bash
    cargo build
    ```
 
 2. Create a `.env` file in the backend directory:
+
    ```
    GITHUB_PERSONAL_ACCESS_TOKEN=your_personal_access_token
    DATABASE_URL=postgresql://user:password@localhost:5432/personal_github_dashboard
@@ -34,6 +37,7 @@ The backend is built using:
    ```
 
 3. Set up the database:
+
    ```bash
    cargo run --bin migrate
    ```
@@ -46,6 +50,7 @@ The backend is built using:
 ## Development
 
 ### Project Structure
+
 ```
 backend/
 ├── src/
@@ -62,6 +67,7 @@ backend/
 ```
 
 ### Key Features
+
 - RESTful API endpoints
 - Real-time WebSocket updates
 - Automatic data synchronization

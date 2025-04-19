@@ -30,12 +30,14 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Development Workflow
 
 1. **Keep Your Fork Updated**
+
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
 2. **Install Dependencies**
+
    ```bash
    # Frontend dependencies
    cd frontend
@@ -47,6 +49,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
    ```
 
 3. **Run Development Servers**
+
    ```bash
    # Frontend
    cd frontend
@@ -60,6 +63,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Code Style Guidelines
 
 ### Rust Guidelines
+
 - Follow the Rust Style Guide
 - Use `cargo fmt` before committing
 - Run `cargo clippy` to catch common mistakes
@@ -67,6 +71,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 - Write unit tests for new functionality
 
 ### TypeScript/React Guidelines
+
 - Follow the project's ESLint configuration
 - Use TypeScript for type safety
 - Write functional components with hooks
@@ -76,6 +81,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Testing
 
 1. **Running Tests**
+
    ```bash
    # Frontend tests
    cd frontend
@@ -95,6 +101,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Pull Request Process
 
 1. **Before Submitting**
+
    - Update documentation for new features
    - Add tests for new functionality
    - Run the full test suite
@@ -102,6 +109,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
    - Rebase on latest main
 
 2. **PR Guidelines**
+
    - Use the PR template
    - Link related issues
    - Include screenshots for UI changes
@@ -123,6 +131,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Documentation
 
 1. **Code Documentation**
+
    - Document public APIs
    - Add inline comments for complex logic
    - Update README.md when needed
@@ -137,6 +146,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Release Process
 
 1. **Version Bumping**
+
    - Follow semantic versioning
    - Update version in Cargo.toml
    - Update version in package.json
@@ -152,6 +162,7 @@ Please refer to [SETUP.md](SETUP.md) for detailed instructions on setting up you
 ## Reporting Issues
 
 1. **Bug Reports**
+
    - Use the bug report template
    - Include reproduction steps
    - Attach relevant logs
@@ -177,6 +188,7 @@ By contributing, you agree that your contributions will be licensed under the pr
 ## Questions?
 
 Feel free to:
+
 - Open an issue
 - Join our Discord
 - Contact maintainers

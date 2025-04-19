@@ -55,6 +55,7 @@ VITE_GITHUB_CLIENT_ID=your_client_id
 ## Build Process
 
 1. Build the frontend:
+
    ```bash
    cd frontend
    npm install
@@ -70,6 +71,7 @@ VITE_GITHUB_CLIENT_ID=your_client_id
 ## Database Setup
 
 1. Create the production database:
+
    ```bash
    sqlx database create
    ```
@@ -82,6 +84,7 @@ VITE_GITHUB_CLIENT_ID=your_client_id
 ## Docker Deployment
 
 1. Build the Docker images:
+
    ```bash
    docker-compose -f docker-compose.prod.yml build
    ```
@@ -135,6 +138,7 @@ server {
 ### Application Monitoring
 
 1. Set up Prometheus metrics endpoint:
+
    - Backend metrics available at `/metrics`
    - Configure Prometheus to scrape this endpoint
 
@@ -153,6 +157,7 @@ server {
 ### Database Backups
 
 1. Automated daily backups:
+
    ```bash
    pg_dump -U user personal_github_dashboard > backup_$(date +%Y%m%d).sql
    ```
@@ -171,10 +176,12 @@ server {
 ## Security Considerations
 
 1. Enable rate limiting:
+
    - Configure in `backend/config/rate_limit.rs`
    - Adjust limits based on usage patterns
 
 2. Set up firewalls:
+
    - Allow only necessary ports (80, 443)
    - Restrict database access
 
@@ -187,11 +194,13 @@ server {
 ### Horizontal Scaling
 
 1. Backend scaling:
+
    - Use load balancer
    - Configure session sharing
    - Scale API servers independently
 
 2. Database scaling:
+
    - Configure read replicas
    - Consider sharding for large datasets
 
@@ -204,6 +213,7 @@ server {
 ### Regular Maintenance
 
 1. Monitor system resources:
+
    - CPU usage
    - Memory usage
    - Disk space
@@ -226,11 +236,13 @@ server {
 ### Common Issues
 
 1. Connection issues:
+
    - Check network connectivity
    - Verify DNS settings
    - Check firewall rules
 
 2. Performance issues:
+
    - Monitor database queries
    - Check Redis cache hit rate
    - Review application logs

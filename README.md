@@ -13,6 +13,7 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 ## Tech Stack
 
 ### Frontend
+
 - Vite + React
 - TypeScript
 - Tailwind CSS
@@ -20,6 +21,7 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 - Vitest for testing
 
 ### Backend
+
 - Rust with Actix-web
 - PostgreSQL with SQLx
 - Redis for caching
@@ -38,39 +40,46 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 ### Getting Started
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/personal-github-dashboard.git
 cd personal-github-dashboard
 ```
 
 2. Start the development databases:
+
 ```bash
 docker-compose up -d
 ```
 
 3. Set up environment variables:
+
 ```bash
 # Copy example environment files
 cp .env.example .env
 ```
 
 4. Install dependencies:
+
 ```bash
 # Install project dependencies
 npm install
 ```
 
 5. Start the development servers:
+
 ```bash
 # Start both frontend and backend
 npm run dev
 ```
 
 The application will be available at:
+
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:3000
 
 ## Project Structure
+
 ```
 personal-github-dashboard/
 ├── backend/        # Rust backend (Actix Web)
@@ -93,13 +102,16 @@ personal-github-dashboard/
 ## API Endpoints
 
 ### Health Check
+
 - `GET /api/health` - Check service health status
 
 ### Analytics
+
 - `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
 - `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
 
 ### Data Synchronization
+
 - `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync
 
 ## Documentation
@@ -123,6 +135,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Overview
 
 This project consists of:
+
 - **Backend**: Built with Rust using Actix Web, fetching data from the GitHub API and storing in PostgreSQL.
 - **Frontend**: A TypeScript/React application with Recharts for visualizations.
 - **Cache**: Redis for real-time data and rate limiting.
@@ -132,6 +145,7 @@ This project consists of:
 For comprehensive documentation, including setup instructions, architecture details, API reference, and deployment guide, please visit our [Documentation](./docs/README.md).
 
 ## Prerequisites
+
 - Rust (install via `curl --proto '=https' --tlsv1.2 -sSf https://sh.rust-lang.org | sh`)
 - Node.js and npm (for the frontend)
 - PostgreSQL (for the database)
@@ -141,16 +155,19 @@ For comprehensive documentation, including setup instructions, architecture deta
 ## Setup Instructions
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/SHA888/personal-github-dashboard.git
    cd personal-github-dashboard
    ```
 
 2. **Backend Setup**:
+
    ```bash
    cd backend
    cargo build
    ```
+
    - Create a `.env` file in `backend/` with:
      ```
      GITHUB_PERSONAL_ACCESS_TOKEN=your_personal_access_token
@@ -161,6 +178,7 @@ For comprehensive documentation, including setup instructions, architecture deta
    - Run: `cargo run`
 
 3. **Frontend Setup**:
+
    ```bash
    cd frontend
    npm install
@@ -172,6 +190,7 @@ For comprehensive documentation, including setup instructions, architecture deta
    - Frontend: `http://localhost:5173`
 
 ## Project Structure
+
 ```
 personal-github-dashboard/
 ├── backend/        # Rust backend (Actix Web)
@@ -189,6 +208,7 @@ personal-github-dashboard/
 The application consists of:
 
 - Backend (Rust + Actix-web)
+
   - GitHub API integration using octocrab
   - PostgreSQL database for data storage
   - Redis for caching and real-time data
@@ -207,6 +227,7 @@ The application consists of:
 ## Architecture
 
 The system uses:
+
 - Rust for backend services
 - PostgreSQL for data storage
 - Redis for caching and real-time features
@@ -214,6 +235,7 @@ The system uses:
 - React + TypeScript for frontend interface
 
 Data flow:
+
 1. GitHub data is fetched via API
 2. Stored in PostgreSQL database
 3. Cached in Redis for performance
@@ -222,19 +244,24 @@ Data flow:
 6. Visualized in web interface
 
 ## Contributing
+
 Feel free to fork, submit PRs, or open issues! Please read our [Development Guide](./docs/development/README.md) for details on how to contribute.
 
 ## License
+
 MIT
 
 ## API Endpoints
 
 ### Health Check
+
 - `GET /api/health` - Check service health status
 
 ### Analytics
+
 - `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
 - `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
 
 ### Data Synchronization
+
 - `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync

@@ -14,17 +14,20 @@ The Personal GitHub Dashboard is a full-stack application designed for efficient
 ## Design Principles
 
 1. **Scalability**
+
    - Efficient resource utilization
    - Performance optimization
    - Horizontal scaling capability
 
 2. **Real-time Capabilities**
+
    - WebSocket support
    - GitHub webhook integration
    - Live updates
    - Event-driven architecture
 
 3. **Security**
+
    - Secure authentication
    - Data encryption
    - Access control
@@ -55,12 +58,14 @@ personal-github-dashboard/
 ### Core Features
 
 1. **Dashboard View**
+
    - Repository and organization overview
    - Advanced activity visualizations
    - Real-time updates
    - Custom report builder
 
 2. **Organization Management**
+
    - Organization dashboard
    - Team analytics
    - Repository grouping
@@ -85,18 +90,21 @@ personal-github-dashboard/
 ### Core Components
 
 1. **Web Server (Actix Web)**
+
    - REST API endpoints
    - WebSocket support
    - Rate limiting
    - Multi-tenant support
 
 2. **GitHub API Integration**
+
    - Paginated data fetching
    - Webhook handling
    - Rate limit management
    - Organization support
 
 3. **Data Processing**
+
    - Real-time analytics
    - Background jobs
    - Data enrichment
@@ -122,6 +130,7 @@ personal-github-dashboard/
 ### Schema Design
 
 1. **Repositories Table**
+
    ```sql
    CREATE TABLE repositories (
        id SERIAL PRIMARY KEY,
@@ -141,6 +150,7 @@ personal-github-dashboard/
    ```
 
 2. **Organizations Table**
+
    ```sql
    CREATE TABLE organizations (
        id SERIAL PRIMARY KEY,
@@ -153,6 +163,7 @@ personal-github-dashboard/
    ```
 
 3. **Activity Table**
+
    ```sql
    CREATE TABLE activity (
        id SERIAL PRIMARY KEY,
@@ -186,18 +197,21 @@ personal-github-dashboard/
 ## Resource Optimization
 
 ### Backend Optimization
+
 - Connection pooling
 - Query optimization
 - Caching strategy
 - Background processing
 
 ### Frontend Optimization
+
 - Code splitting
 - Lazy loading
 - Asset optimization
 - Performance monitoring
 
 ### Database Optimization
+
 - Advanced indexing
 - Materialized views
 - Query optimization
@@ -206,9 +220,11 @@ personal-github-dashboard/
 ## Desktop Architecture
 
 ### Overview
+
 The desktop application is built using Tauri, providing a native cross-platform experience while leveraging our existing React frontend. This architecture enables offline capabilities and system-level integration.
 
 ### Key Components
+
 - **Tauri Core**: Manages window management, system tray, and native APIs
 - **Local Storage**: SQLite database for offline data persistence
 - **Background Service**: Handles periodic synchronization with GitHub
@@ -216,18 +232,22 @@ The desktop application is built using Tauri, providing a native cross-platform 
 - **Secure Storage**: Protected storage for GitHub PAT and user credentials
 
 ### Desktop-Specific Features
+
 1. **Offline Mode**
+
    - Local SQLite database for data persistence
    - Background sync when online
    - Conflict resolution for data updates
 
 2. **System Integration**
+
    - System tray with quick actions
    - Native notifications for important updates
    - Auto-start capability
    - Custom URL scheme handling
 
 3. **Security**
+
    - Secure storage for GitHub PAT
    - Encrypted local database
    - Sandboxed execution environment
@@ -238,6 +258,7 @@ The desktop application is built using Tauri, providing a native cross-platform 
    - Resource usage monitoring
 
 ### Desktop-Web Sync Architecture
+
 ```
 ┌─────────────────┐         ┌──────────────┐
 │  Desktop Client │ ←─────→ │  Web Backend │
@@ -252,12 +273,14 @@ The desktop application is built using Tauri, providing a native cross-platform 
 ## Deployment Architecture
 
 ### VPS Requirements
+
 - Load balancing
 - SSL termination
 - Monitoring
 - Backup system
 
 ### Monitoring
+
 - Application metrics
 - Performance tracking
 - Error logging
@@ -265,6 +288,7 @@ The desktop application is built using Tauri, providing a native cross-platform 
 - Alerting system
 
 ### Desktop Distribution
+
 - **Platforms**: Windows, macOS, Linux
 - **Auto-updates**: Implemented through GitHub releases
 - **Installation**: Platform-specific installers
@@ -273,12 +297,14 @@ The desktop application is built using Tauri, providing a native cross-platform 
 ## Security
 
 ### Authentication
+
 - GitHub OAuth
 - JWT tokens
 - Session management
 - Multi-tenant isolation
 
 ### Data Protection
+
 - Encryption at rest
 - Secure communication
 - Input validation
@@ -287,12 +313,14 @@ The desktop application is built using Tauri, providing a native cross-platform 
 ## Maintenance
 
 ### Updates
+
 - CI/CD pipeline
 - Zero-downtime deployment
 - Version management
 - Dependency updates
 
 ### Monitoring
+
 - Application health
 - Performance metrics
 - Error tracking
@@ -306,6 +334,7 @@ The Personal GitHub Dashboard architecture is designed for both self-hosted and 
 ### Redis Architecture
 
 1. **Data Structures and Usage**
+
    - **Sessions**: Hash maps for user sessions
    - **Rate Limiting**: Counters with TTL
    - **Real-time Data**: Pub/Sub for live updates
@@ -313,6 +342,7 @@ The Personal GitHub Dashboard architecture is designed for both self-hosted and 
    - **Analytics**: Sorted sets for leaderboards
 
 2. **Key Patterns**
+
    ```plaintext
    # Session storage
    session:{user_id} -> Hash
@@ -331,6 +361,7 @@ The Personal GitHub Dashboard architecture is designed for both self-hosted and 
    ```
 
 3. **Performance Considerations**
+
    - Memory optimization
    - Connection pooling
    - Pipeline operations

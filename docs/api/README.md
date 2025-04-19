@@ -13,6 +13,7 @@ Authorization: Bearer <github_pat>
 ## Base URL
 
 The API is available at:
+
 ```
 http://localhost:8080/api
 ```
@@ -22,11 +23,13 @@ http://localhost:8080/api
 ### Health Check
 
 #### Check Service Health
+
 ```
 GET /health
 ```
 
 **Response**
+
 ```json
 {
   "status": "ok",
@@ -37,14 +40,17 @@ GET /health
 ### Analytics
 
 #### Get Repository Activity
+
 ```
 GET /analytics/repository/{owner}/{repo}/activity
 ```
 
 **Query Parameters**
+
 - `days`: Number of days to look back (default: 30)
 
 **Response**
+
 ```json
 {
   "dates": ["2024-04-01T00:00:00Z", "2024-04-02T00:00:00Z"],
@@ -54,14 +60,17 @@ GET /analytics/repository/{owner}/{repo}/activity
 ```
 
 #### Get Repository Trends
+
 ```
 GET /analytics/repository/{owner}/{repo}/trends
 ```
 
 **Query Parameters**
+
 - `days`: Number of days to look back (default: 30)
 
 **Response**
+
 ```json
 {
   "dates": ["2024-04-01T00:00:00Z", "2024-04-02T00:00:00Z"],
@@ -72,11 +81,13 @@ GET /analytics/repository/{owner}/{repo}/trends
 ### Data Synchronization
 
 #### Sync Repository Data
+
 ```
 POST /sync/repository/{owner}/{repo}
 ```
 
 **Response**
+
 ```json
 {
   "status": "success",
@@ -85,6 +96,7 @@ POST /sync/repository/{owner}/{repo}
 ```
 
 **Error Response**
+
 ```json
 {
   "status": "error",
@@ -95,15 +107,18 @@ POST /sync/repository/{owner}/{repo}
 ### Repositories
 
 #### List Repositories
+
 ```
 GET /repositories
 ```
 
 **Query Parameters**
+
 - `page`: Page number (default: 1)
 - `per_page`: Items per page (default: 10)
 
 **Response**
+
 ```json
 [
   {
@@ -123,11 +138,13 @@ GET /repositories
 ```
 
 #### Get Repository Details
+
 ```
 GET /repositories/{owner}/{repo}
 ```
 
 **Response**
+
 ```json
 {
   "id": 1,
@@ -145,15 +162,18 @@ GET /repositories/{owner}/{repo}
 ```
 
 #### Get Repository Activity
+
 ```
 GET /repositories/{owner}/{repo}/activity
 ```
 
 **Query Parameters**
+
 - `page`: Page number (default: 1)
 - `per_page`: Items per page (default: 10)
 
 **Response**
+
 ```json
 [
   {
@@ -168,11 +188,13 @@ GET /repositories/{owner}/{repo}/activity
 ### Organizations
 
 #### List Organizations
+
 ```
 GET /orgs
 ```
 
 **Response**
+
 ```json
 {
   "organizations": [
@@ -189,11 +211,13 @@ GET /orgs
 ```
 
 #### Get Organization Details
+
 ```
 GET /orgs/{org}
 ```
 
 **Response**
+
 ```json
 {
   "id": 1,
@@ -223,11 +247,13 @@ GET /orgs/{org}
 ### Activity
 
 #### Get Recent Activity
+
 ```
 GET /activity
 ```
 
 **Query Parameters**
+
 - `page`: Page number (default: 1)
 - `per_page`: Items per page (default: 50)
 - `type`: Filter by activity type (commit, issue, pr, review)
@@ -236,6 +262,7 @@ GET /activity
 - `since`: Filter by date (ISO 8601)
 
 **Response**
+
 ```json
 {
   "activities": [
@@ -273,15 +300,18 @@ GET /activity
 ### Analytics
 
 #### Get Repository Analytics
+
 ```
 GET /analytics/repos/{owner}/{repo}
 ```
 
 **Query Parameters**
+
 - `period`: Time period (day, week, month, year)
 - `metrics`: Comma-separated list of metrics to include
 
 **Response**
+
 ```json
 {
   "commit_activity": {
@@ -319,11 +349,13 @@ GET /analytics/repos/{owner}/{repo}
 ```
 
 #### Get Organization Analytics
+
 ```
 GET /analytics/orgs/{org}
 ```
 
 **Response**
+
 ```json
 {
   "overview": {
@@ -352,17 +384,20 @@ GET /analytics/orgs/{org}
 ## WebSocket API
 
 ### Connect to WebSocket
+
 ```
 ws://localhost:8080/ws
 ```
 
 **Authentication**
 Include the JWT token in the connection URL:
+
 ```
 ws://localhost:8080/ws?token=<jwt_token>
 ```
 
 **Events**
+
 ```json
 {
   "type": "activity",
@@ -379,11 +414,13 @@ ws://localhost:8080/ws?token=<jwt_token>
 ## Webhooks
 
 ### GitHub Webhook Endpoint
+
 ```
 POST /webhooks/github
 ```
 
 **Headers**
+
 ```
 X-GitHub-Event: <event_type>
 X-Hub-Signature: <signature>
@@ -391,6 +428,7 @@ X-GitHub-Delivery: <delivery_id>
 ```
 
 **Supported Events**
+
 - push
 - pull_request
 - pull_request_review
@@ -407,6 +445,7 @@ X-GitHub-Delivery: <delivery_id>
 All endpoints may return the following error responses:
 
 ### 400 Bad Request
+
 ```json
 {
   "error": "Bad Request",
@@ -415,6 +454,7 @@ All endpoints may return the following error responses:
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "error": "Not Found",
@@ -423,6 +463,7 @@ All endpoints may return the following error responses:
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "error": "Internal Server Error",

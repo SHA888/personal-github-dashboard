@@ -2,7 +2,7 @@ module.exports = {
   // Project configuration
   project: {
     name: 'personal-github-dashboard',
-    version: '1.0.0'
+    version: '1.0.0',
   },
 
   // Task configuration
@@ -10,13 +10,13 @@ module.exports = {
     // Default task settings
     default: {
       timeout: 30000, // 30 seconds
-      retries: 3
-    }
+      retries: 3,
+    },
   },
 
   // Logging configuration
   logging: {
     level: 'info',
-    format: 'json'
-  }
+    format: 'json',
+  },
 };

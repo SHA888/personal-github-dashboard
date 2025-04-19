@@ -19,17 +19,17 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "devDependencies": {
+    "@types/testing-library__react": "^10.0.1",
     "concurrently": "^8.2.2",
     "prettier": "^3.0.0",
     "task-master-ai": "^0.11.1"
   },
   "dependencies": {
-    "task-master": "^1.0.4",
     "@anthropic-ai/sdk": "^0.39.0",
     "boxen": "^8.0.1",
     "chalk": "^4.1.2",
-    "commander": "^11.1.0",
     "cli-table3": "^0.6.5",
+    "commander": "^11.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.21.2",
@@ -42,7 +42,8 @@
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^10.2.0",
     "openai": "^4.89.0",
-    "ora": "^8.2.0"
+    "ora": "^8.2.0",
+    "task-master": "^1.0.4"
   },
   "type": "module"
 }

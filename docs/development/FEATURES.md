@@ -3,6 +3,7 @@
 ## Core Features (Available in Both Modes)
 
 ### GitHub Dashboard
+
 - Real-time repository statistics and metrics
 - Organization activity tracking
 - Contribution graphs and analytics
@@ -13,6 +14,7 @@
 - Dark/light theme support
 
 ### Repository Management
+
 - Repository search and filtering
 - Star/unstar repositories
 - Watch/unwatch repositories
@@ -21,6 +23,7 @@
 - Repository categorization and tagging
 
 ### Organization Tools
+
 - Organization member management
 - Team visibility and access control
 - Organization-wide statistics
@@ -28,6 +31,7 @@
 - Organization activity feeds
 
 ### Analytics and Insights
+
 - Contribution patterns
 - Code frequency metrics
 - Issue resolution times
@@ -39,6 +43,7 @@
 ## Web Mode Specific Features
 
 ### Server-Side Features
+
 - Real-time data synchronization
 - Centralized data storage
 - Multi-device access
@@ -48,12 +53,14 @@
 - Webhook support
 
 ### Authentication
+
 - GitHub OAuth integration
 - Session management
 - Role-based access control
 - Team permissions
 
 ### Data Management
+
 - PostgreSQL database storage
 - Redis caching layer
 - Automated backups
@@ -63,6 +70,7 @@
 ## Desktop Mode Specific Features
 
 ### Offline Capabilities
+
 - Local data storage
 - Offline dashboard access
 - Background synchronization
@@ -71,6 +79,7 @@
 - Reduced API calls
 
 ### System Integration
+
 - Native OS notifications
 - Custom URL scheme handling
 - File system access
@@ -78,6 +87,7 @@
 - Auto-updates
 
 ### Logseq Integration
+
 - Automatic note creation
 - Repository documentation linking
 - Knowledge graph integration
@@ -86,6 +96,7 @@
 - Page templates
 
 ### Security Features
+
 - Secure credential storage
 - Personal access token management
 - Local encryption
@@ -95,6 +106,7 @@
 ## Shared Components
 
 ### User Interface
+
 - Responsive design
 - Material-UI components
 - Custom theming
@@ -104,6 +116,7 @@
 - Toast notifications
 
 ### Data Visualization
+
 - Interactive charts
 - Custom dashboards
 - Data export options
@@ -112,6 +125,7 @@
 - Real-time updates
 
 ### Performance Features
+
 - Lazy loading
 - Data pagination
 - Request caching
@@ -122,7 +136,9 @@
 ## Upcoming Features
 
 ### Planned for Web Mode
+
 1. **Enhanced Collaboration**
+
    - Shared workspaces
    - Team dashboards
    - Comment system
@@ -135,7 +151,9 @@
    - Integration with CI/CD
 
 ### Planned for Desktop Mode
+
 1. **Extended Offline Support**
+
    - Full repository cloning
    - Local git operations
    - Merge conflict resolution
@@ -150,6 +168,7 @@
 ## Feature Configuration
 
 ### Web Mode Configuration
+
 ```javascript
 {
   "features": {
@@ -168,6 +187,7 @@
 ```
 
 ### Desktop Mode Configuration
+
 ```javascript
 {
   "features": {
@@ -185,6 +205,7 @@
 ```
 
 ## Feature Flags
+
 - `ENABLE_LOGSEQ_INTEGRATION`
 - `ENABLE_OFFLINE_MODE`
 - `ENABLE_REAL_TIME_SYNC`
@@ -197,18 +218,21 @@
 ## Feature Dependencies
 
 ### Core Dependencies
+
 - React 18+
 - TypeScript 5+
 - Material-UI 5+
 - Chart.js 4+
 
 ### Web Mode Dependencies
+
 - Actix-web 4+
 - PostgreSQL 15+
 - Redis 7+
 - SQLx 0.7+
 
 ### Desktop Mode Dependencies
+
 - Tauri 1.6+
 - Tauri Plugin API 1.0+
 - Logseq Plugin API 0.0.1+
@@ -217,6 +241,7 @@
 ## Feature Testing
 
 ### Automated Tests
+
 - Unit tests for core features
 - Integration tests for mode-specific features
 - End-to-end tests for user flows
@@ -224,6 +249,7 @@
 - Security audits
 
 ### Manual Testing
+
 - Cross-platform verification
 - Offline functionality
 - Data synchronization
@@ -234,6 +260,7 @@
 ## Feature Documentation
 
 ### For Users
+
 - Feature guides
 - Usage examples
 - Configuration options
@@ -241,6 +268,7 @@
 - Best practices
 
 ### For Developers
+
 - API documentation
 - Component specifications
 - State management

@@ -81,4 +81,23 @@ mod tests {
         assert!(loc.contains("redirect_uri=http://localhost/callback"));
         assert!(loc.contains("state="));
     }
+
+    #[actix_web::test]
+    #[ignore]
+    async fn callback_returns_internal_server_error_for_invalid_code() {
+        // Set env vars for test
+        std::env::set_var("GITHUB_CLIENT_ID", "testid");
+        std::env::set_var("GITHUB_CLIENT_SECRET", "testsecret");
+        std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
+        // Initialize app with callback route
+        let app =
+            test::init_service(App::new().route("/auth/callback", web::get().to(callback))).await;
+        // Send request with dummy code and state
+        let req = test::TestRequest::get()
+            .uri("/auth/callback?code=invalid&state=none")
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        // Expect internal server error
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
 }

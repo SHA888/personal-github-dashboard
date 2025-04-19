@@ -9,18 +9,18 @@ path = "src/main.rs"
 
 [dependencies]
 # Web framework
-actix-web = "4.4.0"
-actix-cors = "0.6.4"
-actix-session = { version = "0.8.0", features = ["redis-rs-session", "cookie-session"] }
+actix-web = "4"
+actix-cors = "0.6"
+actix-session = { version = "0.8", features = ["redis-rs-session"] }
 actix-identity = "0.5"
 cookie = "0.16"
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "time", "json"] }
+sqlx = { version = "0.6", features = ["runtime-actix-native-tls", "postgres"] }
 tokio = { version = "1.0", features = ["full"] }
 
 # Caching
-redis = { version = "0.23.0", features = ["tokio-comp"] }
+redis = "0.15"
 
 # GitHub API
 octocrab = "0.44.0"
@@ -28,7 +28,7 @@ reqwest = { version = "0.11", features = ["json", "cookies"] }
 
 # Authentication
 bcrypt = "0.15"
-jsonwebtoken = "9.0"
+jsonwebtoken = "8"
 rand = "0.8"
 base64 = "0.21"
 
@@ -37,11 +37,11 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Utilities
-chrono = { version = "0.4", features = ["serde"] }
+chrono = "0.4"
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 log = "0.4.20"
-uuid = { version = "1.4.1", features = ["v4", "serde"] }
+uuid = { version = "1.0", features = ["v4"] }
 futures = "0.3.28"
 async-trait = "0.1"
 

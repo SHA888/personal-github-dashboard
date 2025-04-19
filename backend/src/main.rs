@@ -1,78 +1,47 @@
-// mod api;
-mod db;
-mod error;
-mod github;
-mod handlers;
-mod middleware;
-mod models;
-mod routes;
-mod services;
-mod utils;
-
 use actix_cors::Cors;
-use actix_web::web;
-use actix_web::{middleware::Logger, App, HttpServer};
-use db::DbPool;
-use redis::Client as RedisClient;
-use services::github_api::GitHubService;
-use utils::config::Config;
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::{App, HttpServer};
+use cookie::Key;
+use dotenv::dotenv;
+use sqlx::PgPool;
 
-// Define AppState
-pub struct AppState {
-    pub pool: DbPool,
-    pub redis: RedisClient,
-    pub github: GitHubService,
-}
+mod routes;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Load environment variables from .env file
-    dotenv::dotenv().ok();
+    // Load environment variables
+    dotenv().ok();
+    env_logger::init();
 
-    // Initialize logger
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-
-    // Load configuration
-    let config = Config::from_env().expect("Failed to load configuration");
-
-    // Create database pool
-    let pool = db::create_pool(&config.database_url)
+    // Database pool
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPool::connect(&database_url)
         .await
-        .expect("Failed to create database pool");
+        .expect("Failed to connect to Postgres");
 
-    // Create Redis client
-    let redis_client =
-        redis::Client::open(config.redis_url.as_str()).expect("Failed to create Redis client");
+    // Redis session store
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let redis_store = RedisSessionStore::new(redis_url)
+        .await
+        .expect("Failed to connect to Redis");
 
-    // Create GitHub service
-    let github_service = services::github_api::GitHubService::new(
-        config.github_personal_access_token.clone(),
-        config.redis_url.clone(),
-    )
-    .await
-    .expect("Failed to create GitHub service");
-
-    // Create app state
-    let app_state = web::Data::new(AppState {
-        pool: pool.clone(),
-        redis: redis_client,
-        github: github_service,
-    });
-
-    // Create app config
-    let app_config = config.clone(); // Clone config for use in the closure
-
-    // Start HTTP server
-    let bind_addr = format!("{}:{}", config.server_host, config.server_port);
-    log::info!("Starting server at http://{}", bind_addr);
+    // Server binding
+    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".into());
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
-            .wrap(Logger::default())
-            .wrap(Cors::permissive()) // TODO: Configure CORS properly
-            .app_data(app_state.clone())
-            .app_data(web::Data::new(app_config.clone()))
-            .configure(routes::configure_routes)
+            .wrap(cors)
+            .wrap(SessionMiddleware::new(redis_store.clone(), Key::generate()))
+            // Pass database pool to routes
+            .app_data(actix_web::web::Data::new(pool.clone()))
+            // Configure routes
+            .configure(routes::init_routes)
     })
     .bind(bind_addr)?
     .run()

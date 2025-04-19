@@ -11,8 +11,9 @@ path = "src/main.rs"
 # Web framework
 actix-web = "4.4.0"
 actix-cors = "0.6.4"
-actix-session = { version = "0.8.0", features = ["redis-rs-session"] }
+actix-session = { version = "0.8.0", features = ["redis-rs-session", "cookie-session"] }
 actix-identity = "0.5"
+cookie = "0.16"
 
 # Database
 sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "time", "json"] }
@@ -22,7 +23,7 @@ tokio = { version = "1.0", features = ["full"] }
 redis = { version = "0.23.0", features = ["tokio-comp"] }
 
 # GitHub API
-octocrab = "0.32.0"
+octocrab = "0.44.0"
 reqwest = { version = "0.11", features = ["json", "cookies"] }
 
 # Authentication

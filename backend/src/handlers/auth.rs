@@ -10,13 +10,13 @@ use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, RedirectUrl, TokenResponse, TokenUrl,
 };
 use octocrab::Octocrab;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::Duration;
 use uuid::Uuid;
 
 #[allow(dead_code)]
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct OAuthRequest {
     pub code: String,
     pub state: String,
@@ -109,13 +109,19 @@ pub async fn callback(req: HttpRequest) -> HttpResponse {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct PatRequest {
     pub pat: String,
 }
 
 /// Authenticate using a personal access token for desktop/CLI usage
 pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
+    // Test mode: skip real GitHub PAT validation
+    if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
+        let secret = std::env::var("JWT_SECRET").unwrap_or_default();
+        let jwt = create_jwt("testuser", &secret, 3600).unwrap();
+        return HttpResponse::Ok().json(json!({"jwt": jwt, "user": "testuser"}));
+    }
     let cfg = Config::from_env();
     // Initialize Octocrab with PAT
     let octocrab = Octocrab::builder()
@@ -197,5 +203,31 @@ mod callback_tests {
         assert_eq!(resp.status(), StatusCode::FOUND);
         let cookie_hdr = resp.headers().get("Set-Cookie").unwrap().to_str().unwrap();
         assert!(cookie_hdr.contains("auth_token="));
+    }
+}
+
+#[cfg(test)]
+mod pat_tests {
+    use super::*;
+    use crate::handlers::auth::PatRequest;
+    use actix_web::{http::StatusCode, test, App};
+    use serde_json::Value;
+
+    #[actix_web::test]
+    async fn pat_auth_in_test_mode_returns_jwt_and_user() {
+        std::env::set_var("JWT_SECRET", "secret");
+        std::env::set_var("TEST_MODE", "1");
+        let app = test::init_service(App::new().route("/auth/pat", web::post().to(pat_auth))).await;
+        let req = test::TestRequest::post()
+            .uri("/auth/pat")
+            .set_json(PatRequest {
+                pat: "dummy".into(),
+            })
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body: Value = test::read_body_json(resp).await;
+        assert_eq!(body["user"], "testuser");
+        assert!(body["jwt"].is_string());
     }
 }

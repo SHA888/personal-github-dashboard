@@ -1,28 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useState, useEffect } from 'react';
+import { useMutation } from 'react-query';
 import { apiService } from '../services/api';
-import { AxiosError } from 'axios';
 import { User } from '../types/user';
 
 export const useAuth = () => {
-  const queryClient = useQueryClient();
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setLoading] = useState(true);
+  const [isUserError, setError] = useState(false);
 
-  // Fetch current user data
-  const {
-    data: user,
-    isLoading: isUserLoading,
-    // error, // Commented out unused variable
-    isError: isUserError,
-  } = useQuery<User, AxiosError>('currentUser', apiService.getCurrentUser, {
-    retry: false, // Don't retry on initial fetch; handled by redirects
-    refetchOnWindowFocus: false, // Avoid unnecessary refetches
-    staleTime: Infinity, // User data rarely changes without action
-    onError: (err) => {
-      if (err.response?.status === 401) {
-        // Handle unauthorized globally if needed, or let components handle
-        console.log('User is not authenticated.');
+  // Parse JWT from localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({ login: payload.sub } as User);
+      } catch {
+        setError(true);
       }
-    },
-  });
+    }
+    setLoading(false);
+  }, []);
 
   // GitHub Login Mutation (redirects)
   const githubLoginMutation = useMutation(() => apiService.githubLogin(), {
@@ -41,9 +39,9 @@ export const useAuth = () => {
   // Logout Mutation
   const logoutMutation = useMutation(() => apiService.logout(), {
     onSuccess: () => {
-      // Clear user data from cache and redirect
-      queryClient.setQueryData('currentUser', null);
-      queryClient.removeQueries('currentUser');
+      // Clear auth token and user state
+      localStorage.removeItem('auth_token');
+      setUser(null);
       // Optionally redirect to login page or home page
       window.location.href = '/'; // Redirect to home after logout
     },

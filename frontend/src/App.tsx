@@ -8,6 +8,7 @@ import Repositories from './pages/Repositories';
 import Organizations from './pages/Organizations';
 import Security from './pages/Security';
 import Settings from './pages/Settings';
+import LoginPage from './pages/LoginPage';
 import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { store } from './store';
@@ -26,6 +27,7 @@ const App: React.FC = () => {
                 <Route path="/organizations" element={<Organizations />} />
                 <Route path="/security" element={<Security />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/login" element={<LoginPage />} />
               </Routes>
             </Layout>
           </Router>

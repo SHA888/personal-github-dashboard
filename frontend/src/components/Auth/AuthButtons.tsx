@@ -6,13 +6,14 @@ export const AuthButtons: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
 
   const handleLogin = () => {
-    // Redirect to backend GitHub OAuth endpoint
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/github`;
+    // Redirect to backend OAuth login endpoint
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/login`;
   };
 
   const handleLogout = async () => {
     try {
       await logout();
+      localStorage.removeItem('auth_token');
     } catch (error) {
       console.error('Logout failed:', error);
     }

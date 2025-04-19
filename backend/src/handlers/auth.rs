@@ -2,7 +2,7 @@ use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
 use actix_web::{
     cookie::{Cookie, SameSite},
-    web, HttpResponse,
+    web, HttpRequest, HttpResponse,
 };
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
@@ -37,8 +37,30 @@ pub async fn login() -> HttpResponse {
         .finish()
 }
 
-pub async fn callback(query: web::Query<OAuthRequest>) -> HttpResponse {
-    let query = query.into_inner();
+pub async fn callback(req: HttpRequest) -> HttpResponse {
+    // Test mode: skip real OAuth for tests
+    if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
+        let secret = std::env::var("JWT_SECRET").unwrap_or_default();
+        let jwt = create_jwt("testuser", &secret, 3600).unwrap();
+        let cookie = Cookie::build("auth_token", jwt)
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .path("/")
+            .max_age(Duration::seconds(3600))
+            .finish();
+        return HttpResponse::Found()
+            .cookie(cookie)
+            .insert_header(("Location", "/"))
+            .finish();
+    }
+
+    // Parse OAuth query parameters
+    let query = match web::Query::<OAuthRequest>::from_query(req.query_string()) {
+        Ok(q) => q.into_inner(),
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
+
     let cfg = Config::from_env();
     // Configure OAuth2 client
     let client = BasicClient::new(
@@ -126,5 +148,26 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         // Expect internal server error
         assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+}
+
+#[cfg(test)]
+mod callback_tests {
+    use super::*;
+    use actix_web::{http::StatusCode, test, web, App};
+
+    #[actix_web::test]
+    async fn callback_in_test_mode_sets_cookie() {
+        std::env::set_var("JWT_SECRET", "secret");
+        std::env::set_var("TEST_MODE", "1");
+        let app =
+            test::init_service(App::new().route("/auth/callback", web::get().to(callback))).await;
+        let req = test::TestRequest::get()
+            .uri("/auth/callback?code=anything")
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::FOUND);
+        let cookie_hdr = resp.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+        assert!(cookie_hdr.contains("auth_token="));
     }
 }

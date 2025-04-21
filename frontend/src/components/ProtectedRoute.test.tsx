@@ -15,6 +15,7 @@ describe('ProtectedRoute', () => {
       isAuthenticated: true,
       loginMutation: {
         mutate: vi.fn(),
+        mutateAsync: vi.fn(),
         data: undefined,
         error: null,
         variables: undefined,
@@ -32,6 +33,7 @@ describe('ProtectedRoute', () => {
       },
       logoutMutation: {
         mutate: vi.fn(),
+        mutateAsync: vi.fn(),
         data: undefined,
         error: null,
         variables: undefined,
@@ -70,6 +72,7 @@ describe('ProtectedRoute', () => {
       isAuthenticated: false,
       loginMutation: {
         mutate: vi.fn(),
+        mutateAsync: vi.fn(),
         data: undefined,
         error: null,
         variables: undefined,
@@ -87,6 +90,7 @@ describe('ProtectedRoute', () => {
       },
       logoutMutation: {
         mutate: vi.fn(),
+        mutateAsync: vi.fn(),
         data: undefined,
         error: null,
         variables: undefined,

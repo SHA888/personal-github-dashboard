@@ -7,8 +7,14 @@ import * as authHook from '../hooks/useAuth';
 describe('ProtectedRoute', () => {
   it('renders outlet when authenticated', () => {
     vi.spyOn(authHook, 'useAuth').mockReturnValue({
-      isAuthenticated: true,
+      user: { login: 'testuser' },
       loading: false,
+      loginWithGitHub: vi.fn(),
+      loginWithPat: vi.fn(),
+      logout: vi.fn(),
+      isAuthenticated: true,
+      loginMutation: { mutate: vi.fn() },
+      logoutMutation: { mutate: vi.fn() },
     });
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -24,8 +30,14 @@ describe('ProtectedRoute', () => {
 
   it('redirects to login when not authenticated', () => {
     vi.spyOn(authHook, 'useAuth').mockReturnValue({
-      isAuthenticated: false,
+      user: undefined,
       loading: false,
+      loginWithGitHub: vi.fn(),
+      loginWithPat: vi.fn(),
+      logout: vi.fn(),
+      isAuthenticated: false,
+      loginMutation: { mutate: vi.fn() },
+      logoutMutation: { mutate: vi.fn() },
     });
     render(
       <MemoryRouter initialEntries={['/dashboard']}>

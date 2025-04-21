@@ -168,6 +168,12 @@ mod tests {
         // Set env vars for test
         std::env::set_var("GITHUB_CLIENT_ID", "testid");
         std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
+        std::env::set_var("GITHUB_PERSONAL_ACCESS_TOKEN", "dummy_token");
+        std::env::set_var("DATABASE_URL", "postgres://dummy:dummy@localhost/dummy");
+        std::env::set_var("REDIS_URL", "redis://localhost:6379");
+        std::env::set_var("JWT_SECRET", "dummy_secret");
+        std::env::set_var("GITHUB_CLIENT_SECRET", "dummy_secret");
+        std::env::set_var("FRONTEND_URL", "http://localhost:3000");
         // Initialize app with login route
         let app = test::init_service(App::new().route("/auth/login", web::get().to(login))).await;
         // Send request

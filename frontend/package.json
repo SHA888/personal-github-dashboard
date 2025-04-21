@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write 'src/**/*.{ts,tsx,css,json,html}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css,json,html}'",
     "preview": "vite preview",
     "pre-commit": "npm run format && npm run lint"
   },

@@ -18,7 +18,7 @@ impl RedisClient {
         &self,
         key: &str,
     ) -> RedisResult<Option<T>> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self.client.get_async_connection().await?;
         conn.get(key).await
     }
 
@@ -28,11 +28,11 @@ impl RedisClient {
         value: T,
         ttl_seconds: usize,
     ) -> RedisResult<()> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self.client.get_async_connection().await?;
         redis::pipe()
             .set(key, value)
-            .expire(key, ttl_seconds as i64)
-            .query_async::<()>(&mut conn)
+            .expire(key, ttl_seconds)
+            .query_async::<_, ()>(&mut conn)
             .await?;
         Ok(())
     }

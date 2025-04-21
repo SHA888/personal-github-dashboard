@@ -7,6 +7,10 @@ edition = "2021"
 name = "personal-github-dashboard"
 path = "src/main.rs"
 
+[lib]
+name = "personal_github_dashboard"
+path = "src/lib.rs"
+
 [dependencies]
 # Web framework
 actix-web = "4"

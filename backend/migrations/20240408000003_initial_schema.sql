@@ -9,5 +9,13 @@ CREATE TABLE users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Add additional initial tables as needed (organizations, repositories, etc.)
+CREATE TABLE repositories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Add additional initial tables as needed (organizations, etc.)
 -- You can extend this migration as per your project requirements.

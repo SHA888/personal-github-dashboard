@@ -1,0 +1,42 @@
+# Task ID: 8
+# Title: Implement Organization and Repository Views
+# Status: pending
+# Dependencies: 5, 7
+# Priority: medium
+# Description: Develop the UI components for displaying organization and repository data, including lists, details, and metrics.
+# Details:
+Create organization list view with filtering and sorting options. Implement organization detail view showing member count and repository stats. Develop repository list view with filtering by language, stars, and activity. Create repository detail view with metadata, statistics, and recent activity. Implement data fetching using Redux Thunk or RTK Query connecting to the backend API. Add skeleton loaders for better UX during data loading. Implement error handling and retry mechanisms for failed requests.
+
+# Test Strategy:
+Test UI components in isolation with mock data. Verify filtering and sorting functionality. Test integration with Redux store. Ensure proper error state handling and loading indicators. Validate that data is correctly displayed from API responses.
+
+# Subtasks:
+## 1. Implement Redux data fetching layer for organizations and repositories [pending]
+### Dependencies: None
+### Description: Set up the data fetching infrastructure using Redux Thunk or RTK Query to connect to the backend API for organization and repository data
+### Details:
+Create API service files for organization and repository endpoints. Implement Redux actions, reducers, and selectors for data fetching, loading states, and error handling. Set up RTK Query or Redux Thunk middleware for async operations. Include error handling and retry mechanisms for failed requests. Implement proper state normalization for efficient data storage and retrieval.
+
+## 2. Develop organization list view with filtering and sorting [pending]
+### Dependencies: 8.1
+### Description: Create the UI component for displaying a list of organizations with filtering and sorting capabilities
+### Details:
+Design and implement a responsive grid/list view for organizations. Add filter controls for organization properties (name, size, type). Implement sorting options (alphabetical, member count, repository count). Create skeleton loaders for the list view during data fetching. Add pagination or infinite scrolling for large datasets. Ensure proper error state handling and empty state displays.
+
+## 3. Build organization detail view with member and repository statistics [pending]
+### Dependencies: 8.1, 8.2
+### Description: Create the UI component for displaying detailed information about a selected organization
+### Details:
+Design and implement the organization detail page layout. Display organization metadata (name, description, avatar). Show member count statistics with visual representations (charts/graphs). Include repository statistics (count, languages, activity). Add skeleton loaders for each section during data loading. Implement error handling for failed data fetching with retry options.
+
+## 4. Implement repository list view with advanced filtering [pending]
+### Dependencies: 8.1
+### Description: Create the UI component for displaying a list of repositories with filtering by language, stars, and activity
+### Details:
+Design and implement a responsive grid/list view for repositories. Add filter controls for language, star count, and activity level. Create language distribution visualization. Implement sorting options (stars, recent activity, name). Add skeleton loaders during data fetching. Ensure proper error state handling and empty state displays. Include performance optimizations for rendering large lists.
+
+## 5. Develop repository detail view with metadata and activity metrics [pending]
+### Dependencies: 8.1, 8.4
+### Description: Create the UI component for displaying detailed information about a selected repository
+### Details:
+Design and implement the repository detail page layout. Display repository metadata (name, description, stars, forks). Show statistics and metrics with visual charts. Include recent activity timeline. Add contributor information section. Implement skeleton loaders for each section during data loading. Add error handling for failed data fetching with retry options. Ensure responsive design for all screen sizes.

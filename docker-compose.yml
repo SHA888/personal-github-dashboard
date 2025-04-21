@@ -3,6 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
+    container_name: personal-github-dashboard-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -14,15 +15,34 @@ services:
 
   redis:
     image: redis:7
+    container_name: personal-github-dashboard-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    command:
+      - "redis-server"
+      - "--maxmemory"
+      - "256mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+      - "--appendonly"
+      - "yes"
+      - "--save"
+      - "900 1"
+      - "300 10"
+      - "60 10000"
+    environment:
+      - REDIS_AOF_ENABLED=yes
+      - REDIS_SAVE=900 1 300 10 60 10000
+    restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: personal-github-dashboard-backend
+    container_name: personal-github-dashboard-backend
     ports:
       - "8080:8080"
     environment:
@@ -39,6 +59,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: personal-github-dashboard-frontend
+    container_name: personal-github-dashboard-frontend
     ports:
       - "3000:80"
     depends_on:

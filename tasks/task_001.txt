@@ -1,0 +1,11 @@
+# Task ID: 1
+# Title: Setup Project Structure and Environment
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Initialize the project repositories for both frontend and backend, configure development environments, and set up CI/CD pipelines.
+# Details:
+Create two repositories: one for React frontend and one for Rust backend. For frontend: initialize with Create React App using TypeScript template, install Material-UI v7, Redux, and Chart.js. For backend: set up Rust 1.75+ project with Actix-web 4+, SQLx, and Redis client libraries. Configure ESLint and Prettier for frontend, and Clippy for Rust. Set up Docker configurations for local development.
+
+# Test Strategy:
+Verify that all environments can be built and run locally. Ensure all dependencies are correctly installed and configured. Run linting checks to confirm code style compliance.

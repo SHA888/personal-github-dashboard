@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
 use actix_session::Session;
@@ -22,6 +23,24 @@ use uuid::Uuid;
 pub struct OAuthRequest {
     pub code: String,
     pub state: String,
+=======
+use crate::db::{DbPool, User}; // Assuming a User model exists in db module
+use crate::utils::jwt; // Import JWT utils
+use crate::{error::AppError, utils::config::Config};
+use actix_web::{web, HttpMessage, HttpResponse};
+use reqwest::Client;
+use serde::Deserialize;
+use serde_json;
+
+// --- Structs for GitHub API Responses ---
+#[derive(Deserialize, Debug)]
+struct GitHubTokenResponse {
+    access_token: String,
+    #[allow(dead_code)]
+    scope: String,
+    #[allow(dead_code)]
+    token_type: String,
+>>>>>>> d53f3e0 (Fix whitespace via pre-commit hook. All lints and formatting clean.)
 }
 
 pub async fn login() -> HttpResponse {

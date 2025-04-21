@@ -4,6 +4,11 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Config {
     pub database_url: String,
+<<<<<<< HEAD
+=======
+    #[allow(dead_code)]
+    pub github_personal_access_token: String,
+>>>>>>> d53f3e0 (Fix whitespace via pre-commit hook. All lints and formatting clean.)
     pub redis_url: String,
     pub jwt_secret: String,
     pub github_client_id: String,

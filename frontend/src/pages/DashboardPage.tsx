@@ -18,7 +18,7 @@ const DashboardPage: React.FC = () => {
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Text sx={{ mr: 2 }}>{user.login}</Text>
-            <Button variant="outline" onClick={logout}>
+            <Button variant="default" onClick={logout}>
               Logout
             </Button>
           </Box>

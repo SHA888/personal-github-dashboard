@@ -1,17 +1,18 @@
 use actix_cors::Cors;
+use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::http::header;
 use actix_web::{App, HttpServer};
 use cookie::Key;
 use sqlx::PgPool;
 // removed unused import
+// use std::time::Duration;
 
 mod handlers;
 // mod error; // moved to lib.rs
 mod routes;
 // mod utils; // should be accessed via crate path
 use personal_github_dashboard::utils::config::Config;
-
-// Rate limiter removed for now
 
 // Insert minimal AppError usage to test import
 fn _test_app_error_import() {
@@ -38,21 +39,32 @@ async fn main() -> std::io::Result<()> {
     let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| {
         format!(
             "0.0.0.0:{}",
-            std::env::var("PORT").unwrap_or_else(|_| "8080".into())
+            std::env::var("PORT").unwrap_or_else(|_| "8081".into())
         )
     });
 
-    // Rate limiter removed for now
+    // Rate limiter
+    let governor_conf = GovernorConfigBuilder::default()
+        .seconds_per_request(1)
+        .burst_size(10)
+        .finish()
+        .expect("Failed to build governor config");
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin(&config.frontend_url)
-            .allow_any_method()
-            .allow_any_header()
+            .allowed_origin_fn(|origin, _req_head| {
+                origin
+                    .to_str()
+                    .map(|s| s.starts_with("http://localhost"))
+                    .unwrap_or(false)
+            })
+            .allowed_methods(["GET", "POST", "PUT", "DELETE"])
+            .allowed_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
             .supports_credentials()
             .max_age(3600);
 
         App::new()
+            .wrap(Governor::new(&governor_conf))
             .wrap(cors)
             .wrap(SessionMiddleware::new(redis_store.clone(), Key::generate()))
             // Pass database pool to routes

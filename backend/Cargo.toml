@@ -67,3 +67,5 @@ thiserror = "1.0"
 
 tracing = "0.1"
 tracing-subscriber = "0.3"
+actix-governor = "0.6"
+actix-web-httpauth = "0.8"

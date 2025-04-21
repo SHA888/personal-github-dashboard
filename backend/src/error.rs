@@ -1,5 +1,7 @@
+use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use derive_more::Display;
+use serde_json::json;
 
 #[derive(Debug, Display)]
 pub enum AppError {
@@ -16,12 +18,20 @@ pub enum AppError {
 impl std::error::Error for AppError {}
 
 impl ResponseError for AppError {
-    fn error_response(&self) -> HttpResponse {
+    fn status_code(&self) -> StatusCode {
         match self {
-            AppError::InternalError(msg) => HttpResponse::InternalServerError().body(msg.clone()),
-            AppError::Unauthorized(msg) => HttpResponse::Unauthorized().body(msg.clone()),
-            AppError::BadRequest(msg) => HttpResponse::BadRequest().body(msg.clone()),
-            AppError::NotFound(msg) => HttpResponse::NotFound().body(msg.clone()),
+            AppError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
         }
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        let status = self.status_code();
+        let body = json!({ "error": self.to_string() });
+        HttpResponse::build(status)
+            .content_type("application/json")
+            .body(body.to_string())
     }
 }

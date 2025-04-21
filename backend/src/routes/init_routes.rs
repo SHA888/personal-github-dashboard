@@ -1,6 +1,12 @@
 use crate::handlers::auth::{callback, login, pat_auth};
+use crate::handlers::repositories::get_repositories;
 use actix_cors::Cors;
-use actix_web::{web, HttpResponse};
+use actix_web::{dev::ServiceRequest, web, Error, HttpResponse};
+use actix_web_httpauth::extractors::bearer::BearerAuth;
+use actix_web_httpauth::middleware::HttpAuthentication;
+use personal_github_dashboard::error::AppError;
+use personal_github_dashboard::utils::config::Config;
+use personal_github_dashboard::utils::jwt::validate_jwt;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     // Health check
@@ -15,9 +21,11 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
             .route("/pat", web::post().to(pat_auth)),
     );
 
-    // API endpoints
+    // API endpoints with JWT guard and JSON error handler
+    let auth = HttpAuthentication::bearer(validator);
     cfg.service(
         web::scope("/api")
+            .wrap(auth)
             .route("/repositories", web::get().to(get_repositories))
             .route("/organizations", web::get().to(get_organizations))
             .route("/security", web::get().to(get_security_alerts))
@@ -27,10 +35,6 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 
 async fn health() -> HttpResponse {
     HttpResponse::Ok().body("OK")
-}
-
-async fn get_repositories() -> HttpResponse {
-    HttpResponse::NotImplemented().finish()
 }
 
 async fn get_organizations() -> HttpResponse {
@@ -43,4 +47,18 @@ async fn get_security_alerts() -> HttpResponse {
 
 async fn get_user_info() -> HttpResponse {
     HttpResponse::NotImplemented().finish()
+}
+
+async fn validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+    let config = Config::from_env();
+    match validate_jwt(credentials.token(), &config.jwt_secret) {
+        Ok(_) => Ok(req),
+        Err(_) => Err((
+            AppError::Unauthorized("Invalid or missing token".into()).into(),
+            req,
+        )),
+    }
 }

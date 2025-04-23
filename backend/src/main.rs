@@ -4,10 +4,10 @@ use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::http::header;
 use actix_web::{App, HttpServer};
 use cookie::Key;
-use sqlx::PgPool;
 // removed unused import
 // use std::time::Duration;
 
+mod db;
 mod handlers;
 // mod error; // moved to lib.rs
 mod routes;
@@ -26,9 +26,12 @@ async fn main() -> std::io::Result<()> {
     let config = Config::from_env();
 
     // Database pool
-    let pool = PgPool::connect(&config.database_url)
-        .await
-        .expect("Failed to connect to Postgres");
+    let max_pool_size = std::env::var("PG_POOL_MAX")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+
+    let pool = db::create_pg_pool(&config.database_url, max_pool_size).await;
 
     // Redis session store
     let redis_store = RedisSessionStore::new(&config.redis_url)

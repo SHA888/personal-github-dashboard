@@ -48,7 +48,7 @@
           "id": 4,
           "title": "Implement database connection pooling",
           "description": "Set up connection pooling for PostgreSQL in the Rust backend",
-          "status": "pending",
+          "status": "in-progress",
           "dependencies": [1, 3],
           "details": "Implement connection pooling using SQLx's Pool functionality. Configure appropriate pool size based on expected load. Implement graceful connection handling including timeout policies, retry logic, and error handling. Create a database module that exports the connection pool for use throughout the application."
         },

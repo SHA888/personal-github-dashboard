@@ -29,7 +29,7 @@ Deploy Redis 7+ using Docker or a managed service. Configure memory limits, pers
 ### Details:
 Create SQLx migration scripts for the following tables: users (id, github_id, username, email, access_token, refresh_token, preferences), organizations (id, github_id, name, description, member_count), repositories (id, github_id, org_id, name, description, language, stars, forks, issues), and activities (id, user_id, repo_id, type, timestamp, data). Include appropriate indexes, foreign key constraints, and data types. Ensure all timestamps use UTC. Add created_at and updated_at fields to all tables.
 
-## 4. Implement database connection pooling [pending]
+## 4. Implement database connection pooling [in-progress]
 ### Dependencies: 2.1, 2.3
 ### Description: Set up connection pooling for PostgreSQL in the Rust backend
 ### Details:

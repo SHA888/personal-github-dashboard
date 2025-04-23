@@ -23,7 +23,7 @@ Deploy PostgreSQL 15+ using Docker or a managed service. Configure network acces
 ### Details:
 Deploy Redis 7+ using Docker or a managed service. Configure memory limits, persistence options, and network access. Define cache eviction policies and maximum memory usage. Set up monitoring for cache hit/miss rates. Document connection parameters for the application.
 
-## 3. Design database schema and create migration scripts [in-progress]
+## 3. Design database schema and create migration scripts [done]
 ### Dependencies: 2.1
 ### Description: Create SQLx migration scripts for all required database tables
 ### Details:

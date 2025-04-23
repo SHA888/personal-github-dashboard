@@ -40,7 +40,7 @@
           "id": 3,
           "title": "Design database schema and create migration scripts",
           "description": "Create SQLx migration scripts for all required database tables",
-          "status": "in-progress",
+          "status": "done",
           "dependencies": [1],
           "details": "Create SQLx migration scripts for the following tables: users (id, github_id, username, email, access_token, refresh_token, preferences), organizations (id, github_id, name, description, member_count), repositories (id, github_id, org_id, name, description, language, stars, forks, issues), and activities (id, user_id, repo_id, type, timestamp, data). Include appropriate indexes, foreign key constraints, and data types. Ensure all timestamps use UTC. Add created_at and updated_at fields to all tables."
         },

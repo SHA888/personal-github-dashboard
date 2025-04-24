@@ -47,7 +47,7 @@ Implement Redis client using redis-rs crate. Create a caching module with functi
 ### Details:
 Create repository structs for each entity (UserRepository, OrganizationRepository, RepositoryRepository, ActivityRepository). Implement CRUD operations for each entity. Use SQLx for type-safe queries. Implement pagination for list operations. Add error handling and logging. Create integration tests for each repository.
 
-## 7. Integrate caching with database access [pending]
+## 7. Integrate caching with database access [done]
 ### Dependencies: 2.5, 2.6
 ### Description: Combine the database and caching layers for efficient data access
 ### Details:

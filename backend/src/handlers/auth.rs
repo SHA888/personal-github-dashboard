@@ -1,3 +1,5 @@
+use crate::utils::config::Config;
+use crate::utils::jwt::create_jwt;
 use actix_session::Session;
 use actix_web::{
     cookie::{Cookie, SameSite},
@@ -10,8 +12,6 @@ use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, RedirectUrl, TokenResponse, TokenUrl,
 };
 use octocrab::Octocrab;
-use personal_github_dashboard::utils::config::Config;
-use personal_github_dashboard::utils::jwt::create_jwt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::Duration;

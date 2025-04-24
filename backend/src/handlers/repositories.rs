@@ -1,10 +1,15 @@
+use crate::db::{
+    create_repository_with_cache, delete_repository_with_cache, get_repository_by_id_with_cache,
+    update_repository_description_with_cache,
+};
+use crate::error::AppError;
+use crate::utils::config::Config;
+use crate::utils::redis::RedisClient;
 use actix_web::{web, HttpResponse};
 use octocrab::Octocrab;
-use personal_github_dashboard::error::AppError;
-use personal_github_dashboard::utils::config::Config;
-use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct RepositoryInfo {
@@ -22,6 +27,20 @@ pub struct RepoParams {
     pub per_page: Option<u32>,
 }
 
+#[derive(Deserialize)]
+pub struct CreateRepositoryRequest {
+    pub org_id: Option<Uuid>,
+    pub owner_id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub is_private: bool,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateRepositoryDescriptionRequest {
+    pub description: Option<String>,
+}
+
 pub async fn get_repositories(
     _pool: web::Data<PgPool>,
     redis_client: web::Data<RedisClient>,
@@ -33,7 +52,9 @@ pub async fn get_repositories(
         query.per_page.unwrap_or(10)
     );
     // Try to get cached value
-    if let Ok(Some(cached)) = redis_client.get::<String>(&cache_key).await {
+    let cache_result: redis::RedisResult<Option<String>> =
+        redis_client.get::<String>(&cache_key).await;
+    if let Ok(Some(cached)) = cache_result {
         if let Ok(repos) = serde_json::from_str::<Vec<RepositoryInfo>>(&cached) {
             return Ok(HttpResponse::Ok().json(repos));
         }
@@ -80,4 +101,68 @@ pub async fn get_repositories(
     }
 
     Ok(HttpResponse::Ok().json(repos))
+}
+
+pub async fn get_repository_by_id(
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisClient>,
+    repo_id: web::Path<Uuid>,
+) -> HttpResponse {
+    match get_repository_by_id_with_cache(&pool, &redis, &repo_id).await {
+        Ok(Some(repo)) => HttpResponse::Ok().json(repo),
+        Ok(None) => HttpResponse::NotFound().body("Repository not found"),
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
+    }
+}
+
+pub async fn create_repository(
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisClient>,
+    req: web::Json<CreateRepositoryRequest>,
+) -> HttpResponse {
+    match create_repository_with_cache(
+        &pool,
+        &redis,
+        req.org_id.as_ref(),
+        &req.owner_id,
+        &req.name,
+        req.description.as_deref(),
+        req.is_private,
+    )
+    .await
+    {
+        Ok(repo) => HttpResponse::Created().json(repo),
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
+    }
+}
+
+pub async fn update_repository_description(
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisClient>,
+    repo_id: web::Path<Uuid>,
+    req: web::Json<UpdateRepositoryDescriptionRequest>,
+) -> HttpResponse {
+    match update_repository_description_with_cache(
+        &pool,
+        &redis,
+        &repo_id,
+        req.description.as_deref(),
+    )
+    .await
+    {
+        Ok(repo) => HttpResponse::Ok().json(repo),
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
+    }
+}
+
+pub async fn delete_repository(
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisClient>,
+    repo_id: web::Path<Uuid>,
+) -> HttpResponse {
+    match delete_repository_with_cache(&pool, &redis, &repo_id).await {
+        Ok(affected) if affected > 0 => HttpResponse::NoContent().finish(),
+        Ok(_) => HttpResponse::NotFound().body("Repository not found"),
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
+    }
 }

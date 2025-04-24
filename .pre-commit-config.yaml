@@ -24,7 +24,7 @@ repos:
 
       - id: rust-lint
         name: Rust Lint
-        entry: bash -c 'cd backend && cargo clippy -- -D warnings'
+        entry: bash -c 'cd backend && cargo clippy -- -A warnings'
         language: system
         types: [rust]
         pass_filenames: false

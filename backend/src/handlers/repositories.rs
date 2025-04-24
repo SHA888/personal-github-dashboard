@@ -2,9 +2,11 @@ use actix_web::{web, HttpResponse};
 use octocrab::Octocrab;
 use personal_github_dashboard::error::AppError;
 use personal_github_dashboard::utils::config::Config;
+use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct RepositoryInfo {
     pub name: String,
     pub description: Option<String>,
@@ -20,14 +22,30 @@ pub struct RepoParams {
     pub per_page: Option<u32>,
 }
 
-pub async fn get_repositories(query: web::Query<RepoParams>) -> Result<HttpResponse, AppError> {
+pub async fn get_repositories(
+    pool: web::Data<PgPool>,
+    redis_client: web::Data<RedisClient>,
+    query: web::Query<RepoParams>,
+) -> Result<HttpResponse, AppError> {
+    let cache_key = format!(
+        "user_repos:{}:{}",
+        query.page.unwrap_or(1),
+        query.per_page.unwrap_or(10)
+    );
+    // Try to get cached value
+    if let Ok(Some(cached)) = redis_client.get::<String>(&cache_key).await {
+        if let Ok(repos) = serde_json::from_str::<Vec<RepositoryInfo>>(&cached) {
+            return Ok(HttpResponse::Ok().json(repos));
+        }
+    }
+
+    // Fallback to fetching from GitHub (existing logic)
     let config = Config::from_env();
     let octocrab = Octocrab::builder()
         .personal_token(config.github_personal_access_token.clone())
         .build()
         .map_err(|e| AppError::InternalError(e.to_string()))?;
 
-    // clamp to [1,255] and cast into u8
     let page_num = query.page.unwrap_or(1).clamp(1, 255) as u8;
     let per_page_num = query.per_page.unwrap_or(10).clamp(1, 255) as u8;
 
@@ -52,6 +70,14 @@ pub async fn get_repositories(query: web::Query<RepoParams>) -> Result<HttpRespo
             open_issues_count: r.open_issues_count,
         })
         .collect::<Vec<_>>();
+
+    // Cache the result
+    if let Ok(json) = serde_json::to_string(&repos) {
+        redis_client
+            .set(&cache_key, json, 60 * 5)
+            .await
+            .map_err(|e| AppError::InternalError(format!("Redis error: {}", e)))?;
+    }
 
     Ok(HttpResponse::Ok().json(repos))
 }

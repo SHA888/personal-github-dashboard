@@ -13,6 +13,9 @@ mod handlers;
 mod routes;
 // mod utils; // should be accessed via crate path
 use personal_github_dashboard::utils::config::Config;
+use personal_github_dashboard::utils::redis::RedisClient;
+use sqlx::PgPool;
+use std::sync::Arc;
 
 // Insert minimal AppError usage to test import
 fn _test_app_error_import() {
@@ -37,6 +40,12 @@ async fn main() -> std::io::Result<()> {
     let redis_store = RedisSessionStore::new(&config.redis_url)
         .await
         .expect("Failed to connect to Redis");
+
+    // Redis client for caching
+    let redis_client = RedisClient::new(&config.redis_url)
+        .await
+        .expect("Failed to create Redis client");
+    let redis_client_data = actix_web::web::Data::new(redis_client);
 
     // Server binding
     let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| {
@@ -72,6 +81,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(SessionMiddleware::new(redis_store.clone(), Key::generate()))
             // Pass database pool to routes
             .app_data(actix_web::web::Data::new(pool.clone()))
+            // Pass redis client to routes
+            .app_data(redis_client_data.clone())
             // Configure routes
             .configure(routes::init_routes)
     })

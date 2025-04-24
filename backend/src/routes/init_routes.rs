@@ -1,5 +1,5 @@
 use crate::handlers::auth::{callback, login, pat_auth};
-use crate::handlers::repositories::get_repositories;
+use crate::handlers::repositories;
 use actix_cors::Cors;
 use actix_web::{dev::ServiceRequest, web, Error, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -7,6 +7,8 @@ use actix_web_httpauth::middleware::HttpAuthentication;
 use personal_github_dashboard::error::AppError;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::jwt::validate_jwt;
+use personal_github_dashboard::utils::redis::RedisClient;
+use sqlx::PgPool;
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
     // Health check
@@ -26,7 +28,14 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .wrap(auth)
-            .route("/repositories", web::get().to(get_repositories))
+            .route(
+                "/repositories",
+                web::get().to(
+                    |pool: web::Data<PgPool>, redis: web::Data<RedisClient>, query| async move {
+                        repositories::get_repositories(pool, redis, query).await
+                    },
+                ),
+            )
             .route("/organizations", web::get().to(get_organizations))
             .route("/security", web::get().to(get_security_alerts))
             .route("/user", web::get().to(get_user_info)),

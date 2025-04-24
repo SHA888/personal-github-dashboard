@@ -35,13 +35,13 @@ Create SQLx migration scripts for the following tables: users (id, github_id, us
 ### Details:
 Implement connection pooling using SQLx's Pool functionality. Configure appropriate pool size based on expected load. Implement graceful connection handling including timeout policies, retry logic, and error handling. Create a database module that exports the connection pool for use throughout the application.
 
-## 5. Implement Redis caching layer [pending]
+## 5. Implement Redis caching layer [done]
 ### Dependencies: 2.2
 ### Description: Create a Redis client with appropriate TTL policies
 ### Details:
 Implement Redis client using redis-rs crate. Create a caching module with functions for get, set, and invalidate operations. Implement TTL policies for different types of cached data: short TTL (5 minutes) for frequently changing data like activity feeds, medium TTL (1 hour) for semi-static data like repository information, and long TTL (24 hours) for relatively static data like user profiles. Implement cache key generation strategy.
 
-## 6. Create database access layer [pending]
+## 6. Create database access layer [done]
 ### Dependencies: 2.3, 2.4
 ### Description: Implement repository pattern for database access
 ### Details:

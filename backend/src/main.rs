@@ -10,6 +10,7 @@ use cookie::Key;
 mod db;
 mod handlers;
 // mod error; // moved to lib.rs
+mod models;
 mod routes;
 // mod utils; // should be accessed via crate path
 use personal_github_dashboard::utils::config::Config;

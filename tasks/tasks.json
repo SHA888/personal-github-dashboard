@@ -56,7 +56,7 @@
           "id": 5,
           "title": "Implement Redis caching layer",
           "description": "Create a Redis client with appropriate TTL policies",
-          "status": "pending",
+          "status": "done",
           "dependencies": [2],
           "details": "Implement Redis client using redis-rs crate. Create a caching module with functions for get, set, and invalidate operations. Implement TTL policies for different types of cached data: short TTL (5 minutes) for frequently changing data like activity feeds, medium TTL (1 hour) for semi-static data like repository information, and long TTL (24 hours) for relatively static data like user profiles. Implement cache key generation strategy."
         },
@@ -64,7 +64,7 @@
           "id": 6,
           "title": "Create database access layer",
           "description": "Implement repository pattern for database access",
-          "status": "pending",
+          "status": "done",
           "dependencies": [3, 4],
           "details": "Create repository structs for each entity (UserRepository, OrganizationRepository, RepositoryRepository, ActivityRepository). Implement CRUD operations for each entity. Use SQLx for type-safe queries. Implement pagination for list operations. Add error handling and logging. Create integration tests for each repository."
         },

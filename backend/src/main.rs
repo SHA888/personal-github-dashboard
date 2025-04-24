@@ -14,7 +14,6 @@ mod routes;
 // mod utils; // should be accessed via crate path
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
-use sqlx::PgPool;
 use std::sync::Arc;
 
 // Insert minimal AppError usage to test import

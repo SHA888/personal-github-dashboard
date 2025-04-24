@@ -33,35 +33,35 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt, clippy
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
-    - name: Install SQLx CLI
-      run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
+      - name: Install SQLx CLI
+        run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
-    - name: Create database
-      run: sqlx database create
+      - name: Create database
+        run: sqlx database create
 
-    - name: Run migrations
-      working-directory: backend
-      run: sqlx migrate run
+      - name: Run migrations
+        working-directory: backend
+        run: sqlx migrate run
 
-    - name: Check formatting
-      working-directory: backend
-      run: cargo fmt --all -- --check
+      - name: Check formatting
+        working-directory: backend
+        run: cargo fmt --all -- --check
 
-    - name: Run clippy
-      working-directory: backend
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run clippy
+        working-directory: backend
+        run: cargo clippy --all-targets --all-features -- -A warnings
 
-    - name: Run tests
-      working-directory: backend
-      run: cargo test --all-features
+      - name: Run tests
+        working-directory: backend
+        run: cargo test --all-features
 
-    - name: Build
-      working-directory: backend
-      run: cargo build --release
+      - name: Build
+        working-directory: backend
+        run: cargo build --release

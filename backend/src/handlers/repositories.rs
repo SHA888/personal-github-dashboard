@@ -23,7 +23,7 @@ pub struct RepoParams {
 }
 
 pub async fn get_repositories(
-    pool: web::Data<PgPool>,
+    _pool: web::Data<PgPool>,
     redis_client: web::Data<RedisClient>,
     query: web::Query<RepoParams>,
 ) -> Result<HttpResponse, AppError> {

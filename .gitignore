@@ -46,5 +46,9 @@ src-tauri
 # Database environment (development only)
 .env.db
 
+# Prevent accidental secrets and test artifacts from being committed
+backend/scripts/full_cache_validation.sh
+frontend/test-results/
+
 # Added by Claude Task Master
 README-task-master.md

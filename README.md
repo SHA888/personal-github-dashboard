@@ -1,5 +1,7 @@
 # Personal GitHub Dashboard
 
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/SHA888/personal-github-dashboard?utm_source=oss&utm_medium=github&utm_campaign=SHA888%2Fpersonal-github-dashboard&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+
 A personalized dashboard that provides insights and analytics for GitHub repositories and activities.
 
 ## Features

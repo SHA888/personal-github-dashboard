@@ -74,5 +74,8 @@ actix-web-httpauth = "0.8"
 metrics = "0.21"
 metrics-exporter-prometheus = "0.11"
 
+# Testing
+actix-rt = "2"
+
 [dev-dependencies]
 actix-service = "2"

@@ -1,10 +1,25 @@
 use actix_web::{test, App};
 use dotenv::dotenv;
+use env_logger;
+use log;
 use personal_github_dashboard::routes::init_routes_test::init_routes_no_auth;
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde_json;
 use sqlx::PgPool;
+use std::sync::Once;
 use uuid::Uuid;
+
+// Logger initialization for integration tests
+static INIT: Once = Once::new();
+
+fn init_logger() {
+    INIT.call_once(|| {
+        env_logger::Builder::from_default_env()
+            .is_test(true)
+            .filter_level(log::LevelFilter::Debug)
+            .init();
+    });
+}
 
 // Helper: Setup test app and Redis
 async fn setup_app_and_redis() -> (PgPool, RedisClient) {
@@ -72,7 +87,9 @@ async fn truncate_tables(pool: &PgPool) {
 
 #[actix_rt::test]
 async fn test_user_caching() {
+    init_logger();
     dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -88,6 +105,7 @@ async fn test_user_caching() {
             .configure(init_routes_no_auth),
     )
     .await;
+    // First GET - should populate cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/user/{}", user_id))
         .to_request();
@@ -97,6 +115,11 @@ async fn test_user_caching() {
     println!("[DEBUG] Status: {}", status1);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes));
     assert!(status1.is_success());
+    // Check cache directly
+    let cache_key = format!("user:{}", user_id);
+    let cached: Option<String> = redis.get(&cache_key).await.unwrap();
+    assert!(cached.is_some(), "Cache should be set after first fetch");
+    // Second GET - should hit cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/user/{}", user_id))
         .to_request();
@@ -106,14 +129,19 @@ async fn test_user_caching() {
     println!("[DEBUG] Status: {}", status2);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes2));
     assert!(status2.is_success());
-    let cache_key = format!("user:{}", user_id);
+    // Cache should still exist
     let cached: Option<String> = redis.get(&cache_key).await.unwrap();
-    assert!(cached.is_some());
+    assert!(
+        cached.is_some(),
+        "Cache should still exist after second fetch"
+    );
 }
 
 #[actix_rt::test]
 async fn test_organization_caching() {
+    init_logger();
     dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -129,6 +157,7 @@ async fn test_organization_caching() {
             .configure(init_routes_no_auth),
     )
     .await;
+    // First GET - should populate cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/organization/{}", org_id))
         .to_request();
@@ -138,6 +167,11 @@ async fn test_organization_caching() {
     println!("[DEBUG] Status: {}", status1);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes));
     assert!(status1.is_success());
+    // Check cache directly
+    let cache_key = format!("org:{}", org_id);
+    let cached: Option<String> = redis.get(&cache_key).await.unwrap();
+    assert!(cached.is_some(), "Cache should be set after first fetch");
+    // Second GET - should hit cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/organization/{}", org_id))
         .to_request();
@@ -147,14 +181,19 @@ async fn test_organization_caching() {
     println!("[DEBUG] Status: {}", status2);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes2));
     assert!(status2.is_success());
-    let cache_key = format!("organization:{}", org_id);
+    // Cache should still exist
     let cached: Option<String> = redis.get(&cache_key).await.unwrap();
-    assert!(cached.is_some());
+    assert!(
+        cached.is_some(),
+        "Cache should still exist after second fetch"
+    );
 }
 
 #[actix_rt::test]
 async fn test_repository_caching() {
+    init_logger();
     dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -174,6 +213,7 @@ async fn test_repository_caching() {
             .configure(init_routes_no_auth),
     )
     .await;
+    // First GET - should populate cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/repository/{}", repo_id))
         .to_request();
@@ -183,6 +223,11 @@ async fn test_repository_caching() {
     println!("[DEBUG] Status: {}", status1);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes));
     assert!(status1.is_success());
+    // Check cache directly
+    let cache_key = format!("repo:{}", repo_id);
+    let cached: Option<String> = redis.get(&cache_key).await.unwrap();
+    assert!(cached.is_some(), "Cache should be set after first fetch");
+    // Second GET - should hit cache
     let req = test::TestRequest::get()
         .uri(&format!("/api/repository/{}", repo_id))
         .to_request();
@@ -192,14 +237,19 @@ async fn test_repository_caching() {
     println!("[DEBUG] Status: {}", status2);
     println!("[DEBUG] Body: {}", String::from_utf8_lossy(&body_bytes2));
     assert!(status2.is_success());
-    let cache_key = format!("repository:{}", repo_id);
+    // Cache should still exist
     let cached: Option<String> = redis.get(&cache_key).await.unwrap();
-    assert!(cached.is_some());
+    assert!(
+        cached.is_some(),
+        "Cache should still exist after second fetch"
+    );
 }
 
 #[actix_rt::test]
 async fn test_activity_caching() {
+    init_logger();
     dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -250,7 +300,9 @@ async fn test_activity_caching() {
 
 #[actix_rt::test]
 async fn test_user_cache_miss_and_invalid_id() {
+    init_logger();
     dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -280,9 +332,11 @@ async fn test_user_cache_miss_and_invalid_id() {
 
 #[actix_rt::test]
 async fn test_user_cache_ttl_and_invalidation() {
-    dotenv().ok();
+    init_logger();
     use std::time::Duration;
     use tokio::time::sleep;
+    dotenv().ok();
+    std::env::set_var("USER_CACHE_TTL", "2");
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
     let pool = PgPool::connect(&database_url).await.expect("DB connect");
@@ -310,7 +364,7 @@ async fn test_user_cache_ttl_and_invalidation() {
     assert!(status1.is_success());
     let cache_key = format!("user:{}", user_id);
     let cached: Option<String> = redis.get(&cache_key).await.unwrap();
-    assert!(cached.is_some());
+    assert!(cached.is_some(), "Cache should be set after first fetch");
     // Wait for TTL to expire (assuming 2s TTL in handler)
     sleep(Duration::from_secs(3)).await;
     let cached: Option<String> = redis.get(&cache_key).await.unwrap();

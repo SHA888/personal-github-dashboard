@@ -21,6 +21,6 @@ impl CacheableEntity for User {
         format!("user:{}", id)
     }
     fn cache_ttl() -> usize {
-        crate::utils::cache::TTL_USER
+        crate::utils::cache::ttl_user()
     }
 }

@@ -1,7 +1,14 @@
+use std::env;
 use uuid::Uuid;
 
 // TTL policies (in seconds)
-pub const TTL_USER: usize = 60 * 60 * 24; // 24 hours
+pub fn ttl_user() -> usize {
+    env::var("USER_CACHE_TTL")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(60 * 60 * 24) // 24 hours default
+}
+
 pub const TTL_REPO: usize = 60 * 60; // 1 hour
 pub const TTL_ACTIVITY: usize = 60 * 5; // 5 minutes
 

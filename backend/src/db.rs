@@ -3,12 +3,12 @@ use crate::models::organization::Organization;
 use crate::models::repository::Repository;
 use crate::models::user::User;
 use crate::utils::cache::{
-    activity_cache_key, org_cache_key, repo_cache_key, user_cache_key, TTL_ACTIVITY, TTL_REPO,
-    TTL_USER,
+    activity_cache_key, org_cache_key, repo_cache_key, ttl_user, user_cache_key, TTL_ACTIVITY,
+    TTL_REPO,
 };
 use crate::utils::redis::RedisClient;
 use chrono::{DateTime, Utc};
-use log::{info, warn};
+use log::{debug, info, warn};
 use metrics::{histogram, increment_counter};
 use serde_json::Value;
 use sqlx::Error;
@@ -41,19 +41,28 @@ pub async fn get_user_by_id_with_cache(
 ) -> Result<Option<User>, sqlx::Error> {
     let cache_key = user_cache_key(user_id);
     let timer = std::time::Instant::now();
+    debug!(
+        "[CACHE] Attempting to GET user from Redis with key: {}",
+        cache_key
+    );
     let cache_result: redis::RedisResult<Option<String>> = redis.get::<String>(&cache_key).await;
     match &cache_result {
-        Ok(Some(_)) => increment_counter!("cache_user_hit"),
-        Ok(None) => increment_counter!("cache_user_miss"),
-        Err(_) => increment_counter!("cache_user_error"),
+        Ok(Some(_)) => debug!("[CACHE] HIT for user_id: {}", user_id),
+        Ok(None) => debug!("[CACHE] MISS for user_id: {}", user_id),
+        Err(e) => warn!("[CACHE] ERROR on GET for user_id: {}: {}", user_id, e),
     }
     if let Ok(Some(cached)) = cache_result {
-        if let Ok(user) = serde_json::from_str::<User>(&cached) {
-            info!("Cache hit for user_id: {}", user_id);
-            histogram!("db_user_query_duration", timer.elapsed().as_secs_f64());
-            return Ok(Some(user));
-        } else {
-            warn!("Cache deserialization failed for user_id: {}", user_id);
+        match serde_json::from_str::<User>(&cached) {
+            Ok(user) => {
+                debug!("[CACHE] Successfully deserialized cached user: {}", user_id);
+                return Ok(Some(user));
+            }
+            Err(e) => {
+                warn!(
+                    "[CACHE] Deserialization failed for user_id: {}: {}",
+                    user_id, e
+                );
+            }
         }
     }
     let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
@@ -63,7 +72,13 @@ pub async fn get_user_by_id_with_cache(
     histogram!("db_user_query_duration", timer.elapsed().as_secs_f64());
     if let Some(ref user) = user {
         if let Ok(json) = serde_json::to_string(user) {
-            let _ = redis.set(&cache_key, json, TTL_USER).await;
+            debug!("[CACHE] Setting user in Redis with key: {}", cache_key);
+            let set_result = redis.set(&cache_key, json, ttl_user()).await;
+            if let Err(e) = set_result {
+                warn!("[CACHE] ERROR on SET for user_id: {}: {}", user_id, e);
+            } else {
+                debug!("[CACHE] SET successful for user_id: {}", user_id);
+            }
         }
     }
     Ok(user)
@@ -109,7 +124,9 @@ pub async fn create_user_with_cache(
 pub async fn cache_user(redis: &RedisClient, user: &User) {
     let cache_key = user_cache_key(&user.id);
     if let Ok(json) = serde_json::to_string(user) {
-        let _ = redis.set(&cache_key, json, TTL_USER).await;
+        let _ = redis
+            .set(&cache_key, json, crate::utils::cache::ttl_user())
+            .await;
     }
 }
 
@@ -190,19 +207,28 @@ pub async fn get_organization_by_id_with_cache(
 ) -> Result<Option<Organization>, sqlx::Error> {
     let cache_key = org_cache_key(org_id);
     let timer = std::time::Instant::now();
+    debug!(
+        "[CACHE] Attempting to GET org from Redis with key: {}",
+        cache_key
+    );
     let cache_result: redis::RedisResult<Option<String>> = redis.get::<String>(&cache_key).await;
     match &cache_result {
-        Ok(Some(_)) => increment_counter!("cache_org_hit"),
-        Ok(None) => increment_counter!("cache_org_miss"),
-        Err(_) => increment_counter!("cache_org_error"),
+        Ok(Some(_)) => debug!("[CACHE] HIT for org_id: {}", org_id),
+        Ok(None) => debug!("[CACHE] MISS for org_id: {}", org_id),
+        Err(e) => warn!("[CACHE] ERROR on GET for org_id: {}: {}", org_id, e),
     }
     if let Ok(Some(cached)) = cache_result {
-        if let Ok(org) = serde_json::from_str::<Organization>(&cached) {
-            info!("Cache hit for org_id: {}", org_id);
-            histogram!("db_org_query_duration", timer.elapsed().as_secs_f64());
-            return Ok(Some(org));
-        } else {
-            warn!("Cache deserialization failed for org_id: {}", org_id);
+        match serde_json::from_str::<Organization>(&cached) {
+            Ok(org) => {
+                debug!("[CACHE] Successfully deserialized cached org: {}", org_id);
+                return Ok(Some(org));
+            }
+            Err(e) => {
+                warn!(
+                    "[CACHE] Deserialization failed for org_id: {}: {}",
+                    org_id, e
+                );
+            }
         }
     }
     let org = sqlx::query_as::<_, Organization>("SELECT * FROM organizations WHERE id = $1")
@@ -212,7 +238,13 @@ pub async fn get_organization_by_id_with_cache(
     histogram!("db_org_query_duration", timer.elapsed().as_secs_f64());
     if let Some(ref org) = org {
         if let Ok(json) = serde_json::to_string(org) {
-            let _ = redis.set(&cache_key, json, TTL_REPO).await;
+            debug!("[CACHE] Setting org in Redis with key: {}", cache_key);
+            let set_result = redis.set(&cache_key, json, TTL_REPO).await;
+            if let Err(e) = set_result {
+                warn!("[CACHE] ERROR on SET for org_id: {}: {}", org_id, e);
+            } else {
+                debug!("[CACHE] SET successful for org_id: {}", org_id);
+            }
         }
     }
     Ok(org)
@@ -338,19 +370,28 @@ pub async fn get_repository_by_id_with_cache(
 ) -> Result<Option<Repository>, sqlx::Error> {
     let cache_key = repo_cache_key(repo_id);
     let timer = std::time::Instant::now();
+    debug!(
+        "[CACHE] Attempting to GET repo from Redis with key: {}",
+        cache_key
+    );
     let cache_result: redis::RedisResult<Option<String>> = redis.get::<String>(&cache_key).await;
     match &cache_result {
-        Ok(Some(_)) => increment_counter!("cache_repo_hit"),
-        Ok(None) => increment_counter!("cache_repo_miss"),
-        Err(_) => increment_counter!("cache_repo_error"),
+        Ok(Some(_)) => debug!("[CACHE] HIT for repo_id: {}", repo_id),
+        Ok(None) => debug!("[CACHE] MISS for repo_id: {}", repo_id),
+        Err(e) => warn!("[CACHE] ERROR on GET for repo_id: {}: {}", repo_id, e),
     }
     if let Ok(Some(cached)) = cache_result {
-        if let Ok(repo) = serde_json::from_str::<Repository>(&cached) {
-            info!("Cache hit for repo_id: {}", repo_id);
-            histogram!("db_repo_query_duration", timer.elapsed().as_secs_f64());
-            return Ok(Some(repo));
-        } else {
-            warn!("Cache deserialization failed for repo_id: {}", repo_id);
+        match serde_json::from_str::<Repository>(&cached) {
+            Ok(repo) => {
+                debug!("[CACHE] Successfully deserialized cached repo: {}", repo_id);
+                return Ok(Some(repo));
+            }
+            Err(e) => {
+                warn!(
+                    "[CACHE] Deserialization failed for repo_id: {}: {}",
+                    repo_id, e
+                );
+            }
         }
     }
     let repo = sqlx::query_as::<_, Repository>("SELECT * FROM repositories WHERE id = $1")
@@ -360,7 +401,13 @@ pub async fn get_repository_by_id_with_cache(
     histogram!("db_repo_query_duration", timer.elapsed().as_secs_f64());
     if let Some(ref repo) = repo {
         if let Ok(json) = serde_json::to_string(repo) {
-            let _ = redis.set(&cache_key, json, TTL_REPO).await;
+            debug!("[CACHE] Setting repo in Redis with key: {}", cache_key);
+            let set_result = redis.set(&cache_key, json, TTL_REPO).await;
+            if let Err(e) = set_result {
+                warn!("[CACHE] ERROR on SET for repo_id: {}: {}", repo_id, e);
+            } else {
+                debug!("[CACHE] SET successful for repo_id: {}", repo_id);
+            }
         }
     }
     Ok(repo)

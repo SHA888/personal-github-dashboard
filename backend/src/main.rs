@@ -7,19 +7,27 @@ use cookie::Key;
 // removed unused import
 // use std::time::Duration;
 
-mod db;
-mod handlers;
+// mod db;
+// mod handlers;
 // mod error; // moved to lib.rs
-mod models;
-mod routes;
+// mod models;
+// mod routes;
 // mod utils; // should be accessed via crate path
+use metrics_exporter_prometheus::PrometheusBuilder;
+use personal_github_dashboard::db;
+use personal_github_dashboard::error::AppError;
+use personal_github_dashboard::handlers::metrics::{
+    metrics as metrics_endpoint, set_prometheus_handle,
+};
+use personal_github_dashboard::routes;
+use personal_github_dashboard::utils::cache_warm::warm_cache;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
 use std::sync::Arc;
 
 // Insert minimal AppError usage to test import
 fn _test_app_error_import() {
-    let _ = personal_github_dashboard::error::AppError::InternalError("test".to_string());
+    let _ = AppError::InternalError("test".to_string());
 }
 
 #[actix_web::main]
@@ -45,7 +53,17 @@ async fn main() -> std::io::Result<()> {
     let redis_client = RedisClient::new(&config.redis_url)
         .await
         .expect("Failed to create Redis client");
-    let redis_client_data = actix_web::web::Data::new(redis_client);
+    let redis_client_data = actix_web::web::Data::new(redis_client.clone());
+
+    // Warm the cache for frequently accessed data
+    warm_cache(&pool, &redis_client).await;
+
+    // Prometheus metrics exporter
+    let builder = PrometheusBuilder::new();
+    let handle = builder
+        .install_recorder()
+        .expect("Failed to install Prometheus recorder");
+    set_prometheus_handle(handle);
 
     // Server binding
     let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| {
@@ -85,6 +103,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(redis_client_data.clone())
             // Configure routes
             .configure(routes::init_routes)
+            .service(metrics_endpoint)
     })
     .bind(bind_addr)?
     .run()

@@ -83,6 +83,30 @@ backend/
 - `cargo clippy` - Run linter
 - `cargo fmt` - Format code
 
+## Integration Tests
+
+The backend includes comprehensive integration tests for caching logic:
+
+- `tests/user_cache_integration.rs` – User cache integration tests
+- `tests/repository_cache_integration.rs` – Repository cache integration tests
+- `tests/organization_cache_integration.rs` – Organization cache integration tests
+- `tests/activity_cache_integration.rs` – Activity cache integration tests
+
+To run all backend integration tests:
+
+```bash
+cargo test --test user_cache_integration
+cargo test --test repository_cache_integration
+cargo test --test organization_cache_integration
+cargo test --test activity_cache_integration
+```
+
+Or simply:
+
+```bash
+cargo test
+```
+
 ## API Documentation
 
 For detailed API documentation, please refer to the [API Documentation](../../docs/api/README.md).

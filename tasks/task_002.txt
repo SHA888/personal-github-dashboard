@@ -1,6 +1,6 @@
 # Task ID: 2
 # Title: Implement Database Schema and Infrastructure
-# Status: in-progress
+# Status: done
 # Dependencies: 1
 # Priority: high
 # Description: Set up PostgreSQL and Redis instances, design and implement the database schema for users, organizations, repositories, and activities.

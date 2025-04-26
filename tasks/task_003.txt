@@ -1,6 +1,6 @@
 # Task ID: 3
 # Title: Implement GitHub OAuth Authentication
-# Status: pending
+# Status: in-progress
 # Dependencies: 2
 # Priority: high
 # Description: Develop the authentication flow using GitHub OAuth, including token management and user session handling.
@@ -11,7 +11,7 @@ Register OAuth application with GitHub. Implement OAuth flow endpoints in Actix-
 Test OAuth flow with mock GitHub responses. Verify token storage security. Test JWT validation and expiration. Ensure proper error handling for authentication failures. Test token refresh mechanism.
 
 # Subtasks:
-## 1. Register GitHub OAuth Application [pending]
+## 1. Register GitHub OAuth Application [done]
 ### Dependencies: None
 ### Description: Create and configure a GitHub OAuth application to obtain client ID and secret
 ### Details:

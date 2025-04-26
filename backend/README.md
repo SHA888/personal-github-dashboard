@@ -19,6 +19,42 @@ The backend is built using:
 - Redis (v6 or later)
 - GitHub Personal Access Token (PAT) with required scopes
 
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in the required values. Below are the variables you need to configure:
+
+```ini
+# Database Configuration
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/personal_github_dashboard_dev
+PG_POOL_MAX=10
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# Server Configuration
+PORT=8081
+
+# GitHub OAuth Configuration
+GITHUB_CLIENT_ID=your_github_client_id_here
+GITHUB_CLIENT_SECRET=your_github_client_secret_here
+GITHUB_CALLBACK_URL=http://localhost:3001/auth/callback
+GITHUB_OAUTH_SCOPES=read:org,read:user,repo
+
+# JWT Configuration
+JWT_SECRET=your_secure_jwt_secret_here
+JWT_EXPIRES_IN=24h
+```
+
+**Note:**
+
+- Never commit your `.env` file or any credentials to version control.
+- Only use `.env.example` as a template.
+- All credentials and secrets should be managed through environment variables.
+
+---
+
+For more details on each variable, see the comments in `.env.example`.
+
 ## Setup
 
 1. Install dependencies:
@@ -27,22 +63,13 @@ The backend is built using:
    cargo build
    ```
 
-2. Create a `.env` file in the backend directory:
-
-   ```
-   GITHUB_PERSONAL_ACCESS_TOKEN=your_personal_access_token
-   DATABASE_URL=postgresql://user:password@localhost:5432/personal_github_dashboard
-   REDIS_URL=redis://localhost:6379
-   PORT=8080
-   ```
-
-3. Set up the database:
+2. Set up the database:
 
    ```bash
    cargo run --bin migrate
    ```
 
-4. Start the server:
+3. Start the server:
    ```bash
    cargo run
    ```

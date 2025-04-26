@@ -5,7 +5,7 @@ use crate::db::{
     update_user_avatar_with_cache,
 };
 use crate::utils::redis::RedisClient;
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -37,6 +37,19 @@ pub async fn create_user(
     .await
     {
         Ok(user) => HttpResponse::Created().json(user),
+        Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
+    }
+}
+
+// Handler to fetch user by ID (for GET /user/{id})
+pub async fn get_user_by_id_handler(
+    pool: web::Data<PgPool>,
+    redis: web::Data<RedisClient>,
+    user_id: web::Path<Uuid>,
+) -> impl Responder {
+    match get_user_by_id_with_cache(&pool, &redis, &user_id).await {
+        Ok(Some(user)) => HttpResponse::Ok().json(user),
+        Ok(None) => HttpResponse::NotFound().body("User not found"),
         Err(e) => HttpResponse::InternalServerError().body(format!("DB/Cache error: {}", e)),
     }
 }

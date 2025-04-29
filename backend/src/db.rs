@@ -17,10 +17,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 /// Creates a PostgreSQL connection pool with a maximum number of connections and a 5-second acquire timeout.
-
-///
 /// # Examples
-///
 /// ```
 /// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.is_closed() == false);
@@ -35,13 +32,10 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
 }
 
 /// Creates a PostgreSQL connection pool optimized for memory efficiency.
-///
 /// The pool maintains a minimum of one idle connection, limits the maximum number of connections,
 /// sets a maximum connection lifetime of 10 minutes, and applies a 60-second idle timeout. Each new
 /// connection is configured with a 5-second statement timeout.
-///
 /// # Examples
-///
 /// ```
 /// let pool = create_pg_pool_memory_efficient("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.acquire().await.is_ok());
@@ -67,11 +61,8 @@ pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections
 }
 
 /// Retrieves a user by their unique identifier from the database.
-///
 /// Returns `Ok(Some(User))` if a user with the given ID exists, `Ok(None)` if not found, or an error if the query fails.
-///
 /// # Examples
-///
 /// ```
 /// let user = get_user_by_id(&pool, &user_id).await?;
 /// if let Some(user) = user {

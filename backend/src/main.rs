@@ -23,7 +23,7 @@ use personal_github_dashboard::routes;
 use personal_github_dashboard::utils::cache_warm::warm_cache;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
-use std::sync::Arc;
+// Removed unused import Arc and sync
 
 // Insert minimal AppError usage to test import
 fn _test_app_error_import() {

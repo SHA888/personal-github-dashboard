@@ -1,6 +1,5 @@
 use actix_web::App;
 use chrono::{Duration, Utc};
-use dotenv;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
@@ -14,7 +13,6 @@ struct Claims {
 
 #[actix_web::test]
 async fn test_user_cache_flow() {
-    dotenv::dotenv().ok();
     // Setup test pool/redis (point to test DB/Redis)
     let pool = PgPool::connect(&std::env::var("DATABASE_URL").unwrap())
         .await
@@ -22,7 +20,7 @@ async fn test_user_cache_flow() {
     let redis = RedisClient::new(&std::env::var("REDIS_URL").unwrap())
         .await
         .unwrap();
-    let mut app = actix_web::test::init_service({
+    let app = actix_web::test::init_service({
         use personal_github_dashboard::routes::init_routes;
         App::new()
             .app_data(actix_web::web::Data::new(pool.clone()))
@@ -55,10 +53,10 @@ async fn test_user_cache_flow() {
     // Create user (auth required for registration)
     let req = actix_web::test::TestRequest::post()
         .uri("/api/user")
-        .set_json(&serde_json::json!({"username":"cachetest","email":"cache@test.com"}))
+        .set_json(serde_json::json!({"username":"cachetest","email":"cache@test.com"}))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     println!("POST /api/user status: {}", status);
     let body = actix_web::test::read_body(resp).await;
@@ -73,7 +71,7 @@ async fn test_user_cache_flow() {
         .uri(&format!("/api/user/{}", user_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     let body = actix_web::test::read_body(resp).await;
     println!("GET /api/user/{} status: {}", user_id, status);
@@ -88,7 +86,7 @@ async fn test_user_cache_flow() {
         .uri(&format!("/api/user/{}", user_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     let body = actix_web::test::read_body(resp).await;
     println!("GET (cache) /api/user/{} status: {}", user_id, status);
@@ -101,10 +99,10 @@ async fn test_user_cache_flow() {
     // Update user avatar
     let req = actix_web::test::TestRequest::put()
         .uri(&format!("/api/user/{}/avatar", user_id))
-        .set_json(&serde_json::json!({"avatar_url":"https://example.com/avatar.png"}))
+        .set_json(serde_json::json!({"avatar_url":"https://example.com/avatar.png"}))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     let body = actix_web::test::read_body(resp).await;
     println!("PUT /api/user/{}/avatar status: {}", user_id, status);
@@ -119,7 +117,7 @@ async fn test_user_cache_flow() {
         .uri(&format!("/api/user/{}", user_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     println!("DELETE /api/user/{} status: {}", user_id, status);
     assert_eq!(status, 204);
@@ -129,7 +127,7 @@ async fn test_user_cache_flow() {
         .uri(&format!("/api/user/{}", user_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = actix_web::test::call_service(&mut app, req).await;
+    let resp = actix_web::test::call_service(&app, req).await;
     let status = resp.status();
     println!(
         "GET (after delete) /api/user/{} status: {}",

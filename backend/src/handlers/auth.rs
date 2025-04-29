@@ -269,14 +269,30 @@ mod tests {
     #[actix_web::test]
     async fn login_redirect_should_redirect_to_github() {
         // Set env vars for test
-        std::env::set_var("GITHUB_CLIENT_ID", "testid");
-        std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
-        std::env::set_var("GITHUB_PERSONAL_ACCESS_TOKEN", "dummy_token");
-        std::env::set_var("DATABASE_URL", "postgres://dummy:dummy@localhost/dummy");
-        std::env::set_var("REDIS_URL", "redis://localhost:6379");
-        std::env::set_var("JWT_SECRET", "dummy_secret");
-        std::env::set_var("GITHUB_CLIENT_SECRET", "dummy_secret");
-        std::env::set_var("FRONTEND_URL", "http://localhost:3000");
+        unsafe {
+            std::env::set_var("GITHUB_CLIENT_ID", "testid");
+        }
+        unsafe {
+            std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
+        }
+        unsafe {
+            std::env::set_var("GITHUB_PERSONAL_ACCESS_TOKEN", "dummy_token");
+        }
+        unsafe {
+            std::env::set_var("DATABASE_URL", "postgres://dummy:dummy@localhost/dummy");
+        }
+        unsafe {
+            std::env::set_var("REDIS_URL", "redis://localhost:6379");
+        }
+        unsafe {
+            std::env::set_var("JWT_SECRET", "dummy_secret");
+        }
+        unsafe {
+            std::env::set_var("GITHUB_CLIENT_SECRET", "dummy_secret");
+        }
+        unsafe {
+            std::env::set_var("FRONTEND_URL", "http://localhost:3000");
+        }
         // Initialize app with login route
         let app = test::init_service(App::new().route("/auth/login", web::get().to(login))).await;
         // Send request
@@ -294,9 +310,15 @@ mod tests {
     #[ignore]
     async fn callback_returns_internal_server_error_for_invalid_code() {
         // Set env vars for test
-        std::env::set_var("GITHUB_CLIENT_ID", "testid");
-        std::env::set_var("GITHUB_CLIENT_SECRET", "testsecret");
-        std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
+        unsafe {
+            std::env::set_var("GITHUB_CLIENT_ID", "testid");
+        }
+        unsafe {
+            std::env::set_var("GITHUB_CLIENT_SECRET", "testsecret");
+        }
+        unsafe {
+            std::env::set_var("GITHUB_REDIRECT_URL", "http://localhost/callback");
+        }
         // Initialize app with callback route
         let app =
             test::init_service(App::new().route("/auth/callback", web::get().to(callback))).await;
@@ -321,11 +343,15 @@ mod callback_tests {
     #[actix_web::test]
     async fn callback_in_test_mode_sets_cookie() {
         dotenv::dotenv().ok();
-        std::env::set_var("JWT_SECRET", "secret");
-        std::env::set_var("TEST_MODE", "1");
+        unsafe {
+            std::env::set_var("JWT_SECRET", "secret");
+        }
+        unsafe {
+            std::env::set_var("TEST_MODE", "1");
+        }
         let db_url = std::env::var("TEST_DATABASE_URL").unwrap();
         let pool = PgPool::connect(&db_url).await.unwrap();
-        let session_key = Key::generate();
+        let _session_key = Key::generate();
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
@@ -350,12 +376,16 @@ mod pat_tests {
 
     #[actix_web::test]
     async fn pat_auth_in_test_mode_returns_jwt_and_user() {
-        std::env::set_var("JWT_SECRET", "secret");
-        std::env::set_var("TEST_MODE", "1");
+        unsafe {
+            std::env::set_var("JWT_SECRET", "secret");
+        }
+        unsafe {
+            std::env::set_var("TEST_MODE", "1");
+        }
         let app = test::init_service(App::new().route("/auth/pat", web::post().to(pat_auth))).await;
         let req = test::TestRequest::post()
             .uri("/auth/pat")
-            .set_json("dummy".into())
+            .set_json("dummy")
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK);

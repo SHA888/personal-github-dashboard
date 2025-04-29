@@ -4,7 +4,7 @@ use personal_github_dashboard::routes::init_routes;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
-use sqlx::{Executor, PgPool};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
@@ -42,7 +42,7 @@ async fn test_repository_cache_flow() {
     .unwrap();
 
     // Start app
-    let mut app = test::init_service(
+    let app = test::init_service(
         App::new()
             .app_data(actix_web::web::Data::new(pool.clone()))
             .app_data(actix_web::web::Data::new(redis.clone()))
@@ -62,7 +62,7 @@ async fn test_repository_cache_flow() {
         .unwrap();
     let req = test::TestRequest::post()
         .uri("/api/repositories")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "owner_id": test_owner_id,
             "name": test_repo_name,
             "description": "Test repo for cache integration",
@@ -70,7 +70,7 @@ async fn test_repository_cache_flow() {
         }))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("POST /api/repositories status: {}", status);
@@ -85,7 +85,7 @@ async fn test_repository_cache_flow() {
         .uri(&format!("/api/repositories/{}", repo_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("GET /api/repositories/{} status: {}", repo_id, status);
@@ -100,7 +100,7 @@ async fn test_repository_cache_flow() {
         .uri(&format!("/api/repositories/{}", repo_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!(
@@ -119,10 +119,10 @@ async fn test_repository_cache_flow() {
     // Update repository description (PUT)
     let req = test::TestRequest::put()
         .uri(&format!("/api/repositories/{}/description", repo_id))
-        .set_json(&serde_json::json!({"description": "Updated description"}))
+        .set_json(serde_json::json!({"description": "Updated description"}))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!(
@@ -143,7 +143,7 @@ async fn test_repository_cache_flow() {
         .uri(&format!("/api/repositories/{}", repo_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     println!("DELETE /api/repositories/{} status: {}", repo_id, status);
     assert_eq!(status, 204);
@@ -153,7 +153,7 @@ async fn test_repository_cache_flow() {
         .uri(&format!("/api/repositories/{}", repo_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     println!(
         "GET (after delete) /api/repositories/{} status: {}",

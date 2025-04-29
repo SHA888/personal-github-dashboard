@@ -5,8 +5,8 @@ use crate::db::{
     update_user_avatar_with_cache,
 };
 use crate::utils::redis::RedisClient;
-use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use actix_web::{HttpResponse, Responder, web};
+use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 

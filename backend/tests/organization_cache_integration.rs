@@ -1,5 +1,5 @@
-use actix_web::{test, App};
-use jsonwebtoken::{encode, EncodingKey, Header};
+use actix_web::{App, test};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::routes::init_routes;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
@@ -52,7 +52,7 @@ async fn test_organization_cache_flow() {
         .unwrap();
 
     // Start app
-    let mut app = test::init_service(
+    let app = test::init_service(
         App::new()
             .app_data(actix_web::web::Data::new(pool.clone()))
             .app_data(actix_web::web::Data::new(redis.clone()))
@@ -63,13 +63,13 @@ async fn test_organization_cache_flow() {
     // Create organization (POST)
     let req = test::TestRequest::post()
         .uri("/api/organizations")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "name": test_org_name,
             "description": "Test org for cache integration"
         }))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("POST /api/organizations status: {}", status);
@@ -84,7 +84,7 @@ async fn test_organization_cache_flow() {
         .uri(&format!("/api/organizations/{}", org_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("GET /api/organizations/{} status: {}", org_id, status);
@@ -99,7 +99,7 @@ async fn test_organization_cache_flow() {
         .uri(&format!("/api/organizations/{}", org_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!(
@@ -118,10 +118,10 @@ async fn test_organization_cache_flow() {
     // Update organization description (PUT)
     let req = test::TestRequest::put()
         .uri(&format!("/api/organizations/{}/description", org_id))
-        .set_json(&serde_json::json!({"description": "Updated description"}))
+        .set_json(serde_json::json!({"description": "Updated description"}))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!(
@@ -142,7 +142,7 @@ async fn test_organization_cache_flow() {
         .uri(&format!("/api/organizations/{}", org_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     println!("DELETE /api/organizations/{} status: {}", org_id, status);
     assert_eq!(status, 204);
@@ -152,7 +152,7 @@ async fn test_organization_cache_flow() {
         .uri(&format!("/api/organizations/{}", org_id))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     println!(
         "GET (after delete) /api/organizations/{} status: {}",

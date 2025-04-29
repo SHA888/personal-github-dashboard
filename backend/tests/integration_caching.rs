@@ -1,10 +1,8 @@
-use actix_web::{test, App};
+use actix_web::{App, test};
 use dotenv::dotenv;
-use env_logger;
-use log;
 use personal_github_dashboard::routes::init_routes_test::init_routes_no_auth;
 use personal_github_dashboard::utils::redis::RedisClient;
-use serde_json;
+use serial_test::serial;
 use sqlx::PgPool;
 use std::sync::Once;
 use uuid::Uuid;
@@ -12,6 +10,7 @@ use uuid::Uuid;
 // Logger initialization for integration tests
 static INIT: Once = Once::new();
 
+/// ```
 fn init_logger() {
     INIT.call_once(|| {
         env_logger::Builder::from_default_env()
@@ -21,14 +20,51 @@ fn init_logger() {
     });
 }
 
-// Helper: Setup test app and Redis
-async fn setup_app_and_redis() -> (PgPool, RedisClient) {
-    // These should use test env vars or config
+// --- Shared test state ---
+
+/// Returns a new PostgreSQL connection pool for integration tests.
+///
+/// # Examples
+///
+/// ```
+/// let pool = get_test_pool().await;
+/// // Use `pool` to execute test queries.
+/// ```
+async fn get_test_pool() -> PgPool {
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
+    PgPool::connect(&database_url).await.expect("DB connect")
+}
+
+/// Returns a new Redis client for integration tests.
+///
+/// # Examples
+///
+/// ```
+/// let redis = get_test_redis().await;
+/// // Use `redis` to interact with the test Redis instance.
+/// ```
+async fn get_test_redis() -> RedisClient {
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
-    (pool, redis)
+    RedisClient::new(&redis_url).await.expect("Redis connect")
+}
+
+/// Removes all data from the `activities`, `repositories`, `organizations`, `users`, and `oauth_tokens` tables, resetting identity sequences and cascading deletions.
+///
+/// This ensures a clean database state before each test by truncating the relevant tables.
+///
+/// # Examples
+///
+/// ```
+/// let pool = get_test_pool().await;
+/// truncate_tables(&pool).await;
+/// ```
+async fn truncate_tables(pool: &PgPool) {
+    sqlx::query!(
+        "TRUNCATE TABLE activities, repositories, organizations, users, oauth_tokens RESTART IDENTITY CASCADE;"
+    )
+    .execute(pool)
+    .await
+    .expect("truncate tables");
 }
 
 // --- DRY Helper functions ---
@@ -69,31 +105,48 @@ async fn insert_repository(
         .execute(pool).await.expect("insert repo");
 }
 
+/// Inserts a test activity record into the database with the specified IDs and sample data.
+///
+/// The activity is created with a fixed type ("testtype"), current timestamp, and a sample JSON payload.
+/// Used to set up test data for integration tests involving activities.
+///
+/// # Examples
+///
+/// ```
+/// let pool = get_test_pool().await;
+/// let activity_id = Uuid::new_v4();
+/// let user_id = Uuid::new_v4();
+/// let repo_id = Some(Uuid::new_v4());
+/// insert_activity(&pool, activity_id, user_id, repo_id).await;
+/// ```
 async fn insert_activity(pool: &PgPool, activity_id: Uuid, user_id: Uuid, repo_id: Option<Uuid>) {
     sqlx::query!("INSERT INTO activities (id, user_id, repo_id, type, timestamp, data, created_at) VALUES ($1, $2, $3, $4, NOW(), $5, NOW())",
         activity_id, user_id, repo_id, "testtype", serde_json::json!({"k":"v"}))
         .execute(pool).await.expect("insert activity");
 }
 
-// Truncate tables for a clean state before each test
-async fn truncate_tables(pool: &PgPool) {
-    sqlx::query!(
-        "TRUNCATE TABLE activities, repositories, organizations, users RESTART IDENTITY CASCADE;"
-    )
-    .execute(pool)
-    .await
-    .expect("truncate tables");
-}
-
 #[actix_rt::test]
+#[serial]
+/// Tests that user data is cached in Redis after the first API fetch and that subsequent requests retrieve the data from the cache.
+///
+/// This test inserts a user, fetches the user via the API to populate the cache, verifies the cache is set, and ensures a second fetch results in a cache hit.
+///
+/// # Examples
+///
+/// ```
+/// // Runs as part of the integration test suite; not intended for direct invocation.
+/// tokio_test::block_on(test_user_caching());
+/// ```
 async fn test_user_caching() {
     init_logger();
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let username = format!("testuser-{}", user_id);
@@ -138,14 +191,28 @@ async fn test_user_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
+/// Tests that organization data is cached in Redis after the first API fetch and that subsequent fetches use the cache.
+///
+/// This test inserts an organization, fetches it via the API to populate the cache, verifies the cache is set,
+/// then fetches it again to ensure the cache is still present.
+///
+/// # Examples
+///
+/// ```
+/// // Runs as part of the integration test suite; not intended for direct invocation.
+/// // Verifies organization caching behavior.
+/// ```
 async fn test_organization_caching() {
     init_logger();
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let org_id = Uuid::new_v4();
     let name = format!("testorg-{}", org_id);
@@ -190,14 +257,28 @@ async fn test_organization_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
+/// Tests that repository data is cached in Redis after the first fetch and remains available on subsequent requests.
+///
+/// This integration test inserts a user, organization, and repository into the database, then fetches the repository via the API.
+/// It verifies that the repository data is cached in Redis after the first request and that the cache persists after a second request.
+///
+/// # Examples
+///
+/// ```
+/// // Runs as part of the integration test suite; not intended for direct invocation.
+/// tokio_test::block_on(test_repository_caching());
+/// ```
 async fn test_repository_caching() {
     init_logger();
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let org_id = Uuid::new_v4();
     let repo_id = Uuid::new_v4();
@@ -246,14 +327,27 @@ async fn test_repository_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
+/// Tests that activity data is cached in Redis after the first API fetch and remains available on subsequent requests.
+///
+/// This test inserts a user, repository, and activity into the database, fetches the activity via the API, and verifies that the activity is cached in Redis. It then fetches the activity again to confirm the cache is still present.
+///
+/// # Examples
+///
+/// ```
+/// // Runs as part of the integration test suite; not intended for direct invocation.
+/// tokio_test::block_on(test_activity_caching());
+/// ```
 async fn test_activity_caching() {
     init_logger();
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let repo_id = Uuid::new_v4();
@@ -299,14 +393,32 @@ async fn test_activity_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
+/// Tests that requesting a non-existent user returns a 404 response and does not populate the Redis cache.
+///
+/// This test sends a GET request for a randomly generated user ID that does not exist in the database,
+/// verifies that the response status is 404 Not Found, and asserts that the corresponding Redis cache key
+/// is not set.
+///
+/// # Examples
+///
+/// ```
+/// // This test is intended to be run as part of the integration test suite.
+/// // It does not require any setup, as it generates a random user ID.
+/// tokio_test::block_on(async {
+///     test_user_cache_miss_and_invalid_id().await;
+/// });
+/// ```
 async fn test_user_cache_miss_and_invalid_id() {
     init_logger();
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let random_id = Uuid::new_v4();
     let app = test::init_service(
@@ -331,16 +443,29 @@ async fn test_user_cache_miss_and_invalid_id() {
 }
 
 #[actix_rt::test]
+#[serial]
+/// Tests that the user cache entry expires after the configured TTL and is not repopulated after the user is deleted.
+///
+/// This test verifies that fetching a user populates the cache, the cache entry expires after the TTL, and subsequent requests for a deleted user do not repopulate the cache.
+///
+/// # Examples
+///
+/// ```
+/// // This is an integration test and is run as part of the test suite.
+/// // It does not return a value.
+/// ```
 async fn test_user_cache_ttl_and_invalidation() {
     init_logger();
     use std::time::Duration;
     use tokio::time::sleep;
     dotenv().ok();
-    std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
+    unsafe {
+        std::env::set_var("USER_CACHE_TTL", "2");
+    }
+    let pool = get_test_pool().await;
+    let redis = get_test_redis().await;
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let username = format!("testuser-{}", user_id);

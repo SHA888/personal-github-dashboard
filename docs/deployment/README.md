@@ -35,7 +35,7 @@ REDIS_POOL_SIZE=5
 # GitHub Configuration
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
-GITHUB_CALLBACK_URL=https://your-domain.com/api/auth/github/callback
+GITHUB_REDIRECT_URL=https://your-domain.com/api/auth/github/callback
 
 # Security
 JWT_SECRET=your_secure_jwt_secret

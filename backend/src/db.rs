@@ -3,20 +3,25 @@ use crate::models::organization::Organization;
 use crate::models::repository::Repository;
 use crate::models::user::User;
 use crate::utils::cache::{
-    activity_cache_key, org_cache_key, repo_cache_key, ttl_user, user_cache_key, TTL_ACTIVITY,
-    TTL_REPO,
+    TTL_ACTIVITY, TTL_REPO, activity_cache_key, org_cache_key, repo_cache_key, ttl_user,
+    user_cache_key,
 };
 use crate::utils::redis::RedisClient;
 use chrono::{DateTime, Utc};
-use log::{debug, info, warn};
+use log::{debug, warn};
 use metrics::{histogram, increment_counter};
 use serde_json::Value;
 use sqlx::Error;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Create a PostgreSQL connection pool with custom configuration.
+/// Creates a PostgreSQL connection pool with a maximum number of connections and a 5-second acquire timeout.
+/// # Examples
+/// ```
+/// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
+/// assert!(pool.is_closed() == false);
+/// ```
 pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
@@ -26,7 +31,44 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
         .expect("Failed to create Postgres connection pool")
 }
 
-// --- User CRUD ---
+/// Creates a PostgreSQL connection pool optimized for memory efficiency.
+/// The pool maintains a minimum of one idle connection, limits the maximum number of connections,
+/// sets a maximum connection lifetime of 10 minutes, and applies a 60-second idle timeout. Each new
+/// connection is configured with a 5-second statement timeout.
+/// # Examples
+/// ```
+/// let pool = create_pg_pool_memory_efficient("postgres://user:pass@localhost/db", 10).await;
+/// assert!(pool.acquire().await.is_ok());
+/// ```
+pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
+    PgPoolOptions::new()
+        .max_connections(max_connections)
+        .min_connections(1) // keep only 1 idle connection
+        .max_lifetime(Some(Duration::from_secs(600))) // close idle after 10m
+        .idle_timeout(Some(Duration::from_secs(60))) // idle conn timeout 60s
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                sqlx::query("SET statement_timeout = 5000;")
+                    .execute(conn)
+                    .await
+                    .ok();
+                Ok(())
+            })
+        })
+        .connect(database_url)
+        .await
+        .expect("Failed to create PgPool")
+}
+
+/// Retrieves a user by their unique identifier from the database.
+/// Returns `Ok(Some(User))` if a user with the given ID exists, `Ok(None)` if not found, or an error if the query fails.
+/// # Examples
+/// ```
+/// let user = get_user_by_id(&pool, &user_id).await?;
+/// if let Some(user) = user {
+///     println!("Found user: {}", user.username);
+/// }
+/// ```
 pub async fn get_user_by_id(pool: &PgPool, user_id: &Uuid) -> Result<Option<User>, sqlx::Error> {
     sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
         .bind(user_id)

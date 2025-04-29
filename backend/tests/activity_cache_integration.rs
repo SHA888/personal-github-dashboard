@@ -1,5 +1,5 @@
-use actix_web::{test, App};
-use jsonwebtoken::{encode, EncodingKey, Header};
+use actix_web::{App, test};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::routes::init_routes;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
@@ -79,7 +79,7 @@ async fn test_activity_cache_flow() {
         .unwrap();
 
     // Start app
-    let mut app = test::init_service(
+    let app = test::init_service(
         App::new()
             .app_data(actix_web::web::Data::new(pool.clone()))
             .app_data(actix_web::web::Data::new(redis.clone()))
@@ -90,14 +90,14 @@ async fn test_activity_cache_flow() {
     // --- USER-ONLY ACTIVITY ---
     let req = test::TestRequest::post()
         .uri("/api/activities")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "user_id": test_user_id,
             "activity_type": test_activity_type,
             "details": "User-only activity"
         }))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("POST /api/activities (user-only) status: {}", status);
@@ -110,7 +110,7 @@ async fn test_activity_cache_flow() {
     // --- USER+REPO ACTIVITY ---
     let req = test::TestRequest::post()
         .uri("/api/activities")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "user_id": test_user_id,
             "repo_id": test_repo_id,
             "activity_type": test_activity_type,
@@ -118,7 +118,7 @@ async fn test_activity_cache_flow() {
         }))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("POST /api/activities (user+repo) status: {}", status);
@@ -131,7 +131,7 @@ async fn test_activity_cache_flow() {
     // --- USER+ORG ACTIVITY ---
     let req = test::TestRequest::post()
         .uri("/api/activities")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "user_id": test_user_id,
             "org_id": test_org_id,
             "activity_type": test_activity_type,
@@ -139,7 +139,7 @@ async fn test_activity_cache_flow() {
         }))
         .insert_header(("Authorization", format!("Bearer {}", token)))
         .to_request();
-    let resp = test::call_service(&mut app, req).await;
+    let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
     println!("POST /api/activities (user+org) status: {}", status);
@@ -160,7 +160,7 @@ async fn test_activity_cache_flow() {
             .uri(&format!("/api/activities/{}", activity_id))
             .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         let status = resp.status();
         let body = test::read_body(resp).await;
         println!(
@@ -176,7 +176,7 @@ async fn test_activity_cache_flow() {
             .uri(&format!("/api/activities/{}", activity_id))
             .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         let status = resp.status();
         let body = test::read_body(resp).await;
         println!(
@@ -192,7 +192,7 @@ async fn test_activity_cache_flow() {
             .uri(&format!("/api/activities/{}", activity_id))
             .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         let status = resp.status();
         println!(
             "DELETE /api/activities/{} ({}) status: {}",
@@ -204,7 +204,7 @@ async fn test_activity_cache_flow() {
             .uri(&format!("/api/activities/{}", activity_id))
             .insert_header(("Authorization", format!("Bearer {}", token)))
             .to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
         let status = resp.status();
         println!(
             "GET (after delete) /api/activities/{} ({}) status: {}",

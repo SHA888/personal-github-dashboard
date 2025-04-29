@@ -2,7 +2,7 @@ use crate::db::{
     create_activity_with_cache, delete_activity_with_cache, get_activity_by_id_with_cache,
 };
 use crate::utils::redis::RedisClient;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;

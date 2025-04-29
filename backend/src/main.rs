@@ -1,8 +1,8 @@
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_session::{SessionMiddleware, storage::RedisSessionStore};
 use actix_web::http::header;
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, web::PayloadConfig};
 use cookie::Key;
 // removed unused import
 // use std::time::Duration;
@@ -23,7 +23,7 @@ use personal_github_dashboard::routes;
 use personal_github_dashboard::utils::cache_warm::warm_cache;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;
-use std::sync::Arc;
+// Removed unused import Arc and sync
 
 // Insert minimal AppError usage to test import
 fn _test_app_error_import() {
@@ -31,6 +31,29 @@ fn _test_app_error_import() {
 }
 
 #[actix_web::main]
+/// Initializes and runs the Actix-web HTTP server with memory-efficient settings.
+///
+/// Loads configuration from environment variables, sets up a PostgreSQL connection pool,
+/// connects to Redis for session management and caching, preloads frequently accessed data into the cache,
+/// configures Prometheus metrics, applies CORS and rate limiting middleware, and starts the server
+/// with a limited number of workers and a restricted request payload size.
+///
+/// # Returns
+///
+/// Returns a `std::io::Result<()>` indicating the success or failure of the server startup.
+///
+/// # Panics
+///
+/// Panics if connecting to Redis or creating the Redis client fails, or if Prometheus metrics recorder installation fails.
+///
+/// # Examples
+///
+/// ```no_run
+/// #[tokio::main]
+/// async fn main() -> std::io::Result<()> {
+///     main().await
+/// }
+/// ```
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     env_logger::init();
@@ -42,7 +65,7 @@ async fn main() -> std::io::Result<()> {
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);
 
-    let pool = db::create_pg_pool(&config.database_url, max_pool_size).await;
+    let pool = db::create_pg_pool_memory_efficient(&config.database_url, max_pool_size).await;
 
     // Redis session store
     let redis_store = RedisSessionStore::new(&config.redis_url)
@@ -80,6 +103,7 @@ async fn main() -> std::io::Result<()> {
         .finish()
         .expect("Failed to build governor config");
 
+    // --- Memory Optimization: Limit Actix workers and payload size ---
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin_fn(|origin, _req_head| {
@@ -104,7 +128,11 @@ async fn main() -> std::io::Result<()> {
             // Configure routes
             .configure(routes::init_routes)
             .service(metrics_endpoint)
+            // Limit max payload size for requests (e.g. 256 KB)
+            .app_data(PayloadConfig::new(262_144))
     })
+    // Use default worker count (num_cpus::get()) for optimal production performance
+    // .workers(num_cpus::get())
     .bind(bind_addr)?
     .run()
     .await

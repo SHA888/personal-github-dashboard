@@ -5,7 +5,7 @@ use crate::db::{
     get_organization_by_id_with_cache, update_organization_description_with_cache,
 };
 use crate::utils::redis::RedisClient;
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;

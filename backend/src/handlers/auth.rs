@@ -54,6 +54,142 @@ pub async fn login() -> HttpResponse {
         .finish()
 }
 
+fn parse_oauth_query(req: &HttpRequest) -> Result<OAuthRequest, HttpResponse> {
+    use actix_web::web::Query;
+    match Query::<OAuthRequest>::from_query(req.query_string()) {
+        Ok(q) => Ok(q.into_inner()),
+        Err(e) => {
+            warn!("Invalid OAuth query params: {:?}", e);
+            Err(HttpResponse::BadRequest().json(json!({"error": "Invalid OAuth parameters"})))
+        }
+    }
+}
+
+async fn exchange_code_for_token(
+    client: &BasicClient,
+    code: String,
+) -> Result<
+    oauth2::StandardTokenResponse<oauth2::EmptyExtraTokenFields, oauth2::basic::BasicTokenType>,
+    HttpResponse,
+> {
+    match client
+        .exchange_code(AuthorizationCode::new(code))
+        .request_async(async_http_client)
+        .await
+    {
+        Ok(token) => Ok(token),
+        Err(err) => {
+            error!("OAuth token exchange failed: {:?}", err);
+            Err(HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to exchange OAuth token"})))
+        }
+    }
+}
+
+async fn fetch_github_user(
+    token: &oauth2::StandardTokenResponse<
+        oauth2::EmptyExtraTokenFields,
+        oauth2::basic::BasicTokenType,
+    >,
+) -> Result<serde_json::Value, HttpResponse> {
+    let octocrab = Octocrab::builder()
+        .personal_token(token.access_token().secret().to_string())
+        .build()
+        .unwrap();
+    match octocrab.current().user().await {
+        Ok(user) => Ok(serde_json::to_value(user).unwrap()),
+        Err(e) => {
+            error!("Failed to fetch GitHub user: {:?}", e);
+            Err(HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to fetch GitHub user"})))
+        }
+    }
+}
+
+async fn find_or_create_user(
+    pool: &PgPool,
+    username: &str,
+    email: &str,
+    avatar_url: Option<String>,
+) -> Result<User, HttpResponse> {
+    match sqlx::query_as!(User, "SELECT id, username, email, avatar_url, created_at FROM users WHERE username = $1 OR email = $2 LIMIT 1", username, email)
+        .fetch_optional(pool)
+        .await
+    {
+        Ok(Some(u)) => Ok(u),
+        Ok(None) => {
+            let new_id = Uuid::new_v4();
+            let now = chrono::Utc::now();
+            if let Err(e) = sqlx::query!("INSERT INTO users (id, username, email, avatar_url, created_at) VALUES ($1, $2, $3, $4, $5)", new_id, username, email, avatar_url, now)
+                .execute(pool)
+                .await
+            {
+                error!("User insert failed: {:?}", e);
+                return Err(HttpResponse::InternalServerError().finish());
+            }
+            Ok(User {
+                id: new_id,
+                username: username.to_string(),
+                email: email.to_string(),
+                avatar_url,
+                created_at: now,
+            })
+        }
+        Err(e) => {
+            error!("User lookup failed: {:?}", e);
+            Err(HttpResponse::InternalServerError().finish())
+        }
+    }
+}
+
+fn get_encryption_key() -> Result<[u8; 32], HttpResponse> {
+    let key = match env::var("OAUTH_TOKEN_KEY") {
+        Ok(k) => k,
+        Err(_) => {
+            error!("OAUTH_TOKEN_KEY env var missing");
+            return Err(HttpResponse::InternalServerError().finish());
+        }
+    };
+    match base64::engine::general_purpose::STANDARD.decode(&key) {
+        Ok(k) if k.len() == 32 => {
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&k);
+            Ok(arr)
+        }
+        _ => {
+            error!("OAUTH_TOKEN_KEY must be 32 raw bytes (base64-encoded)");
+            Err(HttpResponse::InternalServerError().finish())
+        }
+    }
+}
+
+fn encrypt_token_bytes(token: &str, key_bytes: &[u8; 32]) -> Result<Vec<u8>, HttpResponse> {
+    match OAuthToken::encrypt_token(token, key_bytes) {
+        Ok(t) => Ok(t),
+        Err(e) => {
+            error!("Token encryption failed: {:?}", e);
+            Err(HttpResponse::InternalServerError().finish())
+        }
+    }
+}
+
+fn encrypt_optional_token_bytes(
+    token: Option<&oauth2::RefreshToken>,
+    key_bytes: &[u8; 32],
+) -> Result<Option<Vec<u8>>, HttpResponse> {
+    if let Some(rt) = token {
+        match OAuthToken::encrypt_token(rt.secret(), key_bytes) {
+            Ok(t) => Ok(Some(t)),
+            Err(e) => {
+                error!("Refresh token encryption failed: {:?}", e);
+                Err(HttpResponse::InternalServerError().finish())
+            }
+        }
+    } else {
+        Ok(None)
+    }
+}
+
 /// Handles the OAuth callback from GitHub, exchanges the authorization code for an access token, retrieves user information, persists user and token data, and establishes a session with a JWT.
 ///
 /// In test mode (`TEST_MODE=1`), bypasses real OAuth and issues a test JWT for a dummy user.
@@ -89,12 +225,9 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
     }
 
     // Parse OAuth query parameters
-    let query = match web::Query::<OAuthRequest>::from_query(req.query_string()) {
-        Ok(q) => q.into_inner(),
-        Err(e) => {
-            warn!("Invalid OAuth query params: {:?}", e);
-            return HttpResponse::BadRequest().json(json!({"error": "Invalid OAuth parameters"}));
-        }
+    let query = match parse_oauth_query(&req) {
+        Ok(q) => q,
+        Err(resp) => return resp,
     };
 
     let cfg = Config::from_env();
@@ -106,148 +239,84 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
         Some(TokenUrl::new("https://github.com/login/oauth/access_token".to_string()).unwrap()),
     )
     .set_redirect_uri(RedirectUrl::new(cfg.github_redirect_url.clone()).unwrap());
+
     // Exchange code for token
-    match client
-        .exchange_code(AuthorizationCode::new(query.code))
-        .request_async(async_http_client)
-        .await
-    {
-        Ok(token) => {
-            // Fetch GitHub user info
-            let octocrab = Octocrab::builder()
-                .personal_token(token.access_token().secret().to_string())
-                .build()
-                .unwrap();
-            let gh_user = octocrab.current().user().await;
-            if let Ok(gh_user) = gh_user {
-                // Map GitHub user fields
-                let username = gh_user.login.clone();
-                let email = gh_user.email.clone().unwrap_or_default();
-                let avatar_url = Some(gh_user.avatar_url.to_string());
+    let token = match exchange_code_for_token(&client, query.code).await {
+        Ok(t) => t,
+        Err(resp) => return resp,
+    };
 
-                // Find or create user in DB
-                let user = match sqlx::query_as!(User, "SELECT id, username, email, avatar_url, created_at FROM users WHERE username = $1 OR email = $2 LIMIT 1", username, email)
-                    .fetch_optional(pool.get_ref())
-                    .await
-                {
-                    Ok(u) => u,
-                    Err(e) => {
-                        error!("User lookup failed: {:?}", e);
-                        return HttpResponse::InternalServerError().finish();
-                    }
-                };
+    // Fetch GitHub user info
+    let gh_user = match fetch_github_user(&token).await {
+        Ok(u) => u,
+        Err(resp) => return resp,
+    };
 
-                let user = match user {
-                    Some(u) => u,
-                    None => {
-                        let new_id = Uuid::new_v4();
-                        let now = chrono::Utc::now();
-                        if let Err(e) = sqlx::query!("INSERT INTO users (id, username, email, avatar_url, created_at) VALUES ($1, $2, $3, $4, $5)", new_id, username, email, avatar_url, now)
-                            .execute(pool.get_ref()).await {
-                            error!("User insert failed: {:?}", e);
-                            return HttpResponse::InternalServerError().finish();
-                        }
-                        User {
-                            id: new_id,
-                            username,
-                            email,
-                            avatar_url,
-                            created_at: now,
-                        }
-                    }
-                };
+    let username = gh_user["login"].as_str().unwrap_or("").to_string();
+    let email = gh_user["email"].as_str().unwrap_or("").to_string();
+    let avatar_url = gh_user["avatar_url"].as_str().map(|s| s.to_string());
 
-                // Encrypt tokens
-                let key = match env::var("OAUTH_TOKEN_KEY") {
-                    Ok(k) => k,
-                    Err(_) => {
-                        error!("OAUTH_TOKEN_KEY env var missing");
-                        return HttpResponse::InternalServerError().finish();
-                    }
-                };
-                let key_bytes = match base64::engine::general_purpose::STANDARD.decode(&key) {
-                    Ok(k) if k.len() == 32 => {
-                        let mut arr = [0u8; 32];
-                        arr.copy_from_slice(&k);
-                        arr
-                    }
-                    _ => {
-                        error!("OAUTH_TOKEN_KEY must be 32 raw bytes (base64-encoded)");
-                        return HttpResponse::InternalServerError().finish();
-                    }
-                };
-                let encrypted_access =
-                    match OAuthToken::encrypt_token(token.access_token().secret(), &key_bytes) {
-                        Ok(t) => t,
-                        Err(e) => {
-                            error!("Token encryption failed: {:?}", e);
-                            return HttpResponse::InternalServerError().finish();
-                        }
-                    };
-                let encrypted_refresh = if let Some(rt) = token.refresh_token() {
-                    match OAuthToken::encrypt_token(rt.secret(), &key_bytes) {
-                        Ok(t) => Some(t),
-                        Err(e) => {
-                            error!("Refresh token encryption failed: {:?}", e);
-                            return HttpResponse::InternalServerError().finish();
-                        }
-                    }
-                } else {
-                    None
-                };
-                // Store in DB
-                let now = chrono::Utc::now();
-                let expiry = token
-                    .expires_in()
-                    .map(|d| now + chrono::Duration::from_std(d).unwrap());
-                let token_type_str = format!("{:?}", token.token_type());
-                if let Err(e) = sqlx::query!(
-                    "INSERT INTO oauth_tokens (id, user_id, provider, access_token, refresh_token, token_type, scope, expiry, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-                    Uuid::new_v4(),
-                    user.id,
-                    "github",
-                    encrypted_access,
-                    encrypted_refresh,
-                    Some(token_type_str),
-                    token.scopes().map(|scopes| scopes.iter().map(|s| s.as_ref()).collect::<Vec<_>>().join(",")),
-                    expiry,
-                    now,
-                    now
-                )
-                .execute(pool.get_ref())
-                .await {
-                    error!("Failed to store OAuth token: {:?}", e);
-                    return HttpResponse::InternalServerError().finish();
-                }
-                // Create JWT for user
-                let jwt = create_jwt(&user.username, &Config::from_env().jwt_secret, 3600).unwrap();
-                // Store JWT in session
-                let _ = session.insert("jwt", &jwt);
-                // Set cookie
-                let cookie = Cookie::build("auth_token", jwt)
-                    .http_only(true)
-                    .secure(true)
-                    .same_site(SameSite::Lax)
-                    .path("/")
-                    .max_age(Duration::seconds(3600))
-                    .finish();
-                // Redirect to home with cookie
-                return HttpResponse::Found()
-                    .cookie(cookie)
-                    .insert_header(("Location", "/"))
-                    .finish();
-            }
-            error!("Failed to fetch GitHub user: {:?}", gh_user.err());
-            HttpResponse::InternalServerError()
-                .json(json!({"error": "Failed to fetch GitHub user"}))
-        }
-        Err(err) => {
-            error!("OAuth token exchange failed: {:?}", err);
-            HttpResponse::InternalServerError()
-                .json(json!({"error": "Failed to exchange OAuth token"}))
-        }
+    // Find or create user in DB
+    let user = match find_or_create_user(pool.get_ref(), &username, &email, avatar_url).await {
+        Ok(u) => u,
+        Err(resp) => return resp,
+    };
+
+    // Encrypt tokens
+    let key_bytes = match get_encryption_key() {
+        Ok(k) => k,
+        Err(resp) => return resp,
+    };
+    let encrypted_access = match encrypt_token_bytes(token.access_token().secret(), &key_bytes) {
+        Ok(t) => t,
+        Err(resp) => return resp,
+    };
+    let encrypted_refresh = match encrypt_optional_token_bytes(token.refresh_token(), &key_bytes) {
+        Ok(t) => t,
+        Err(resp) => return resp,
+    };
+
+    // Store in DB
+    let now = chrono::Utc::now();
+    let expiry = token
+        .expires_in()
+        .map(|d| now + chrono::Duration::from_std(d).unwrap());
+    let token_type_str = format!("{:?}", token.token_type());
+    if let Err(e) = sqlx::query!(
+        "INSERT INTO oauth_tokens (id, user_id, provider, access_token, refresh_token, token_type, scope, expiry, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+        Uuid::new_v4(),
+        user.id,
+        "github",
+        encrypted_access,
+        encrypted_refresh,
+        Some(token_type_str),
+        token.scopes().map(|scopes| scopes.iter().map(|s| s.as_ref()).collect::<Vec<_>>().join(",")),
+        expiry,
+        now,
+        now
+    )
+    .execute(pool.get_ref())
+    .await {
+        error!("Failed to store OAuth token: {:?}", e);
+        return HttpResponse::InternalServerError().finish();
     }
+    // Create JWT for user
+    let jwt = create_jwt(&user.username, &Config::from_env().jwt_secret, 3600).unwrap();
+    // Store JWT in session
+    let _ = session.insert("jwt", &jwt);
+    // Set cookie
+    let cookie = Cookie::build("auth_token", jwt)
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Lax)
+        .path("/")
+        .max_age(Duration::seconds(3600))
+        .finish();
+    // Redirect to home with cookie
+    HttpResponse::Found()
+        .cookie(cookie)
+        .insert_header(("Location", "/"))
+        .finish()
 }
 
 /// Authenticate using a personal access token for desktop/CLI usage
@@ -369,7 +438,9 @@ mod callback_tests {
         unsafe {
             std::env::set_var("TEST_MODE", "1");
         }
-        let db_url = std::env::var("TEST_DATABASE_URL").unwrap();
+        let db_url = std::env::var("TEST_DATABASE_URL").expect(
+            "TEST_DATABASE_URL must be set for integration tests (set this in your CI environment)",
+        );
         let pool = PgPool::connect(&db_url).await.unwrap();
         let _session_key = Key::generate();
         let app = test::init_service(

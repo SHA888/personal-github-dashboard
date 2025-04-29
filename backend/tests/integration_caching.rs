@@ -140,6 +140,8 @@ async fn insert_activity(pool: &PgPool, activity_id: Uuid, user_id: Uuid, repo_i
 async fn test_user_caching() {
     init_logger();
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }
@@ -204,6 +206,8 @@ async fn test_user_caching() {
 async fn test_organization_caching() {
     init_logger();
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }
@@ -268,6 +272,8 @@ async fn test_organization_caching() {
 async fn test_repository_caching() {
     init_logger();
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }
@@ -335,6 +341,8 @@ async fn test_repository_caching() {
 async fn test_activity_caching() {
     init_logger();
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }
@@ -404,6 +412,8 @@ async fn test_activity_caching() {
 async fn test_user_cache_miss_and_invalid_id() {
     init_logger();
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }
@@ -449,6 +459,8 @@ async fn test_user_cache_ttl_and_invalidation() {
     use std::time::Duration;
     use tokio::time::sleep;
     dotenv().ok();
+    // SAFETY: Setting environment variables in tests is required to isolate test state and avoid conflicts between tests running in parallel.
+    // This is safe here because tests are run serially (see #[serial] attribute) and only test configuration is affected.
     unsafe {
         std::env::set_var("USER_CACHE_TTL", "2");
     }

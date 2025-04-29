@@ -37,7 +37,7 @@ PORT=8081
 # GitHub OAuth Configuration
 GITHUB_CLIENT_ID=your_github_client_id_here
 GITHUB_CLIENT_SECRET=your_github_client_secret_here
-GITHUB_CALLBACK_URL=http://localhost:3001/auth/callback
+GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/callback
 GITHUB_OAUTH_SCOPES=read:org,read:user,repo
 
 # JWT Configuration

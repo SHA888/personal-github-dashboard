@@ -158,7 +158,13 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
                 };
 
                 // Encrypt tokens
-                let key = env::var("OAUTH_TOKEN_KEY").expect("OAUTH_TOKEN_KEY must be set");
+                let key = match env::var("OAUTH_TOKEN_KEY") {
+                    Ok(k) => k,
+                    Err(_) => {
+                        error!("OAUTH_TOKEN_KEY env var missing");
+                        return HttpResponse::InternalServerError().finish();
+                    }
+                };
                 let key_bytes = match base64::engine::general_purpose::STANDARD.decode(&key) {
                     Ok(k) if k.len() == 32 => {
                         let mut arr = [0u8; 32];
@@ -171,10 +177,24 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
                     }
                 };
                 let encrypted_access =
-                    OAuthToken::encrypt_token(token.access_token().secret(), &key_bytes).unwrap();
-                let encrypted_refresh = token
-                    .refresh_token()
-                    .map(|rt| OAuthToken::encrypt_token(rt.secret(), &key_bytes).unwrap());
+                    match OAuthToken::encrypt_token(token.access_token().secret(), &key_bytes) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            error!("Token encryption failed: {:?}", e);
+                            return HttpResponse::InternalServerError().finish();
+                        }
+                    };
+                let encrypted_refresh = if let Some(rt) = token.refresh_token() {
+                    match OAuthToken::encrypt_token(rt.secret(), &key_bytes) {
+                        Ok(t) => Some(t),
+                        Err(e) => {
+                            error!("Refresh token encryption failed: {:?}", e);
+                            return HttpResponse::InternalServerError().finish();
+                        }
+                    }
+                } else {
+                    None
+                };
                 // Store in DB
                 let now = chrono::Utc::now();
                 let expiry = token

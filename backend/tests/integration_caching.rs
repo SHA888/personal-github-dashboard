@@ -48,7 +48,7 @@ async fn get_test_redis() -> RedisClient {
     RedisClient::new(&redis_url).await.expect("Redis connect")
 }
 
-/// Removes all data from the `activities`, `repositories`, `organizations`, and `users` tables, resetting identity sequences and cascading deletions.
+/// Removes all data from the `activities`, `repositories`, `organizations`, `users`, and `oauth_tokens` tables, resetting identity sequences and cascading deletions.
 ///
 /// This ensures a clean database state before each test by truncating the relevant tables.
 ///
@@ -60,7 +60,7 @@ async fn get_test_redis() -> RedisClient {
 /// ```
 async fn truncate_tables(pool: &PgPool) {
     sqlx::query!(
-        "TRUNCATE TABLE activities, repositories, organizations, users RESTART IDENTITY CASCADE;"
+        "TRUNCATE TABLE activities, repositories, organizations, users, oauth_tokens RESTART IDENTITY CASCADE;"
     )
     .execute(pool)
     .await

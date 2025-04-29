@@ -8,11 +8,37 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1d503988e75e42b99abe292ae36f4ce9)](https://app.codacy.com/gh/SHA888/personal-github-dashboard/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![codecov](https://codecov.io/gh/SHA888/personal-github-dashboard/branch/main/graph/badge.svg?token=TOKEN)](https://codecov.io/gh/SHA888/personal-github-dashboard)
 ![GitHub Copilot enabled](https://img.shields.io/badge/Copilot-Enabled-10cfc9?logo=github)
-![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/SHA888/personal-github-dashboard?utm_source=oss&utm_medium=github&utm_campaign=SHA888%2Fpersonal-github-dashboard&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/SHA888/personal-github-dashboard?utm_source=oss&utm_medium=github&utm_campaign=SHA888%2Fpersonal-github-dashboard&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)
+
+---
+
+## Integration Test Secrets in CI
+
+**Best Practice:**
+
+- Secrets such as `TEST_DATABASE_URL` and `TEST_REDIS_URL` are never committed to the repository.
+- These are securely managed as [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
+- The CI workflow injects these secrets as environment variables for integration tests.
+
+**How to set up for CI:**
+
+1. Go to your repository’s Settings → Secrets and variables → Actions.
+2. Add `TEST_DATABASE_URL` and `TEST_REDIS_URL` as secrets.
+3. The workflow uses:
+   ```yaml
+   env:
+     TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+     TEST_REDIS_URL: ${{ secrets.TEST_REDIS_URL }}
+   ```
+
+**For local development:**
+
+- Copy `.env.example` to `.env` and fill in the required values.
+- Never commit your `.env` file.
+
+---
 
 A personalized dashboard that provides insights and analytics for GitHub repositories and activities.
-
-</div>
 
 ## Features
 

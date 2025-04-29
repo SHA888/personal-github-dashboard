@@ -1,6 +1,6 @@
-# Personal GitHub Dashboard
-
 <div align="center">
+
+# Personal GitHub Dashboard
 
 ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
 ![Backend CI](https://github.com/SHA888/personal-github-dashboard/actions/workflows/backend.yml/badge.svg)
@@ -10,9 +10,9 @@
 ![GitHub Copilot enabled](https://img.shields.io/badge/Copilot-Enabled-10cfc9?logo=github)
 ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/SHA888/personal-github-dashboard?utm_source=oss&utm_medium=github&utm_campaign=SHA888%2Fpersonal-github-dashboard&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
-</div>
-
 A personalized dashboard that provides insights and analytics for GitHub repositories and activities.
+
+</div>
 
 ## Features
 

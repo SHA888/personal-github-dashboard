@@ -26,7 +26,10 @@ impl Config {
     pub fn from_env() -> Self {
         dotenv::dotenv().ok();
         Config {
-            database_url: std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+            database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+                "postgres://postgres:postgres@localhost:5432/personal_github_dashboard_dev"
+                    .to_string()
+            }),
             github_personal_access_token: std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
                 .expect("GITHUB_PERSONAL_ACCESS_TOKEN must be set"),
             redis_url: std::env::var("REDIS_URL").expect("REDIS_URL must be set"),

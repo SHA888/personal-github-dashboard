@@ -13,6 +13,7 @@ use metrics::{histogram, increment_counter};
 use serde_json::Value;
 use sqlx::Error;
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use std::env;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -29,6 +30,19 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
         .connect(database_url)
         .await
         .expect("Failed to create Postgres connection pool")
+}
+
+/// Utility function to get the database URL from env or fallback to default.
+pub fn get_database_url() -> String {
+    std::env::var("DATABASE_URL").expect(
+        "DATABASE_URL must be set (use .env for local, secrets for CI, or real env var for prod)",
+    )
+}
+
+/// Creates a PostgreSQL connection pool using fallback logic for DATABASE_URL.
+pub async fn create_pg_pool_with_fallback(max_connections: u32) -> PgPool {
+    let database_url = get_database_url();
+    create_pg_pool(&database_url, max_connections).await
 }
 
 /// Creates a PostgreSQL connection pool optimized for memory efficiency.

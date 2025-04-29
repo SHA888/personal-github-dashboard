@@ -36,4 +36,9 @@ impl RedisClient {
             .await?;
         Ok(())
     }
+
+    pub async fn del(&self, key: &str) -> RedisResult<()> {
+        let mut conn = self.client.get_async_connection().await?;
+        redis::cmd("DEL").arg(key).query_async(&mut conn).await
+    }
 }

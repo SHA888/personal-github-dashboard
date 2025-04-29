@@ -4,7 +4,7 @@
 
 - **App Name:** Personal GitHub Dashboard
 - **Homepage URL:** http://localhost:3000
-- **Callback URL:** http://localhost:3001/auth/callback
+- **Callback URL:** http://localhost:3000/api/auth/callback
 
 ## Required Scopes
 

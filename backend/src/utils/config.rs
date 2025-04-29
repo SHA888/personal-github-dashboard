@@ -13,6 +13,16 @@ pub struct Config {
 }
 
 impl Config {
+    /// Loads configuration values from environment variables.
+    ///
+    /// Reads required configuration parameters from environment variables and constructs a `Config` instance. Panics if any required variable is missing, except for `FRONTEND_URL`, which defaults to `"http://localhost:3001"` if not set. The `GITHUB_REDIRECT_URL` must exactly match the callback URL registered in your GitHub OAuth app settings.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let config = Config::from_env();
+    /// assert!(!config.database_url.is_empty());
+    /// ```
     pub fn from_env() -> Self {
         dotenv::dotenv().ok();
         Config {

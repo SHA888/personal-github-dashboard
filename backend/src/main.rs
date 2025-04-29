@@ -31,6 +31,29 @@ fn _test_app_error_import() {
 }
 
 #[actix_web::main]
+/// Initializes and runs the Actix-web HTTP server with memory-efficient settings.
+///
+/// Loads configuration from environment variables, sets up a PostgreSQL connection pool,
+/// connects to Redis for session management and caching, preloads frequently accessed data into the cache,
+/// configures Prometheus metrics, applies CORS and rate limiting middleware, and starts the server
+/// with a limited number of workers and a restricted request payload size.
+///
+/// # Returns
+///
+/// Returns a `std::io::Result<()>` indicating the success or failure of the server startup.
+///
+/// # Panics
+///
+/// Panics if connecting to Redis or creating the Redis client fails, or if Prometheus metrics recorder installation fails.
+///
+/// # Examples
+///
+/// ```no_run
+/// #[tokio::main]
+/// async fn main() -> std::io::Result<()> {
+///     main().await
+/// }
+/// ```
 async fn main() -> std::io::Result<()> {
     // Load environment variables
     env_logger::init();

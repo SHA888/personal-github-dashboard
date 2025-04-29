@@ -16,8 +16,14 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
 use uuid::Uuid;
 
-/// Create a PostgreSQL connection pool with custom configuration.
-pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
+/// Creates a PostgreSQL connection pool with a maximum number of connections and a 5-second acquire timeout.
+///
+/// # Examples
+///
+/// ```
+/// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
+/// assert!(pool.is_closed() == false);
+/// ```pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .acquire_timeout(Duration::from_secs(5))
@@ -26,8 +32,18 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
         .expect("Failed to create Postgres connection pool")
 }
 
-/// Create a PostgreSQL connection pool with memory-efficient options.
-pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
+/// Creates a PostgreSQL connection pool optimized for memory efficiency.
+///
+/// The pool maintains a minimum of one idle connection, limits the maximum number of connections,
+/// sets a maximum connection lifetime of 10 minutes, and applies a 60-second idle timeout. Each new
+/// connection is configured with a 5-second statement timeout.
+///
+/// # Examples
+///
+/// ```
+/// let pool = create_pg_pool_memory_efficient("postgres://user:pass@localhost/db", 10).await;
+/// assert!(pool.acquire().await.is_ok());
+/// ```pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .min_connections(1) // keep only 1 idle connection
@@ -47,7 +63,18 @@ pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections
         .expect("Failed to create PgPool")
 }
 
-// --- User CRUD ---
+/// Retrieves a user by their unique identifier from the database.
+///
+/// Returns `Ok(Some(User))` if a user with the given ID exists, `Ok(None)` if not found, or an error if the query fails.
+///
+/// # Examples
+///
+/// ```
+/// let user = get_user_by_id(&pool, &user_id).await?;
+/// if let Some(user) = user {
+///     println!("Found user: {}", user.username);
+/// }
+/// ```
 pub async fn get_user_by_id(pool: &PgPool, user_id: &Uuid) -> Result<Option<User>, sqlx::Error> {
     sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
         .bind(user_id)

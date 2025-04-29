@@ -22,6 +22,20 @@ impl RedisClient {
         conn.get(key).await
     }
 
+    /// Sets a value in Redis with a specified time-to-live (TTL) in seconds.
+    ///
+    /// Stores the given value under the provided key and sets its expiration time atomically.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use your_crate::RedisClient;
+    /// # async fn example() -> redis::RedisResult<()> {
+    /// let client = RedisClient::new("redis://127.0.0.1/").await?;
+    /// client.set("my_key", "my_value", 60).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn set<T: redis::ToRedisArgs + Send + Sync + 'static>(
         &self,
         key: &str,
@@ -37,6 +51,20 @@ impl RedisClient {
         Ok(())
     }
 
+    /// Deletes a key from Redis asynchronously.
+    ///
+    /// Removes the specified key from the Redis database if it exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backend::utils::redis::RedisClient;
+    /// # async fn example() -> redis::RedisResult<()> {
+    /// let client = RedisClient::new("redis://127.0.0.1/").await?;
+    /// client.del("my_key").await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn del(&self, key: &str) -> RedisResult<()> {
         let mut conn = self.client.get_async_connection().await?;
         redis::cmd("DEL").arg(key).query_async(&mut conn).await

@@ -25,15 +25,10 @@ impl Config {
                 .expect("GITHUB_CLIENT_ID must be set"),
             github_client_secret: std::env::var("GITHUB_CLIENT_SECRET")
                 .expect("GITHUB_CLIENT_SECRET must be set"),
+            // Only use GITHUB_REDIRECT_URL for clarity and consistency
+            // This must match the callback URL registered in your GitHub OAuth app settings exactly (including port and path)
             github_redirect_url: std::env::var("GITHUB_REDIRECT_URL")
-                .or_else(|_| std::env::var("GITHUB_CALLBACK_URL"))
-                .unwrap_or_else(|_| {
-                    format!(
-                        "{}/auth/callback",
-                        std::env::var("FRONTEND_URL")
-                            .unwrap_or_else(|_| "http://localhost:3001".into())
-                    )
-                }),
+                .expect("GITHUB_REDIRECT_URL must be set"),
             frontend_url: std::env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:3001".to_string()),
         }

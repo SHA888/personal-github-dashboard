@@ -2,11 +2,12 @@ use actix_web::{test, App};
 use dotenv::dotenv;
 use env_logger;
 use log;
+use once_cell::sync::Lazy;
 use personal_github_dashboard::routes::init_routes_test::init_routes_no_auth;
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde_json;
 use sqlx::PgPool;
-use std::sync::Once;
+use std::sync::{Arc, Once};
 use uuid::Uuid;
 
 // Logger initialization for integration tests
@@ -21,14 +22,41 @@ fn init_logger() {
     });
 }
 
-// Helper: Setup test app and Redis
-async fn setup_app_and_redis() -> (PgPool, RedisClient) {
-    // These should use test env vars or config
+// --- Shared test state ---
+static TEST_POOL: Lazy<Arc<PgPool>> = Lazy::new(|| {
     let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let pool = rt
+        .block_on(PgPool::connect(&database_url))
+        .expect("DB connect");
+    Arc::new(pool)
+});
+
+static TEST_REDIS: Lazy<Arc<RedisClient>> = Lazy::new(|| {
     let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
-    (pool, redis)
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let redis = rt
+        .block_on(RedisClient::new(&redis_url))
+        .expect("Redis connect");
+    Arc::new(redis)
+});
+
+fn get_test_pool() -> Arc<PgPool> {
+    TEST_POOL.clone()
+}
+
+fn get_test_redis() -> Arc<RedisClient> {
+    TEST_REDIS.clone()
+}
+
+// Helper: Truncate tables for a clean state before each test
+async fn truncate_tables(pool: &PgPool) {
+    sqlx::query!(
+        "TRUNCATE TABLE activities, repositories, organizations, users RESTART IDENTITY CASCADE;"
+    )
+    .execute(pool)
+    .await
+    .expect("truncate tables");
 }
 
 // --- DRY Helper functions ---
@@ -75,25 +103,13 @@ async fn insert_activity(pool: &PgPool, activity_id: Uuid, user_id: Uuid, repo_i
         .execute(pool).await.expect("insert activity");
 }
 
-// Truncate tables for a clean state before each test
-async fn truncate_tables(pool: &PgPool) {
-    sqlx::query!(
-        "TRUNCATE TABLE activities, repositories, organizations, users RESTART IDENTITY CASCADE;"
-    )
-    .execute(pool)
-    .await
-    .expect("truncate tables");
-}
-
 #[actix_rt::test]
 async fn test_user_caching() {
     init_logger();
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let username = format!("testuser-{}", user_id);
@@ -142,10 +158,8 @@ async fn test_organization_caching() {
     init_logger();
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let org_id = Uuid::new_v4();
     let name = format!("testorg-{}", org_id);
@@ -194,10 +208,8 @@ async fn test_repository_caching() {
     init_logger();
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let org_id = Uuid::new_v4();
     let repo_id = Uuid::new_v4();
@@ -250,10 +262,8 @@ async fn test_activity_caching() {
     init_logger();
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let repo_id = Uuid::new_v4();
@@ -303,10 +313,8 @@ async fn test_user_cache_miss_and_invalid_id() {
     init_logger();
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let random_id = Uuid::new_v4();
     let app = test::init_service(
@@ -337,10 +345,8 @@ async fn test_user_cache_ttl_and_invalidation() {
     use tokio::time::sleep;
     dotenv().ok();
     std::env::set_var("USER_CACHE_TTL", "2");
-    let database_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let redis_url = std::env::var("TEST_REDIS_URL").expect("TEST_REDIS_URL must be set");
-    let pool = PgPool::connect(&database_url).await.expect("DB connect");
-    let redis = RedisClient::new(&redis_url).await.expect("Redis connect");
+    let pool = get_test_pool();
+    let redis = get_test_redis();
     truncate_tables(&pool).await;
     let user_id = Uuid::new_v4();
     let username = format!("testuser-{}", user_id);
@@ -371,7 +377,7 @@ async fn test_user_cache_ttl_and_invalidation() {
     assert!(cached.is_none(), "Cache should expire after TTL");
     // Invalidate cache by deleting user
     sqlx::query!("DELETE FROM users WHERE id = $1", user_id)
-        .execute(&pool)
+        .execute(&*pool)
         .await
         .expect("delete user");
     // GET again, should return 404 and not repopulate cache

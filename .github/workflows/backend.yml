@@ -32,6 +32,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 

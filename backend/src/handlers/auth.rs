@@ -1,3 +1,5 @@
+use crate::models::oauth_token::OAuthToken;
+use crate::models::user::User;
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
 use actix_session::Session;
@@ -14,6 +16,8 @@ use oauth2::{
 use octocrab::Octocrab;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sqlx::PgPool;
+use std::env;
 use time::Duration;
 use uuid::Uuid;
 
@@ -30,7 +34,7 @@ pub async fn login() -> HttpResponse {
     let state = Uuid::new_v4().to_string();
     // Build GitHub authorization URL
     let url = format!(
-        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&state={}&scope=repo,user",
+        "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&state={}&scope=read:org,read:user,repo",
         cfg.github_client_id,
         cfg.github_redirect_url,
         state
@@ -40,7 +44,7 @@ pub async fn login() -> HttpResponse {
         .finish()
 }
 
-pub async fn callback(req: HttpRequest, session: Session) -> HttpResponse {
+pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool>) -> HttpResponse {
     // Test mode: skip real OAuth for tests
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
         let secret = std::env::var("JWT_SECRET").unwrap_or_default();
@@ -91,9 +95,79 @@ pub async fn callback(req: HttpRequest, session: Session) -> HttpResponse {
                 .build()
                 .unwrap();
             let gh_user = octocrab.current().user().await;
-            if let Ok(user) = gh_user {
+            if let Ok(gh_user) = gh_user {
+                // Map GitHub user fields
+                let username = gh_user.login.clone();
+                let email = gh_user.email.clone().unwrap_or_default();
+                let avatar_url = Some(gh_user.avatar_url.to_string());
+
+                // Find or create user in DB
+                let user = sqlx::query_as!(
+                    User,
+                    "SELECT id, username, email, avatar_url, created_at FROM users WHERE username = $1 OR email = $2 LIMIT 1",
+                    username,
+                    email
+                )
+                .fetch_optional(pool.get_ref())
+                .await
+                .unwrap_or(None)
+                .unwrap_or_else(|| {
+                    // Insert new user if not found
+                    let new_id = uuid::Uuid::new_v4();
+                    let now = chrono::Utc::now();
+                    let _ = futures::executor::block_on(sqlx::query!(
+                        "INSERT INTO users (id, username, email, avatar_url, created_at) VALUES ($1, $2, $3, $4, $5)",
+                        new_id,
+                        username,
+                        email,
+                        avatar_url,
+                        now
+                    )
+                    .execute(pool.get_ref()));
+                    User {
+                        id: new_id,
+                        username,
+                        email,
+                        avatar_url,
+                        created_at: now,
+                    }
+                });
+
+                // Encrypt tokens
+                let key = env::var("OAUTH_TOKEN_KEY").expect("OAUTH_TOKEN_KEY must be set");
+                let key_bytes = base64::decode(&key).expect("OAUTH_TOKEN_KEY must be base64");
+                let key_arr: [u8; 32] = key_bytes
+                    .try_into()
+                    .expect("OAUTH_TOKEN_KEY must be 32 bytes");
+                let encrypted_access =
+                    OAuthToken::encrypt_token(token.access_token().secret(), &key_arr).unwrap();
+                let encrypted_refresh = match token.refresh_token() {
+                    Some(r) => Some(OAuthToken::encrypt_token(r.secret(), &key_arr).unwrap()),
+                    None => None,
+                };
+                // Store in DB
+                let now = chrono::Utc::now();
+                let expiry = token
+                    .expires_in()
+                    .map(|d| now + chrono::Duration::from_std(d).unwrap());
+                let _ = sqlx::query!(
+                    "INSERT INTO oauth_tokens (id, user_id, provider, access_token, refresh_token, token_type, scope, expiry, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+                    uuid::Uuid::new_v4(),
+                    user.id,
+                    "github",
+                    encrypted_access,
+                    encrypted_refresh,
+                    Some(token.token_type().as_ref().to_string()),
+                    token.scopes().map(|scopes| scopes.iter().map(|s| s.as_ref()).collect::<Vec<_>>().join(",")),
+                    expiry,
+                    now,
+                    now
+                )
+                .execute(pool.get_ref())
+                .await;
                 // Create JWT for user
-                let jwt = create_jwt(&user.login, &Config::from_env().jwt_secret, 3600).unwrap();
+                let jwt = create_jwt(&user.username, &Config::from_env().jwt_secret, 3600).unwrap();
                 // Store JWT in session
                 let _ = session.insert("jwt", &jwt);
                 // Set cookie

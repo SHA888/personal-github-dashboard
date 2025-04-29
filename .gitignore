@@ -13,6 +13,8 @@ Cargo.lock
 
 # Environment files
 .env
+backend/.env
+frontend/.env
 
 # General
 *.log

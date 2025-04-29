@@ -13,6 +13,20 @@ struct Claims {
 }
 
 #[actix_web::test]
+/// Tests the complete user lifecycle with cache integration in an Actix Web application.
+///
+/// This asynchronous test verifies user creation, retrieval (from both database and cache), update, deletion, and post-deletion behavior. It ensures correct interaction between PostgreSQL, Redis cache, JWT authentication, and HTTP endpoints.
+///
+/// # Examples
+///
+/// ```
+/// // This function is intended to be run as an integration test with the appropriate
+/// // environment variables and test database/Redis setup.
+/// #[actix_rt::test]
+/// async fn test_user_cache_flow() {
+///     // ...test logic...
+/// }
+/// ```
 async fn test_user_cache_flow() {
     dotenv::dotenv().ok();
     // Setup test pool/redis (point to test DB/Redis)

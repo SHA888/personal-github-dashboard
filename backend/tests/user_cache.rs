@@ -7,6 +7,20 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 #[actix_rt::test]
+/// Integration test verifying user data caching and invalidation between PostgreSQL and Redis.
+///
+/// This test ensures that user data is correctly retrieved from the database and cached in Redis on the first request, served from the cache on subsequent requests, and properly invalidated when the user is deleted from the database.
+///
+/// # Examples
+///
+/// ```
+/// // This test is intended to be run as part of the integration test suite.
+/// // It requires a running PostgreSQL and Redis instance, and appropriate environment variables set.
+/// #[actix_rt::test]
+/// async fn test_user_cache_behavior() {
+///     // ...test logic as implemented...
+/// }
+/// ```
 async fn test_user_cache_behavior() {
     dotenv::dotenv().ok();
     // Setup: pool, redis, app

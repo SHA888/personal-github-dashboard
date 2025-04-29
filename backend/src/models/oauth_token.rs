@@ -22,6 +22,18 @@ pub struct OAuthToken {
 }
 
 impl OAuthToken {
+    /// Encrypts a plaintext string using AES-256-GCM with a random nonce.
+    ///
+    /// The resulting byte vector contains the nonce followed by the ciphertext and authentication tag. Returns an error string if encryption fails.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let key = [0u8; 32];
+    /// let plaintext = "my_secret_token";
+    /// let encrypted = OAuthToken::encrypt_token(plaintext, &key).unwrap();
+    /// assert!(encrypted.len() > 12); // Nonce + ciphertext
+    /// ```
     pub fn encrypt_token(plain: &str, key: &[u8; 32]) -> Result<Vec<u8>, String> {
         let rng = SystemRandom::new();
         let mut nonce = [0u8; NONCE_LEN];
@@ -40,6 +52,20 @@ impl OAuthToken {
         result.extend_from_slice(&in_out);
         Ok(result)
     }
+    /// Decrypts an AES-256-GCM encrypted OAuth token and returns the plaintext string.
+    ///
+    /// Expects the input to contain the nonce followed by the ciphertext, as produced by `encrypt_token`.
+    /// Returns an error if the ciphertext is too short, the nonce or key is invalid, decryption fails, or the result is not valid UTF-8.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let key = [0u8; 32];
+    /// let plaintext = "my_secret_token";
+    /// let ciphertext = OAuthToken::encrypt_token(plaintext, &key).unwrap();
+    /// let decrypted = OAuthToken::decrypt_token(&ciphertext, &key).unwrap();
+    /// assert_eq!(decrypted, plaintext);
+    /// ```
     pub fn decrypt_token(ciphertext: &[u8], key: &[u8; 32]) -> Result<String, String> {
         if ciphertext.len() < NONCE_LEN {
             return Err("ciphertext too short".into());

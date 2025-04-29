@@ -28,6 +28,16 @@ pub struct OAuthRequest {
     pub state: String,
 }
 
+/// Redirects the client to the GitHub OAuth authorization page.
+///
+/// Constructs a GitHub OAuth authorization URL with the required client ID, redirect URI, state, and scopes, then returns an HTTP 302 redirect to initiate the OAuth login flow.
+///
+/// # Examples
+///
+/// ```
+/// let response = login();
+/// assert_eq!(response.status(), actix_web::http::StatusCode::FOUND);
+/// ```
 pub async fn login() -> HttpResponse {
     // Load OAuth config and generate state
     let cfg = Config::from_env();
@@ -44,6 +54,20 @@ pub async fn login() -> HttpResponse {
         .finish()
 }
 
+/// Handles the OAuth callback from GitHub, exchanges the authorization code for an access token, retrieves user information, persists user and token data, and establishes a session with a JWT.
+///
+/// In test mode (`TEST_MODE=1`), bypasses real OAuth and issues a test JWT for a dummy user.
+///
+/// # Examples
+///
+/// ```
+/// // In an Actix-web test, simulate the OAuth callback:
+/// let req = test::TestRequest::with_uri("/auth/callback?code=abc&state=xyz").to_http_request();
+/// let session = Session::default();
+/// let pool = web::Data::new(setup_test_pg_pool());
+/// let resp = callback(req, session, pool).await;
+/// assert_eq!(resp.status(), StatusCode::FOUND);
+/// ```
 pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool>) -> HttpResponse {
     // Test mode: skip real OAuth for tests
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {

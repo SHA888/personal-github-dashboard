@@ -1,5 +1,6 @@
 use actix_web::App;
 use chrono::{Duration, Utc};
+use dotenv;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
@@ -13,6 +14,7 @@ struct Claims {
 
 #[actix_web::test]
 async fn test_user_cache_flow() {
+    dotenv::dotenv().ok();
     // Setup test pool/redis (point to test DB/Redis)
     let pool = PgPool::connect(&std::env::var("DATABASE_URL").unwrap())
         .await
@@ -29,13 +31,14 @@ async fn test_user_cache_flow() {
     })
     .await;
 
-    // Clean up users table before test
-    sqlx::query("DELETE FROM users WHERE username = $1 OR email = $2")
+    // Clean up any existing test user before inserting
+    let cleanup_res = sqlx::query("DELETE FROM users WHERE username = $1 OR email = $2")
         .bind("cachetest")
         .bind("cache@test.com")
         .execute(&pool)
-        .await
-        .unwrap();
+        .await;
+    println!("Cleanup result: {:?}", cleanup_res);
+    cleanup_res.unwrap();
 
     // Generate JWT for Authorization header
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");

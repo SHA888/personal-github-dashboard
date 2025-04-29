@@ -15,7 +15,7 @@ use crate::utils::config::Config;
 use crate::utils::jwt::validate_jwt;
 use crate::utils::redis::RedisClient;
 use actix_cors::Cors;
-use actix_web::{dev::ServiceRequest, web, Error, HttpResponse};
+use actix_web::{Error, HttpResponse, dev::ServiceRequest, web};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::PgPool;

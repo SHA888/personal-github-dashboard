@@ -8,7 +8,7 @@ use crate::models::{
 use crate::utils::redis::RedisClient;
 use log::{info, warn};
 use sqlx::PgPool;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 /// Fetches up to N most recent entities of each type and warms the cache by calling their *_by_id_with_cache functions.
 pub async fn warm_cache(pool: &PgPool, redis: &RedisClient) {

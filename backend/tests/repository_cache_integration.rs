@@ -1,5 +1,5 @@
-use actix_web::{test, App};
-use jsonwebtoken::{encode, EncodingKey, Header};
+use actix_web::{App, test};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::routes::init_routes;
 use personal_github_dashboard::utils::config::Config;
 use personal_github_dashboard::utils::redis::RedisClient;

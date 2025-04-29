@@ -1,7 +1,7 @@
 use actix_web::App;
 use chrono::{Duration, Utc};
 use dotenv;
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;

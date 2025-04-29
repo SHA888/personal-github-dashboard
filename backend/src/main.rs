@@ -1,8 +1,8 @@
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_session::{SessionMiddleware, storage::RedisSessionStore};
 use actix_web::http::header;
-use actix_web::{web::PayloadConfig, App, HttpServer};
+use actix_web::{App, HttpServer, web::PayloadConfig};
 use cookie::Key;
 // removed unused import
 // use std::time::Duration;
@@ -131,7 +131,8 @@ async fn main() -> std::io::Result<()> {
             // Limit max payload size for requests (e.g. 256 KB)
             .app_data(PayloadConfig::new(262_144))
     })
-    .workers(2) // Limit to 2 workers for lower memory usage
+    // Use default worker count (num_cpus::get()) for optimal production performance
+    // .workers(num_cpus::get())
     .bind(bind_addr)?
     .run()
     .await

@@ -2,11 +2,13 @@ use crate::models::oauth_token::OAuthToken;
 use crate::models::user::User;
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
-use actix_session::{storage::RedisSessionStore, Session, SessionMiddleware};
+use actix_session::Session;
 use actix_web::{
+    HttpRequest, HttpResponse,
     cookie::{Cookie, SameSite},
-    web, HttpRequest, HttpResponse,
+    web,
 };
+use base64::Engine;
 use log::{error, warn};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
@@ -45,9 +47,7 @@ pub async fn login() -> HttpResponse {
     // Build GitHub authorization URL
     let url = format!(
         "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&state={}&scope=read:org,read:user,repo",
-        cfg.github_client_id,
-        cfg.github_redirect_url,
-        state
+        cfg.github_client_id, cfg.github_redirect_url, state
     );
     HttpResponse::Found()
         .insert_header(("Location", url))
@@ -126,70 +126,80 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
                 let avatar_url = Some(gh_user.avatar_url.to_string());
 
                 // Find or create user in DB
-                let user = sqlx::query_as!(
-                    User,
-                    "SELECT id, username, email, avatar_url, created_at FROM users WHERE username = $1 OR email = $2 LIMIT 1",
-                    username,
-                    email
-                )
-                .fetch_optional(pool.get_ref())
-                .await
-                .unwrap_or(None)
-                .unwrap_or_else(|| {
-                    // Insert new user if not found
-                    let new_id = uuid::Uuid::new_v4();
-                    let now = chrono::Utc::now();
-                    let _ = futures::executor::block_on(sqlx::query!(
-                        "INSERT INTO users (id, username, email, avatar_url, created_at) VALUES ($1, $2, $3, $4, $5)",
-                        new_id,
-                        username,
-                        email,
-                        avatar_url,
-                        now
-                    )
-                    .execute(pool.get_ref()));
-                    User {
-                        id: new_id,
-                        username,
-                        email,
-                        avatar_url,
-                        created_at: now,
+                let user = match sqlx::query_as!(User, "SELECT id, username, email, avatar_url, created_at FROM users WHERE username = $1 OR email = $2 LIMIT 1", username, email)
+                    .fetch_optional(pool.get_ref())
+                    .await
+                {
+                    Ok(u) => u,
+                    Err(e) => {
+                        error!("User lookup failed: {:?}", e);
+                        return HttpResponse::InternalServerError().finish();
                     }
-                });
+                };
+
+                let user = match user {
+                    Some(u) => u,
+                    None => {
+                        let new_id = Uuid::new_v4();
+                        let now = chrono::Utc::now();
+                        if let Err(e) = sqlx::query!("INSERT INTO users (id, username, email, avatar_url, created_at) VALUES ($1, $2, $3, $4, $5)", new_id, username, email, avatar_url, now)
+                            .execute(pool.get_ref()).await {
+                            error!("User insert failed: {:?}", e);
+                            return HttpResponse::InternalServerError().finish();
+                        }
+                        User {
+                            id: new_id,
+                            username,
+                            email,
+                            avatar_url,
+                            created_at: now,
+                        }
+                    }
+                };
 
                 // Encrypt tokens
                 let key = env::var("OAUTH_TOKEN_KEY").expect("OAUTH_TOKEN_KEY must be set");
-                let key_bytes = base64::decode(&key).expect("OAUTH_TOKEN_KEY must be base64");
-                let key_arr: [u8; 32] = key_bytes
-                    .try_into()
-                    .expect("OAUTH_TOKEN_KEY must be 32 bytes");
-                let encrypted_access =
-                    OAuthToken::encrypt_token(token.access_token().secret(), &key_arr).unwrap();
-                let encrypted_refresh = match token.refresh_token() {
-                    Some(r) => Some(OAuthToken::encrypt_token(r.secret(), &key_arr).unwrap()),
-                    None => None,
+                let key_bytes = match base64::engine::general_purpose::STANDARD.decode(&key) {
+                    Ok(k) if k.len() == 32 => {
+                        let mut arr = [0u8; 32];
+                        arr.copy_from_slice(&k);
+                        arr
+                    }
+                    _ => {
+                        error!("OAUTH_TOKEN_KEY must be 32 raw bytes (base64-encoded)");
+                        return HttpResponse::InternalServerError().finish();
+                    }
                 };
+                let encrypted_access =
+                    OAuthToken::encrypt_token(token.access_token().secret(), &key_bytes).unwrap();
+                let encrypted_refresh = token
+                    .refresh_token()
+                    .map(|rt| OAuthToken::encrypt_token(rt.secret(), &key_bytes).unwrap());
                 // Store in DB
                 let now = chrono::Utc::now();
                 let expiry = token
                     .expires_in()
                     .map(|d| now + chrono::Duration::from_std(d).unwrap());
-                let _ = sqlx::query!(
+                let token_type_str = format!("{:?}", token.token_type());
+                if let Err(e) = sqlx::query!(
                     "INSERT INTO oauth_tokens (id, user_id, provider, access_token, refresh_token, token_type, scope, expiry, created_at, updated_at)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-                    uuid::Uuid::new_v4(),
+                    Uuid::new_v4(),
                     user.id,
                     "github",
                     encrypted_access,
                     encrypted_refresh,
-                    Some(token.token_type().as_ref().to_string()),
+                    Some(token_type_str),
                     token.scopes().map(|scopes| scopes.iter().map(|s| s.as_ref()).collect::<Vec<_>>().join(",")),
                     expiry,
                     now,
                     now
                 )
                 .execute(pool.get_ref())
-                .await;
+                .await {
+                    error!("Failed to store OAuth token: {:?}", e);
+                    return HttpResponse::InternalServerError().finish();
+                }
                 // Create JWT for user
                 let jwt = create_jwt(&user.username, &Config::from_env().jwt_secret, 3600).unwrap();
                 // Store JWT in session
@@ -220,13 +230,8 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
     }
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct PatRequest {
-    pub pat: String,
-}
-
 /// Authenticate using a personal access token for desktop/CLI usage
-pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
+pub async fn pat_auth(body: web::Json<String>) -> HttpResponse {
     // Test mode: skip real GitHub PAT validation
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
         let secret = std::env::var("JWT_SECRET").unwrap_or_default();
@@ -236,7 +241,7 @@ pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
     let cfg = Config::from_env();
     // Initialize Octocrab with PAT
     let octocrab = Octocrab::builder()
-        .personal_token(body.pat.clone())
+        .personal_token(body.0.clone())
         .build()
         .unwrap();
     // Fetch user
@@ -259,7 +264,7 @@ pub async fn pat_auth(body: web::Json<PatRequest>) -> HttpResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::{http::StatusCode, test, web, App};
+    use actix_web::{App, http::StatusCode, test, web};
 
     #[actix_web::test]
     async fn login_redirect_should_redirect_to_github() {
@@ -308,9 +313,8 @@ mod tests {
 #[cfg(test)]
 mod callback_tests {
     use super::*;
-    use actix_session::{storage::RedisSessionStore, SessionMiddleware};
     use actix_web::cookie::Key;
-    use actix_web::{http::StatusCode, test, web, App};
+    use actix_web::{App, http::StatusCode, test, web};
     use dotenv;
     use sqlx::PgPool;
 
@@ -321,13 +325,10 @@ mod callback_tests {
         std::env::set_var("TEST_MODE", "1");
         let db_url = std::env::var("TEST_DATABASE_URL").unwrap();
         let pool = PgPool::connect(&db_url).await.unwrap();
-        let redis_url = std::env::var("TEST_REDIS_URL").unwrap();
-        let redis_store = RedisSessionStore::new(&redis_url).await.unwrap();
         let session_key = Key::generate();
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool))
-                .wrap(SessionMiddleware::new(redis_store, session_key))
                 .route("/auth/callback", web::get().to(callback)),
         )
         .await;
@@ -344,8 +345,7 @@ mod callback_tests {
 #[cfg(test)]
 mod pat_tests {
     use super::*;
-    use crate::handlers::auth::PatRequest;
-    use actix_web::{http::StatusCode, test, App};
+    use actix_web::{App, http::StatusCode, test};
     use serde_json::Value;
 
     #[actix_web::test]
@@ -355,9 +355,7 @@ mod pat_tests {
         let app = test::init_service(App::new().route("/auth/pat", web::post().to(pat_auth))).await;
         let req = test::TestRequest::post()
             .uri("/auth/pat")
-            .set_json(PatRequest {
-                pat: "dummy".into(),
-            })
+            .set_json("dummy".into())
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK);

@@ -1,4 +1,4 @@
-use actix_web::{test, web, App};
+use actix_web::{App, test, web};
 use personal_github_dashboard::models::user::User;
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde_json::json;

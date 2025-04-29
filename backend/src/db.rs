@@ -3,27 +3,29 @@ use crate::models::organization::Organization;
 use crate::models::repository::Repository;
 use crate::models::user::User;
 use crate::utils::cache::{
-    activity_cache_key, org_cache_key, repo_cache_key, ttl_user, user_cache_key, TTL_ACTIVITY,
-    TTL_REPO,
+    TTL_ACTIVITY, TTL_REPO, activity_cache_key, org_cache_key, repo_cache_key, ttl_user,
+    user_cache_key,
 };
 use crate::utils::redis::RedisClient;
 use chrono::{DateTime, Utc};
-use log::{debug, info, warn};
+use log::{debug, warn};
 use metrics::{histogram, increment_counter};
 use serde_json::Value;
 use sqlx::Error;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::time::Duration;
 use uuid::Uuid;
 
 /// Creates a PostgreSQL connection pool with a maximum number of connections and a 5-second acquire timeout.
+
 ///
 /// # Examples
 ///
 /// ```
 /// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.is_closed() == false);
-/// ```pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
+/// ```
+pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .acquire_timeout(Duration::from_secs(5))
@@ -43,7 +45,8 @@ use uuid::Uuid;
 /// ```
 /// let pool = create_pg_pool_memory_efficient("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.acquire().await.is_ok());
-/// ```pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
+/// ```
+pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .min_connections(1) // keep only 1 idle connection

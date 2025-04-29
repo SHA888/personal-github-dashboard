@@ -3,9 +3,10 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use ring::aead;
-use ring::aead::{Aad, BoundKey, LessSafeKey, Nonce, UnboundKey, AES_256_GCM, NONCE_LEN};
+use ring::aead::{AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
 use ring::rand::{SecureRandom, SystemRandom};
+
+use thiserror::Error;
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct OAuthToken {
@@ -21,6 +22,24 @@ pub struct OAuthToken {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Error)]
+pub enum CryptoError {
+    #[error("ciphertext too short")]
+    CiphertextTooShort,
+    #[error("invalid nonce")]
+    InvalidNonce,
+    #[error("key error: {0}")]
+    Key(String),
+    #[error("seal error: {0}")]
+    Seal(String),
+    #[error("open error: {0}")]
+    Open(String),
+    #[error("utf8 error: {0}")]
+    Utf8(String),
+    #[error("nonce generation error: {0}")]
+    NonceGen(String),
+}
+
 impl OAuthToken {
     /// Encrypts a plaintext string using AES-256-GCM with a random nonce.
     ///
@@ -34,20 +53,20 @@ impl OAuthToken {
     /// let encrypted = OAuthToken::encrypt_token(plaintext, &key).unwrap();
     /// assert!(encrypted.len() > 12); // Nonce + ciphertext
     /// ```
-    pub fn encrypt_token(plain: &str, key: &[u8; 32]) -> Result<Vec<u8>, String> {
+    pub fn encrypt_token(plain: &str, key: &[u8; 32]) -> Result<Vec<u8>, CryptoError> {
         let rng = SystemRandom::new();
-        let mut nonce = [0u8; NONCE_LEN];
+        let mut nonce = [0u8; 12];
         rng.fill(&mut nonce)
-            .map_err(|e| format!("nonce gen: {:?}", e))?;
+            .map_err(|e| CryptoError::NonceGen(format!("{:?}", e)))?;
         let nonce_bytes = nonce;
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let unbound_key =
-            UnboundKey::new(&AES_256_GCM, key).map_err(|e| format!("key: {:?}", e))?;
-        let mut sealing_key = LessSafeKey::new(unbound_key);
+            UnboundKey::new(&AES_256_GCM, key).map_err(|e| CryptoError::Key(format!("{:?}", e)))?;
+        let sealing_key = LessSafeKey::new(unbound_key);
         let mut in_out = plain.as_bytes().to_vec();
         sealing_key
             .seal_in_place_append_tag(nonce, Aad::empty(), &mut in_out)
-            .map_err(|e| format!("seal: {:?}", e))?;
+            .map_err(|e| CryptoError::Seal(format!("{:?}", e)))?;
         let mut result = nonce_bytes.to_vec();
         result.extend_from_slice(&in_out);
         Ok(result)
@@ -66,19 +85,20 @@ impl OAuthToken {
     /// let decrypted = OAuthToken::decrypt_token(&ciphertext, &key).unwrap();
     /// assert_eq!(decrypted, plaintext);
     /// ```
-    pub fn decrypt_token(ciphertext: &[u8], key: &[u8; 32]) -> Result<String, String> {
-        if ciphertext.len() < NONCE_LEN {
-            return Err("ciphertext too short".into());
+    pub fn decrypt_token(ciphertext: &[u8], key: &[u8; 32]) -> Result<String, CryptoError> {
+        if ciphertext.len() < 12 {
+            return Err(CryptoError::CiphertextTooShort);
         }
-        let (nonce_bytes, ct) = ciphertext.split_at(NONCE_LEN);
-        let nonce = Nonce::try_assume_unique_for_key(nonce_bytes).map_err(|_| "invalid nonce")?;
+        let (nonce_bytes, ct) = ciphertext.split_at(12);
+        let nonce =
+            Nonce::try_assume_unique_for_key(nonce_bytes).map_err(|_| CryptoError::InvalidNonce)?;
         let unbound_key =
-            UnboundKey::new(&AES_256_GCM, key).map_err(|e| format!("key: {:?}", e))?;
-        let mut opening_key = LessSafeKey::new(unbound_key);
+            UnboundKey::new(&AES_256_GCM, key).map_err(|e| CryptoError::Key(format!("{:?}", e)))?;
+        let opening_key = LessSafeKey::new(unbound_key);
         let mut in_out = ct.to_vec();
         let plain = opening_key
             .open_in_place(nonce, Aad::empty(), &mut in_out)
-            .map_err(|e| format!("open: {:?}", e))?;
-        String::from_utf8(plain.to_vec()).map_err(|e| format!("utf8: {:?}", e))
+            .map_err(|e| CryptoError::Open(format!("{:?}", e)))?;
+        String::from_utf8(plain.to_vec()).map_err(|e| CryptoError::Utf8(format!("{:?}", e)))
     }
 }

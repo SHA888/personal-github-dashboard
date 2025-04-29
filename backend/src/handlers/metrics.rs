@@ -1,6 +1,6 @@
 // TODO: Implement metrics handler module for repository analytics endpoints.
 
-use actix_web::{get, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, get};
 use metrics_exporter_prometheus::PrometheusHandle;
 use once_cell::sync::OnceCell;
 

@@ -1,4 +1,6 @@
 -- Migration: Create oauth_tokens table for storing encrypted OAuth tokens
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE oauth_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -1,4 +1,4 @@
-use actix_web::{test, App};
+use actix_web::{App, test};
 use dotenv::dotenv;
 use env_logger;
 use log;
@@ -6,8 +6,11 @@ use once_cell::sync::Lazy;
 use personal_github_dashboard::routes::init_routes_test::init_routes_no_auth;
 use personal_github_dashboard::utils::redis::RedisClient;
 use serde_json;
+use serial_test::serial;
 use sqlx::PgPool;
 use std::sync::{Arc, Once};
+use std::time::Duration;
+use tokio::time::sleep;
 use uuid::Uuid;
 
 // Logger initialization for integration tests
@@ -138,13 +141,13 @@ async fn insert_repository(
 /// insert_activity(&pool, activity_id, user_id, repo_id).await;
 /// ```
 async fn insert_activity(pool: &PgPool, activity_id: Uuid, user_id: Uuid, repo_id: Option<Uuid>) {
-async fn insert_activity(pool: &PgPool, activity_id: Uuid, user_id: Uuid, repo_id: Option<Uuid>) {
     sqlx::query!("INSERT INTO activities (id, user_id, repo_id, type, timestamp, data, created_at) VALUES ($1, $2, $3, $4, NOW(), $5, NOW())",
         activity_id, user_id, repo_id, "testtype", serde_json::json!({"k":"v"}))
         .execute(pool).await.expect("insert activity");
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that user data is cached in Redis after the first API fetch and that subsequent requests retrieve the data from the cache.
 ///
 /// This test inserts a user, fetches the user via the API to populate the cache, verifies the cache is set, and ensures a second fetch results in a cache hit.
@@ -205,6 +208,7 @@ async fn test_user_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that organization data is cached in Redis after the first API fetch and that subsequent fetches use the cache.
 ///
 /// This test inserts an organization, fetches it via the API to populate the cache, verifies the cache is set,
@@ -266,6 +270,7 @@ async fn test_organization_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that repository data is cached in Redis after the first fetch and remains available on subsequent requests.
 ///
 /// This integration test inserts a user, organization, and repository into the database, then fetches the repository via the API.
@@ -331,6 +336,7 @@ async fn test_repository_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that activity data is cached in Redis after the first API fetch and remains available on subsequent requests.
 ///
 /// This test inserts a user, repository, and activity into the database, fetches the activity via the API, and verifies that the activity is cached in Redis. It then fetches the activity again to confirm the cache is still present.
@@ -392,6 +398,7 @@ async fn test_activity_caching() {
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that requesting a non-existent user returns a 404 response and does not populate the Redis cache.
 ///
 /// This test sends a GET request for a randomly generated user ID that does not exist in the database,
@@ -437,6 +444,7 @@ async fn test_user_cache_miss_and_invalid_id() {
 }
 
 #[actix_rt::test]
+#[serial]
 /// Tests that the user cache entry expires after the configured TTL and is not repopulated after the user is deleted.
 ///
 /// This test verifies that fetching a user populates the cache, the cache entry expires after the TTL, and subsequent requests for a deleted user do not repopulate the cache.

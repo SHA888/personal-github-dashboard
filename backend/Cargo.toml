@@ -83,5 +83,18 @@ ring = "0.17"
 # Lazy initialization
 once_cell = "1.18.0"
 
+# Optional: Remove unused or heavy dependencies (manual audit required)
+# Example: Remove octocrab if not used, or replace with lighter alternative
+# [dependencies]
+# octocrab = "0.44.0"  # Remove if not used
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+
+[profile.dev]
+opt-level = 1
+
 [dev-dependencies]
 actix-service = "2"

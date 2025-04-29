@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::http::header;
-use actix_web::{App, HttpServer};
+use actix_web::{web::PayloadConfig, App, HttpServer};
 use cookie::Key;
 // removed unused import
 // use std::time::Duration;
@@ -42,7 +42,7 @@ async fn main() -> std::io::Result<()> {
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);
 
-    let pool = db::create_pg_pool(&config.database_url, max_pool_size).await;
+    let pool = db::create_pg_pool_memory_efficient(&config.database_url, max_pool_size).await;
 
     // Redis session store
     let redis_store = RedisSessionStore::new(&config.redis_url)
@@ -80,6 +80,7 @@ async fn main() -> std::io::Result<()> {
         .finish()
         .expect("Failed to build governor config");
 
+    // --- Memory Optimization: Limit Actix workers and payload size ---
     HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin_fn(|origin, _req_head| {
@@ -104,7 +105,10 @@ async fn main() -> std::io::Result<()> {
             // Configure routes
             .configure(routes::init_routes)
             .service(metrics_endpoint)
+            // Limit max payload size for requests (e.g. 256 KB)
+            .app_data(PayloadConfig::new(262_144))
     })
+    .workers(2) // Limit to 2 workers for lower memory usage
     .bind(bind_addr)?
     .run()
     .await

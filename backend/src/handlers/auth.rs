@@ -2,7 +2,7 @@ use crate::models::oauth_token::OAuthToken;
 use crate::models::user::User;
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
-use actix_session::Session;
+use actix_session::{storage::RedisSessionStore, Session, SessionMiddleware};
 use actix_web::{
     cookie::{Cookie, SameSite},
     web, HttpRequest, HttpResponse,
@@ -284,14 +284,29 @@ mod tests {
 #[cfg(test)]
 mod callback_tests {
     use super::*;
+    use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+    use actix_web::cookie::Key;
     use actix_web::{http::StatusCode, test, web, App};
+    use dotenv;
+    use sqlx::PgPool;
 
     #[actix_web::test]
     async fn callback_in_test_mode_sets_cookie() {
+        dotenv::dotenv().ok();
         std::env::set_var("JWT_SECRET", "secret");
         std::env::set_var("TEST_MODE", "1");
-        let app =
-            test::init_service(App::new().route("/auth/callback", web::get().to(callback))).await;
+        let db_url = std::env::var("TEST_DATABASE_URL").unwrap();
+        let pool = PgPool::connect(&db_url).await.unwrap();
+        let redis_url = std::env::var("TEST_REDIS_URL").unwrap();
+        let redis_store = RedisSessionStore::new(&redis_url).await.unwrap();
+        let session_key = Key::generate();
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(pool))
+                .wrap(SessionMiddleware::new(redis_store, session_key))
+                .route("/auth/callback", web::get().to(callback)),
+        )
+        .await;
         let req = test::TestRequest::get()
             .uri("/auth/callback?code=anything")
             .to_request();

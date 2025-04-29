@@ -26,6 +26,27 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
         .expect("Failed to create Postgres connection pool")
 }
 
+/// Create a PostgreSQL connection pool with memory-efficient options.
+pub async fn create_pg_pool_memory_efficient(database_url: &str, max_connections: u32) -> PgPool {
+    PgPoolOptions::new()
+        .max_connections(max_connections)
+        .min_connections(1) // keep only 1 idle connection
+        .max_lifetime(Some(Duration::from_secs(600))) // close idle after 10m
+        .idle_timeout(Some(Duration::from_secs(60))) // idle conn timeout 60s
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                sqlx::query("SET statement_timeout = 5000;")
+                    .execute(conn)
+                    .await
+                    .ok();
+                Ok(())
+            })
+        })
+        .connect(database_url)
+        .await
+        .expect("Failed to create PgPool")
+}
+
 // --- User CRUD ---
 pub async fn get_user_by_id(pool: &PgPool, user_id: &Uuid) -> Result<Option<User>, sqlx::Error> {
     sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")

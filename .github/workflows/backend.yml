@@ -63,7 +63,7 @@ jobs:
 
       - name: Run tests
         working-directory: backend
-        run: cargo test --all-features
+        run: cargo test --all-features -- --include-ignored
 
       - name: Build
         working-directory: backend

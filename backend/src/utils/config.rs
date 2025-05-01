@@ -47,20 +47,24 @@ impl Config {
             .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
             jwt_secret: std::env::var("JWT_SECRET")
                 .unwrap_or_else(|_| "test_secret_for_ci".to_string()),
-            github_client_id: std::env::var("GITHUB_CLIENT_ID").unwrap_or_else(|_| {
-                if cfg!(test) {
-                    "test_client_id".to_string()
-                } else {
-                    panic!("GITHUB_CLIENT_ID must be set")
-                }
-            }),
-            github_client_secret: std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_else(|_| {
-                if cfg!(test) {
-                    "test_client_secret".to_string()
-                } else {
-                    panic!("GITHUB_CLIENT_SECRET must be set")
-                }
-            }),
+            github_client_id: std::env::var("GH_CLIENT_ID")
+                .or_else(|_| std::env::var("GITHUB_CLIENT_ID"))
+                .unwrap_or_else(|_| {
+                    if cfg!(test) {
+                        "test_client_id".to_string()
+                    } else {
+                        panic!("GH_CLIENT_ID or GITHUB_CLIENT_ID must be set")
+                    }
+                }),
+            github_client_secret: std::env::var("GH_CLIENT_SECRET")
+                .or_else(|_| std::env::var("GITHUB_CLIENT_SECRET"))
+                .unwrap_or_else(|_| {
+                    if cfg!(test) {
+                        "test_client_secret".to_string()
+                    } else {
+                        panic!("GH_CLIENT_SECRET or GITHUB_CLIENT_SECRET must be set")
+                    }
+                }),
             github_redirect_url: std::env::var("GITHUB_REDIRECT_URL").unwrap_or_else(|_| {
                 if cfg!(test) {
                     "http://localhost:8080/callback".to_string()

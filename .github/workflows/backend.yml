@@ -36,6 +36,7 @@ jobs:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
       TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
       TEST_REDIS_URL: ${{ secrets.TEST_REDIS_URL }}
+      GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +45,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
 
       - name: Install SQLx CLI
         run: cargo install sqlx-cli --no-default-features --features native-tls,postgres

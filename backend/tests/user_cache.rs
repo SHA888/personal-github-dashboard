@@ -1,8 +1,6 @@
 use actix_web::{App, test, web};
-use dotenv;
 use personal_github_dashboard::models::user::User;
 use personal_github_dashboard::utils::redis::RedisClient;
-use serde_json;
 use sqlx::PgPool;
 use uuid::Uuid;
 

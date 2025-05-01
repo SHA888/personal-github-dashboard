@@ -14,28 +14,12 @@ pub struct Config {
 
 impl Config {
     /// Loads configuration values from environment variables.
-    ///
     /// Reads required configuration parameters from environment variables and constructs a `Config` instance. Panics if any required variable is missing, except for `FRONTEND_URL`, which defaults to `"http://localhost:3001"` if not set. The `GITHUB_REDIRECT_URL` must exactly match the callback URL registered in your GitHub OAuth app settings.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let config = Config::from_env();
-    /// assert!(!config.database_url.is_empty());
     /// Loads configuration values from environment variables, providing defaults for optional fields.
-    ///
     /// Attempts to read environment variables for all configuration parameters, falling back to default values for `DATABASE_URL` and `FRONTEND_URL` if they are not set. Panics if any required environment variable is missing.
-    ///
     /// # Panics
-    ///
     /// Panics if any of the following environment variables are not set: `GITHUB_PERSONAL_ACCESS_TOKEN`, `REDIS_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, or `GITHUB_REDIRECT_URL`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let config = Config::from_env();
-    /// assert!(!config.github_personal_access_token.is_empty());
-    /// ```    pub fn from_env() -> Self {
+    pub fn from_env() -> Self {
         dotenv::dotenv().ok();
         Config {
             database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| {

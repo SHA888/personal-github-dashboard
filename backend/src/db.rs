@@ -13,7 +13,6 @@ use metrics::{histogram, increment_counter};
 use serde_json::Value;
 use sqlx::Error;
 use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::env;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -22,6 +21,8 @@ use uuid::Uuid;
 /// ```
 /// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.is_closed() == false);
+/// ```
+///
 /// Creates a PostgreSQL connection pool with a specified maximum number of connections.
 ///
 /// The pool uses a 5-second acquire timeout and panics if the connection cannot be established.
@@ -30,7 +31,8 @@ use uuid::Uuid;
 ///
 /// ```
 /// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
-/// ```pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
+/// ```
+pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .acquire_timeout(Duration::from_secs(5))
@@ -48,7 +50,8 @@ use uuid::Uuid;
 /// ```
 /// let url = get_database_url();
 /// assert!(url.starts_with("postgres://"));
-/// ```pub fn get_database_url() -> String {
+/// ```
+pub fn get_database_url() -> String {
     std::env::var("DATABASE_URL").expect(
         "DATABASE_URL must be set (use .env for local, secrets for CI, or real env var for prod)",
     )
@@ -63,7 +66,8 @@ use uuid::Uuid;
 ///
 /// ```
 /// let pool = create_pg_pool_with_fallback(10).await;
-/// ```pub async fn create_pg_pool_with_fallback(max_connections: u32) -> PgPool {
+/// ```
+pub async fn create_pg_pool_with_fallback(max_connections: u32) -> PgPool {
     let database_url = get_database_url();
     create_pg_pool(&database_url, max_connections).await
 }

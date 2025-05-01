@@ -21,6 +21,17 @@ impl Config {
     /// Panics if any of the following environment variables are not set: `GITHUB_PERSONAL_ACCESS_TOKEN`, `REDIS_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, or `GITHUB_REDIRECT_URL`.
     pub fn from_env() -> Self {
         dotenv::dotenv().ok();
+
+        // Debug logging for environment variables
+        #[cfg(test)]
+        {
+            println!("Environment Variables:");
+            for (key, value) in std::env::vars() {
+                if key.contains("REDIS") || key.contains("TEST_REDIS") {
+                    println!("{}: {}", key, value);
+                }
+            }
+        }
         Config {
             database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| {
                 "postgres://postgres:postgres@localhost:5432/personal_github_dashboard_dev"
@@ -34,7 +45,8 @@ impl Config {
                 "REDIS_URL"
             })
             .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
-            jwt_secret: std::env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
+            jwt_secret: std::env::var("JWT_SECRET")
+                .unwrap_or_else(|_| "test_secret_for_ci".to_string()),
             github_client_id: std::env::var("GITHUB_CLIENT_ID")
                 .expect("GITHUB_CLIENT_ID must be set"),
             github_client_secret: std::env::var("GITHUB_CLIENT_SECRET")

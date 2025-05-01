@@ -13,8 +13,15 @@ struct Claims {
     exp: usize,
 }
 
-#[actix_web::test]
+#[tokio::test]
 async fn test_activity_cache_flow() {
+    // Debug environment variables
+    println!("Environment Variables:");
+    for (key, value) in std::env::vars() {
+        if key.contains("REDIS") || key.contains("TEST_REDIS") {
+            println!("{}: {}", key, value);
+        }
+    }
     // Setup
     let config = Config::from_env();
     let pool = PgPool::connect(&config.database_url).await.unwrap();

@@ -48,6 +48,14 @@ jobs:
       - name: Install SQLx CLI
         run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
+      - name: Check Environment Variables
+        run: |
+          if [ -n "$TEST_REDIS_URL" ]; then
+            echo "TEST_REDIS_URL is set"
+          else
+            echo "TEST_REDIS_URL is not set"
+          fi
+
       - name: Create database
         run: sqlx database create
 

@@ -22,8 +22,20 @@ impl Config {
     /// ```
     /// let config = Config::from_env();
     /// assert!(!config.database_url.is_empty());
+    /// Loads configuration values from environment variables, providing defaults for optional fields.
+    ///
+    /// Attempts to read environment variables for all configuration parameters, falling back to default values for `DATABASE_URL` and `FRONTEND_URL` if they are not set. Panics if any required environment variable is missing.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any of the following environment variables are not set: `GITHUB_PERSONAL_ACCESS_TOKEN`, `REDIS_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, or `GITHUB_REDIRECT_URL`.
+    ///
+    /// # Examples
+    ///
     /// ```
-    pub fn from_env() -> Self {
+    /// let config = Config::from_env();
+    /// assert!(!config.github_personal_access_token.is_empty());
+    /// ```    pub fn from_env() -> Self {
         dotenv::dotenv().ok();
         Config {
             database_url: std::env::var("DATABASE_URL").unwrap_or_else(|_| {

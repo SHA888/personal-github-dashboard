@@ -22,8 +22,15 @@ use uuid::Uuid;
 /// ```
 /// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
 /// assert!(pool.is_closed() == false);
+/// Creates a PostgreSQL connection pool with a specified maximum number of connections.
+///
+/// The pool uses a 5-second acquire timeout and panics if the connection cannot be established.
+///
+/// # Examples
+///
 /// ```
-pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
+/// let pool = create_pg_pool("postgres://user:pass@localhost/db", 10).await;
+/// ```pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool {
     PgPoolOptions::new()
         .max_connections(max_connections)
         .acquire_timeout(Duration::from_secs(5))
@@ -32,15 +39,31 @@ pub async fn create_pg_pool(database_url: &str, max_connections: u32) -> PgPool 
         .expect("Failed to create Postgres connection pool")
 }
 
-/// Utility function to get the database URL from env or fallback to default.
-pub fn get_database_url() -> String {
+/// Retrieves the `DATABASE_URL` environment variable.
+///
+/// Panics if `DATABASE_URL` is not set.
+///
+/// # Examples
+///
+/// ```
+/// let url = get_database_url();
+/// assert!(url.starts_with("postgres://"));
+/// ```pub fn get_database_url() -> String {
     std::env::var("DATABASE_URL").expect(
         "DATABASE_URL must be set (use .env for local, secrets for CI, or real env var for prod)",
     )
 }
 
-/// Creates a PostgreSQL connection pool using fallback logic for DATABASE_URL.
-pub async fn create_pg_pool_with_fallback(max_connections: u32) -> PgPool {
+/// Creates a PostgreSQL connection pool using the `DATABASE_URL` environment variable.
+///
+/// This function retrieves the database URL from the environment and initializes a connection pool
+/// with the specified maximum number of connections. Panics if the environment variable is not set or the pool cannot be created.
+///
+/// # Examples
+///
+/// ```
+/// let pool = create_pg_pool_with_fallback(10).await;
+/// ```pub async fn create_pg_pool_with_fallback(max_connections: u32) -> PgPool {
     let database_url = get_database_url();
     create_pg_pool(&database_url, max_connections).await
 }

@@ -28,7 +28,12 @@ impl Config {
             }),
             github_personal_access_token: std::env::var("GITHUB_PERSONAL_ACCESS_TOKEN")
                 .expect("GITHUB_PERSONAL_ACCESS_TOKEN must be set"),
-            redis_url: std::env::var("REDIS_URL").expect("REDIS_URL must be set"),
+            redis_url: std::env::var(if cfg!(test) {
+                "TEST_REDIS_URL"
+            } else {
+                "REDIS_URL"
+            })
+            .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
             jwt_secret: std::env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
             github_client_id: std::env::var("GITHUB_CLIENT_ID")
                 .expect("GITHUB_CLIENT_ID must be set"),

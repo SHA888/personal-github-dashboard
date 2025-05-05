@@ -40,10 +40,16 @@ pub struct OAuthRequest {
 /// let response = login();
 /// assert_eq!(response.status(), actix_web::http::StatusCode::FOUND);
 /// ```
-pub async fn login() -> HttpResponse {
+pub async fn login(session: Session) -> HttpResponse {
     // Load OAuth config and generate state
     let cfg = Config::from_env();
     let state = Uuid::new_v4().to_string();
+    // Store state in session for CSRF protection
+    if let Err(e) = session.insert("oauth_state", &state) {
+        error!("Failed to store OAuth state in session: {:?}", e);
+        return HttpResponse::InternalServerError()
+            .json(json!({"error": "Failed to initiate OAuth login"}));
+    }
     // Build GitHub authorization URL
     let url = format!(
         "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&state={}&scope=read:org,read:user,repo",
@@ -225,10 +231,34 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
     }
 
     // Parse OAuth query parameters
-    let query = match parse_oauth_query(&req) {
+    let oauth_query = match parse_oauth_query(&req) {
         Ok(q) => q,
         Err(resp) => return resp,
     };
+
+    // Validate state parameter
+    let session_state = match session.get::<String>("oauth_state") {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            warn!("OAuth state missing from session");
+            return HttpResponse::BadRequest()
+                .json(json!({"error": "Invalid OAuth state (missing)"}));
+        }
+        Err(e) => {
+            error!("Failed to retrieve OAuth state from session: {:?}", e);
+            return HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to validate OAuth state"}));
+        }
+    };
+    if oauth_query.state != session_state {
+        warn!(
+            "OAuth state mismatch: expected {}, got {}",
+            session_state, oauth_query.state
+        );
+        return HttpResponse::BadRequest().json(json!({"error": "Invalid OAuth state (mismatch)"}));
+    }
+    // Remove state from session to prevent reuse
+    let _ = session.remove("oauth_state");
 
     let cfg = Config::from_env();
     // Configure OAuth2 client
@@ -241,7 +271,7 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
     .set_redirect_uri(RedirectUrl::new(cfg.github_redirect_url.clone()).unwrap());
 
     // Exchange code for token
-    let token = match exchange_code_for_token(&client, query.code).await {
+    let token = match exchange_code_for_token(&client, oauth_query.code).await {
         Ok(t) => t,
         Err(resp) => return resp,
     };

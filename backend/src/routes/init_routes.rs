@@ -31,6 +31,8 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
             .wrap(Cors::default().supports_credentials())
             .route("/login", web::get().to(login))
             .route("/callback", web::get().to(callback))
+            .route("/github", web::get().to(login)) // Alias for best-practice naming
+            .route("/github/callback", web::get().to(callback)) // Alias for best-practice naming
             .route("/pat", web::post().to(pat_auth)),
     );
 

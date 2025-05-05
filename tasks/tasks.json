@@ -100,7 +100,7 @@
           "id": 2,
           "title": "Implement Database Schema for OAuth Tokens",
           "description": "Design and implement database tables to securely store OAuth tokens with encryption",
-          "status": "pending",
+          "status": "done",
           "dependencies": [],
           "details": "Create a users table with GitHub-specific fields (github_id, username). Create an oauth_tokens table with fields for access_token, refresh_token, token_type, scope, and expiry. Implement encryption for token storage using a library like ring or sodiumoxide. Set up database migrations using diesel or sqlx. Add indexes for efficient token lookup. Document the schema design and encryption approach."
         },
@@ -108,7 +108,7 @@
           "id": 3,
           "title": "Implement Backend OAuth Flow Endpoints",
           "description": "Create Actix-web routes to handle the GitHub OAuth authorization flow",
-          "status": "pending",
+          "status": "done",
           "dependencies": [1, 2],
           "details": "Implement /auth/github endpoint to redirect users to GitHub authorization page with appropriate scopes. Create /auth/github/callback endpoint to handle the OAuth code exchange. Implement token exchange logic to convert authorization code to access token. Store tokens in the database with proper encryption. Handle error cases and edge conditions. Add logging for debugging authentication issues."
         },

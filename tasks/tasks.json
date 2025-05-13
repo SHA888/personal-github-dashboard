@@ -8,7 +8,54 @@
       "dependencies": [],
       "priority": "high",
       "details": "Create two repositories: one for React frontend and one for Rust backend. For frontend: initialize with Create React App using TypeScript template, install Material-UI v7, Redux, and Chart.js. For backend: set up Rust 1.75+ project with Actix-web 4+, SQLx, and Redis client libraries. Configure ESLint and Prettier for frontend, and Clippy for Rust. Set up Docker configurations for local development.",
-      "testStrategy": "Verify that all environments can be built and run locally. Ensure all dependencies are correctly installed and configured. Run linting checks to confirm code style compliance."
+      "testStrategy": "Verify that all environments can be built and run locally. Ensure all dependencies are correctly installed and configured. Run linting checks to confirm code style compliance.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Initialize GitHub Repositories and Project Structure",
+          "description": "Create two separate GitHub repositories for the frontend and backend components of the application, with appropriate .gitignore files and README documentation.",
+          "dependencies": [],
+          "details": "Create 'frontend-app' repository with React TypeScript template. Create 'backend-api' repository with basic Rust project structure. Set up main branches with protection rules. Add comprehensive README.md files in both repositories with setup instructions, architecture overview, and contribution guidelines. Configure .gitignore files appropriate for React/TypeScript and Rust projects.",
+          "status": "pending",
+          "testStrategy": "Verify repository creation and access permissions for team members. Ensure README files contain accurate setup instructions by having a team member follow them on a fresh environment."
+        },
+        {
+          "id": 2,
+          "title": "Configure Frontend Development Environment",
+          "description": "Set up the React frontend project with TypeScript, install required dependencies, and configure code quality tools.",
+          "dependencies": [1],
+          "details": "Initialize project using Create React App with TypeScript template: 'npx create-react-app frontend --template typescript'. Install dependencies: Material-UI v7, Redux Toolkit, React Router, Chart.js, and Axios. Configure ESLint with Airbnb style guide and Prettier for code formatting. Set up directory structure following feature-based organization (components/, features/, services/, utils/, etc.). Create basic theme configuration for Material-UI.",
+          "status": "pending",
+          "testStrategy": "Run 'npm run build' to verify the project compiles without errors. Execute ESLint to ensure code quality rules are properly applied. Create a simple test component to verify Material-UI and TypeScript integration."
+        },
+        {
+          "id": 3,
+          "title": "Configure Backend Development Environment",
+          "description": "Set up the Rust backend project with Actix-web framework, database connections, and code quality tools.",
+          "dependencies": [1],
+          "details": "Initialize Rust project with Cargo: 'cargo new backend --bin'. Add dependencies in Cargo.toml: actix-web 4+, sqlx with PostgreSQL and runtime-tokio features, redis, serde for serialization, dotenv for environment variables, and tokio for async runtime. Configure project structure with separate modules for routes, models, services, and middleware. Set up Clippy with custom configuration for code quality. Create database connection pool setup with SQLx.",
+          "status": "pending",
+          "testStrategy": "Run 'cargo check' and 'cargo clippy' to verify project setup and code quality. Create a simple health check endpoint and test with 'cargo test'. Verify database connection with a simple query test."
+        },
+        {
+          "id": 4,
+          "title": "Create Docker Development Environment",
+          "description": "Set up Docker and Docker Compose configurations for local development, including containers for frontend, backend, database, and Redis.",
+          "dependencies": [2, 3],
+          "details": "Create Dockerfile for frontend with Node.js base image, including development and production build stages. Create Dockerfile for backend with Rust base image, optimized for development and production. Create docker-compose.yml with services for: frontend (with hot reloading), backend (with cargo watch), PostgreSQL database, and Redis. Configure environment variables for local development. Set up volume mappings for code changes and persistent data. Configure networking between containers.",
+          "status": "pending",
+          "testStrategy": "Test the complete Docker Compose setup by running 'docker-compose up' and verifying all services start correctly. Verify hot reloading works for both frontend and backend. Test database and Redis connections from the backend container."
+        },
+        {
+          "id": 5,
+          "title": "Configure CI/CD Pipelines",
+          "description": "Set up continuous integration and deployment pipelines for both frontend and backend repositories using GitHub Actions.",
+          "dependencies": [2, 3, 4],
+          "details": "Create GitHub Actions workflows for frontend: lint and test on pull requests, build and deploy on main branch merges. Create GitHub Actions workflows for backend: cargo check, clippy, and tests on pull requests, build Docker image and deploy on main branch merges. Configure caching for dependencies to speed up CI/CD pipelines. Set up environment secrets for deployment credentials. Create staging and production deployment configurations. Add status badges to README files.",
+          "status": "pending",
+          "testStrategy": "Test CI/CD pipelines by creating test branches and pull requests to verify workflows execute correctly. Verify deployment to staging environment works automatically. Check that status badges update correctly in README files."
+        }
+      ]
     },
     {
       "id": 2,

@@ -46,3 +46,4 @@ Implement the /api/activities (GET) endpoint with support for various filtering 
 ### Description: Document all API endpoints using OpenAPI/Swagger and ensure consistent error responses
 ### Details:
 Integrate OpenAPI/Swagger documentation into the Actix-web application. Document all endpoints, request parameters, and response schemas. Create examples for each endpoint. Document error responses and status codes. Ensure all endpoints follow consistent REST conventions for responses. Set up a Swagger UI endpoint for interactive API exploration. Verify documentation is complete and accurate for all implemented endpoints.
+

@@ -40,3 +40,4 @@ Design and implement a responsive grid/list view for repositories. Add filter co
 ### Description: Create the UI component for displaying detailed information about a selected repository
 ### Details:
 Design and implement the repository detail page layout. Display repository metadata (name, description, stars, forks). Show statistics and metrics with visual charts. Include recent activity timeline. Add contributor information section. Implement skeleton loaders for each section during data loading. Add error handling for failed data fetching with retry options. Ensure responsive design for all screen sizes.
+

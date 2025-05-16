@@ -29,7 +29,7 @@ Create a users table with GitHub-specific fields (github_id, username). Create a
 ### Details:
 Implement /auth/github endpoint to redirect users to GitHub authorization page with appropriate scopes. Create /auth/github/callback endpoint to handle the OAuth code exchange. Implement token exchange logic to convert authorization code to access token. Store tokens in the database with proper encryption. Handle error cases and edge conditions. Add logging for debugging authentication issues.
 
-## 4. Implement JWT Session Management [pending]
+## 4. Implement JWT Session Management [in-progress]
 ### Dependencies: 3.3
 ### Description: Create JWT generation and validation for authenticated user sessions
 ### Details:
@@ -46,3 +46,4 @@ Implement a GitHub login button component that redirects to the backend /auth/gi
 ### Description: Create mechanisms to handle token expiration, refresh, and session persistence
 ### Details:
 Implement automatic token refresh when access tokens expire. Create API interceptors to handle 401 responses by triggering token refresh. Implement secure session timeout and extension logic. Add session revocation on logout. Create background token validation to ensure sessions remain valid. Implement proper error handling for authentication failures. Add comprehensive testing for the authentication flow including edge cases. Document the complete authentication flow for developers.
+

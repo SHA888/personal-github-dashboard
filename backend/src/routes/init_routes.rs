@@ -122,7 +122,7 @@ async fn validator(
     credentials: BearerAuth,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
     let config = Config::from_env();
-    match validate_jwt(credentials.token(), &config.jwt_secret) {
+    match validate_jwt(credentials.token(), &config) {
         Ok(_) => Ok(req),
         Err(_) => Err((
             AppError::Unauthorized("Invalid or missing token".into()).into(),

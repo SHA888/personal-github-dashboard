@@ -40,3 +40,4 @@ Create Dockerfile for frontend with Node.js base image, including development an
 ### Description: Set up continuous integration and deployment pipelines for both frontend and backend repositories using GitHub Actions.
 ### Details:
 Create GitHub Actions workflows for frontend: lint and test on pull requests, build and deploy on main branch merges. Create GitHub Actions workflows for backend: cargo check, clippy, and tests on pull requests, build Docker image and deploy on main branch merges. Configure caching for dependencies to speed up CI/CD pipelines. Set up environment secrets for deployment credentials. Create staging and production deployment configurations. Add status badges to README files.
+

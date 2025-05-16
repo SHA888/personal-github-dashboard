@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct Config {
     pub database_url: String,
     pub github_personal_access_token: String,
@@ -20,7 +20,9 @@ impl Config {
     /// # Panics
     /// Panics if any of the following environment variables are not set: `GITHUB_PERSONAL_ACCESS_TOKEN`, `REDIS_URL`, `JWT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, or `GITHUB_REDIRECT_URL`.
     pub fn from_env() -> Self {
-        dotenv::dotenv().ok();
+        if !cfg!(test) && dotenv::from_path(".env").is_ok() {
+            dotenv::dotenv().ok();
+        }
 
         // Debug logging for environment variables
         #[cfg(test)]
@@ -65,11 +67,11 @@ impl Config {
                         panic!("GH_CLIENT_SECRET or GITHUB_CLIENT_SECRET must be set")
                     }
                 }),
-            github_redirect_url: std::env::var("GITHUB_REDIRECT_URL").unwrap_or_else(|_| {
+            github_redirect_url: std::env::var("GITHUB_CALLBACK_URL").unwrap_or_else(|_| {
                 if cfg!(test) {
                     "http://localhost:8080/callback".to_string()
                 } else {
-                    panic!("GITHUB_REDIRECT_URL must be set")
+                    panic!("GITHUB_CALLBACK_URL must be set")
                 }
             }),
             frontend_url: std::env::var("FRONTEND_URL")

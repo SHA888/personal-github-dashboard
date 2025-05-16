@@ -3,13 +3,9 @@ use crate::models::user::User;
 use crate::utils::config::Config;
 use crate::utils::jwt::create_jwt;
 use actix_session::Session;
-use actix_web::{
-    HttpRequest, HttpResponse,
-    cookie::{Cookie, SameSite},
-    web,
-};
+use actix_web::cookie::{Cookie, SameSite};
+use actix_web::{HttpRequest, HttpResponse, web};
 use base64::Engine;
-use log::{error, warn};
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -20,7 +16,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::PgPool;
 use std::env;
+use time::Duration as TimeDelta;
 use time::Duration;
+use tracing::{error, warn};
 use uuid::Uuid;
 
 #[allow(dead_code)]
@@ -40,9 +38,8 @@ pub struct OAuthRequest {
 /// let response = login();
 /// assert_eq!(response.status(), actix_web::http::StatusCode::FOUND);
 /// ```
-pub async fn login(session: Session) -> HttpResponse {
-    // Load OAuth config and generate state
-    let cfg = Config::from_env();
+pub async fn login(session: Session, config: web::Data<Config>) -> HttpResponse {
+    // Config is now passed as a parameter. OAuth config and state generation:
     let state = Uuid::new_v4().to_string();
     // Store state in session for CSRF protection
     if let Err(e) = session.insert("oauth_state", &state) {
@@ -53,7 +50,7 @@ pub async fn login(session: Session) -> HttpResponse {
     // Build GitHub authorization URL
     let url = format!(
         "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&state={}&scope=read:org,read:user,repo",
-        cfg.github_client_id, cfg.github_redirect_url, state
+        config.github_client_id, config.github_redirect_url, state
     );
     HttpResponse::Found()
         .insert_header(("Location", url))
@@ -211,23 +208,63 @@ fn encrypt_optional_token_bytes(
 /// assert_eq!(resp.status(), StatusCode::FOUND);
 /// ```
 pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool>) -> HttpResponse {
-    // Test mode: skip real OAuth for tests
+    // Test mode: skip real OAuth and database interactions for tests
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
-        let secret = std::env::var("JWT_SECRET").unwrap_or_default();
-        let jwt = create_jwt("testuser", &secret, 3600).unwrap();
-        // Store JWT in session
+        let cfg = Config::from_env();
+        let jwt = create_jwt("testuser", vec!["user".to_string()], &cfg, 3600).unwrap();
+        // Store JWT and state in session
         let _ = session.insert("jwt", &jwt);
-        let cookie = Cookie::build("auth_token", jwt)
+        let _ = session.insert("oauth_state", "test_state");
+        let cookie = Cookie::build("auth_token", jwt.clone())
             .http_only(true)
             .secure(true)
             .same_site(SameSite::Lax)
             .path("/")
-            .max_age(Duration::seconds(3600))
+            .max_age(TimeDelta::seconds(3600))
             .finish();
         return HttpResponse::Found()
             .cookie(cookie)
             .insert_header(("Location", "/"))
             .finish();
+    }
+
+    // Validate state if not in test mode
+    let state_from_session = session.get::<String>("oauth_state").unwrap_or_default();
+    let state_from_request = req
+        .query_string()
+        .split('&')
+        .find_map(|pair| {
+            let mut parts = pair.split('=');
+            if parts.next() == Some("state") {
+                parts.next()
+            } else {
+                None
+            }
+        })
+        .map(|s| s.to_string())
+        .unwrap_or_default();
+
+    // If we're in test mode, we want to bypass state validation and return the test JWT
+    if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
+        let cfg = Config::from_env();
+        let jwt = create_jwt("testuser", vec!["user".to_string()], &cfg, 3600).unwrap();
+        let cookie = Cookie::build("auth_token", jwt.clone())
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .path("/")
+            .max_age(TimeDelta::seconds(3600))
+            .finish();
+        return HttpResponse::Found()
+            .cookie(cookie)
+            .insert_header(("Location", "/"))
+            .finish();
+    }
+
+    // Handle Option types correctly
+    let session_state = state_from_session.unwrap_or_default();
+    if session_state.is_empty() || session_state != state_from_request {
+        return HttpResponse::BadRequest().body("Invalid OAuth state");
     }
 
     // Parse OAuth query parameters
@@ -237,26 +274,49 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
     };
 
     // Validate state parameter
-    let session_state = match session.get::<String>("oauth_state") {
-        Ok(Some(s)) => s,
-        Ok(None) => {
-            warn!("OAuth state missing from session");
-            return HttpResponse::BadRequest()
-                .json(json!({"error": "Invalid OAuth state (missing)"}));
-        }
-        Err(e) => {
-            error!("Failed to retrieve OAuth state from session: {:?}", e);
-            return HttpResponse::InternalServerError()
-                .json(json!({"error": "Failed to validate OAuth state"}));
+    let session_state = if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
+        // In test mode, use the X-Test-State header if available
+        req.headers()
+            .get("X-Test-State")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                tracing::warn!("No X-Test-State header in test mode");
+                Some("test_state".to_string())
+            })
+    } else {
+        match session.get::<String>("oauth_state") {
+            Ok(Some(state)) => Some(state),
+            Ok(None) => {
+                tracing::error!("OAuth state missing from session");
+                return HttpResponse::BadRequest().json(json!({
+                    "error": "Invalid OAuth state (missing)"
+                }));
+            }
+            Err(e) => {
+                tracing::error!("Failed to retrieve OAuth state from session: {:?}", e);
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": "Failed to validate OAuth state"
+                }));
+            }
         }
     };
-    if oauth_query.state != session_state {
-        warn!(
-            "OAuth state mismatch: expected {}, got {}",
-            session_state, oauth_query.state
-        );
-        return HttpResponse::BadRequest().json(json!({"error": "Invalid OAuth state (mismatch)"}));
+
+    // In test mode, we might not have a state from the request
+    if !oauth_query.state.is_empty() {
+        if session_state.as_deref() != Some(oauth_query.state.as_str()) {
+            tracing::error!("State mismatch: session state does not match request state");
+            return HttpResponse::BadRequest().json(json!({
+                "error": "Invalid OAuth state (mismatch)"
+            }));
+        }
+    } else if std::env::var("TEST_MODE").unwrap_or_default() != "1" {
+        tracing::error!("No state provided in OAuth callback");
+        return HttpResponse::BadRequest().json(json!({
+            "error": "No state provided"
+        }));
     }
+
     // Remove state from session to prevent reuse
     let _ = session.remove("oauth_state");
 
@@ -331,7 +391,7 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
         return HttpResponse::InternalServerError().finish();
     }
     // Create JWT for user
-    let jwt = create_jwt(&user.username, &Config::from_env().jwt_secret, 3600).unwrap();
+    let jwt = create_jwt(&user.username, vec!["user".to_string()], &cfg, 3600).unwrap();
     // Store JWT in session
     let _ = session.insert("jwt", &jwt);
     // Set cookie
@@ -353,8 +413,9 @@ pub async fn callback(req: HttpRequest, session: Session, pool: web::Data<PgPool
 pub async fn pat_auth(body: web::Json<String>) -> HttpResponse {
     // Test mode: skip real GitHub PAT validation
     if std::env::var("TEST_MODE").unwrap_or_default() == "1" {
-        let secret = std::env::var("JWT_SECRET").unwrap_or_default();
-        let jwt = create_jwt("testuser", &secret, 3600).unwrap();
+        let _secret = std::env::var("JWT_SECRET").unwrap_or_default();
+        let cfg = Config::from_env();
+        let jwt = create_jwt("testuser", vec!["user".to_string()], &cfg, 3600).unwrap();
         return HttpResponse::Ok().json(json!({"jwt": jwt, "user": "testuser"}));
     }
     let cfg = Config::from_env();
@@ -367,7 +428,7 @@ pub async fn pat_auth(body: web::Json<String>) -> HttpResponse {
     match octocrab.current().user().await {
         Ok(user) => {
             // Create JWT
-            let jwt = create_jwt(&user.login, &cfg.jwt_secret, 3600).unwrap();
+            let jwt = create_jwt(&user.login, vec!["user".to_string()], &cfg, 3600).unwrap();
             HttpResponse::Ok().json(json!({
                 "jwt": jwt,
                 "user": user.login,
@@ -413,15 +474,25 @@ mod tests {
             std::env::set_var("FRONTEND_URL", "http://localhost:3000");
         }
         // Initialize app with login route
-        let app = test::init_service(App::new().route("/auth/login", web::get().to(login))).await;
+        let config_for_test_app = Config::from_env(); // This Config will use GITHUB_CLIENT_ID="testid" set above
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(config_for_test_app.clone())) // Pass this config to the handler
+                .route("/auth/login", web::get().to(login)),
+        )
+        .await;
         // Send request
         let req = test::TestRequest::get().uri("/auth/login").to_request();
         let resp = test::call_service(&app, req).await;
         // Assert redirect
         assert_eq!(resp.status(), StatusCode::FOUND);
         let loc = resp.headers().get("Location").unwrap().to_str().unwrap();
+        println!("Redirect Location: {}", loc);
         assert!(loc.contains("client_id=testid"));
-        assert!(loc.contains("redirect_uri=http://localhost/callback"));
+        assert!(loc.contains(&format!(
+            "redirect_uri={}",
+            config_for_test_app.github_redirect_url
+        )));
         assert!(loc.contains("state="));
     }
 
@@ -454,34 +525,51 @@ mod tests {
 #[cfg(test)]
 mod callback_tests {
     use super::*;
-    use actix_web::cookie::Key;
-    use actix_web::{App, http::StatusCode, test, web};
-    use dotenv;
+    use actix_web::http::StatusCode;
+    use actix_web::{App, HttpRequest, HttpResponse, cookie::Key, test, web};
+    use serde_json::json;
     use sqlx::PgPool;
 
     #[actix_web::test]
     async fn callback_in_test_mode_sets_cookie() {
-        dotenv::dotenv().ok();
         unsafe {
             std::env::set_var("JWT_SECRET", "secret");
-        }
-        unsafe {
             std::env::set_var("TEST_MODE", "1");
+            std::env::set_var("GITHUB_PERSONAL_ACCESS_TOKEN", "dummy_token");
         }
-        let db_url = std::env::var("TEST_DATABASE_URL").expect(
-            "TEST_DATABASE_URL must be set for integration tests (set this in your CI environment)",
-        );
-        let pool = PgPool::connect(&db_url).await.unwrap();
-        let _session_key = Key::generate();
+        let app_config = Config::from_env(); // This calls dotenv().ok() internally
+
+        // In test mode, we don't need a database pool since we're bypassing OAuth
+        // Create a mock database pool that will never be used in test mode
+        let pool = web::Data::new(PgPool::connect_lazy("postgres://localhost/test").unwrap());
+
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(pool))
+                .app_data(web::Data::new(app_config.clone()))
+                .app_data(pool)
                 .route("/auth/callback", web::get().to(callback)),
         )
         .await;
+
+        // Create a request with a state parameter
+        let state = "test_state".to_string();
         let req = test::TestRequest::get()
-            .uri("/auth/callback?code=anything")
+            .uri(&format!("/auth/callback?code=anything&state={}", state))
+            .insert_header(("X-Test-State", state.clone()))
             .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), StatusCode::FOUND);
+        let cookie_hdr = resp.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+        assert!(cookie_hdr.contains("auth_token="));
+
+        // Create a request with a state parameter
+        let state = "test_state".to_string();
+        let req = test::TestRequest::get()
+            .uri(&format!("/auth/callback?code=anything&state={}", state))
+            .insert_header(("X-Test-State", state.clone()))
+            .to_request();
+
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::FOUND);
         let cookie_hdr = resp.headers().get("Set-Cookie").unwrap().to_str().unwrap();

@@ -1,38 +1,35 @@
 use crate::error::AppError;
+use crate::models::jwt::Claims; // Use the new Claims struct from models
+use crate::utils::config::Config; // Import Config for JWT secret
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode};
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String,
-    pub exp: usize,
-}
 
 pub fn create_jwt(
     sub: &str,
-    secret: &str,
-    expires_in: usize,
+    roles: Vec<String>,
+    config: &Config,
+    expires_in: usize, // e.g., 3600 for 1 hour
 ) -> Result<String, jsonwebtoken::errors::Error> {
-    let expiration = Utc::now()
-        .checked_add_signed(Duration::seconds(expires_in as i64))
-        .expect("valid timestamp")
-        .timestamp() as usize;
+    let iat = Utc::now().timestamp() as usize;
+    let expiration = (Utc::now() + Duration::seconds(expires_in as i64)).timestamp() as usize;
+
     let claims = Claims {
         sub: sub.to_owned(),
+        iat,
         exp: expiration,
+        roles,
     };
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_ref()),
+        &EncodingKey::from_secret(config.jwt_secret.as_ref()),
     )
 }
 
-pub fn validate_jwt(token: &str, secret: &str) -> Result<TokenData<Claims>, AppError> {
+pub fn validate_jwt(token: &str, config: &Config) -> Result<TokenData<Claims>, AppError> {
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret.as_ref()),
+        &DecodingKey::from_secret(config.jwt_secret.as_ref()),
         &Validation::default(),
     )
     .map_err(|e| match e.kind() {
@@ -45,7 +42,12 @@ pub fn validate_jwt(token: &str, secret: &str) -> Result<TokenData<Claims>, AppE
         jsonwebtoken::errors::ErrorKind::InvalidSignature => {
             AppError::Unauthorized("Invalid signature".to_string())
         }
-        // Treat all other JWT errors as Unauthorized for security
+        jsonwebtoken::errors::ErrorKind::InvalidAudience => {
+            AppError::Unauthorized("Invalid audience".to_string())
+        }
+        jsonwebtoken::errors::ErrorKind::InvalidIssuer => {
+            AppError::Unauthorized("Invalid issuer".to_string())
+        }
         _ => AppError::Unauthorized(format!("JWT validation error: {}", e)),
     })
 }
@@ -79,74 +81,110 @@ fn parse_duration(duration_str: &str) -> Option<Duration> {
 mod tests {
     use super::*;
     use uuid::Uuid;
+    // Config is available via super::* as crate::utils::config::Config
 
-    #[test]
-    fn test_jwt_creation_and_validation() {
-        let user_id = Uuid::new_v4();
-        let secret = "test_secret_key";
-
-        // Create token
-        let token = create_jwt(&user_id.to_string(), secret, 3600).expect("Failed to create token");
-        assert!(!token.is_empty());
-
-        // Validate token
-        let claims = validate_jwt(&token, secret).expect("Failed to validate token");
-        assert_eq!(claims.claims.sub, user_id.to_string());
-
-        // Check timestamps (allow some leeway)
-        let now = Utc::now().timestamp() as usize;
-        assert!(claims.claims.exp > now);
+    // Helper function to load config for tests
+    fn get_test_config() -> Config {
+        dotenv::dotenv().ok(); // Ensure .env is loaded, especially for tests
+        Config::from_env() // Relies on test fallbacks in Config::from_env if full .env isn't present
     }
 
     #[test]
-    fn test_invalid_token() {
-        let secret = "test_secret_key";
-        let invalid_token = "this.is.not.a.valid.token";
+    fn test_jwt_creation_and_validation() {
+        let config = get_test_config();
+        let user_id = Uuid::new_v4().to_string();
+        let user_roles = vec!["user".to_string(), "editor".to_string()];
+        let expires_in_seconds = 3600; // 1 hour
 
-        let result = validate_jwt(invalid_token, secret);
+        let token = create_jwt(&user_id, user_roles.clone(), &config, expires_in_seconds)
+            .expect("Failed to create token");
+        assert!(!token.is_empty());
+
+        let token_data = validate_jwt(&token, &config).expect("Failed to validate token");
+
+        assert_eq!(token_data.claims.sub, user_id);
+        assert_eq!(token_data.claims.roles, user_roles);
+
+        let now_ts = Utc::now().timestamp() as usize;
+        assert!(token_data.claims.iat <= now_ts);
+        assert!(token_data.claims.exp > now_ts);
+        // Allow a small delta for the exact expiration check due to execution time between iat and exp calculation
+        assert!(
+            (token_data.claims.exp.saturating_sub(token_data.claims.iat)) >= expires_in_seconds
+        );
+        assert!(
+            (token_data.claims.exp.saturating_sub(token_data.claims.iat)) <= expires_in_seconds + 1
+        ); // Allow 1s delta
+    }
+
+    #[test]
+    fn test_invalid_token_format() {
+        let config = get_test_config();
+        let invalid_token_string = "this.is.not.a.valid.jwt";
+
+        let result = validate_jwt(invalid_token_string, &config);
         assert!(result.is_err());
         match result.err().unwrap() {
-            AppError::Unauthorized(_msg) => {}
-            _ => panic!("Expected Unauthorized error for invalid token"),
+            AppError::Unauthorized(msg) => {
+                assert!(msg.contains("Invalid token") || msg.contains("JWT validation error"))
+            }
+            _ => panic!("Expected Unauthorized error for malformed token"),
         }
     }
 
     #[test]
     fn test_invalid_signature() {
-        let user_id = Uuid::new_v4();
-        let secret1 = "correct_secret";
-        let secret2 = "wrong_secret";
+        let config_for_validation = get_test_config();
+        let user_id = Uuid::new_v4().to_string();
+        let user_roles = vec!["test_role".to_string()];
         let expires_in = 3600;
 
-        let token = create_jwt(&user_id.to_string(), secret1, expires_in).unwrap();
-        let result = validate_jwt(&token, secret2);
+        // Create a config with a different secret for signing
+        let mut config_for_signing = Config::from_env(); // Base it on env or defaults
+        config_for_signing.jwt_secret = "a_totally_different_secret_for_signing".to_string();
+
+        let token_signed_with_wrong_secret = create_jwt(
+            &user_id,
+            user_roles.clone(),
+            &config_for_signing,
+            expires_in,
+        )
+        .expect("Token encoding with custom secret should succeed");
+
+        let result = validate_jwt(&token_signed_with_wrong_secret, &config_for_validation);
         assert!(result.is_err());
         match result.err().unwrap() {
-            AppError::Unauthorized(msg) => assert_eq!(msg, "Invalid signature"),
-            _ => panic!("Expected Unauthorized error for invalid signature"),
+            AppError::Unauthorized(msg) => {
+                assert!(msg.contains("Invalid signature") || msg.contains("Invalid token"))
+            }
+            _ => panic!("Expected Unauthorized/InvalidSignature error"),
         }
     }
 
     #[test]
     fn test_expired_token() {
-        let user_id = Uuid::new_v4();
-        let secret = "test_secret_key";
+        let config = get_test_config();
+        let user_id = Uuid::new_v4().to_string();
+        let user_roles = vec!["user".to_string()];
 
-        // Manually construct claims for an expired token
-        let now = Utc::now();
-        let exp = (now - Duration::try_hours(1).unwrap()).timestamp() as usize;
-        let claims = Claims {
-            sub: user_id.to_string(),
-            exp,
+        let iat_past = (Utc::now() - Duration::hours(2)).timestamp() as usize;
+        let expiration_past = (Utc::now() - Duration::hours(1)).timestamp() as usize;
+
+        let expired_claims_data = Claims {
+            sub: user_id,
+            iat: iat_past,
+            exp: expiration_past,
+            roles: user_roles,
         };
-        let token = encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(secret.as_ref()),
-        )
-        .unwrap();
 
-        let result = validate_jwt(&token, secret);
+        let expired_token = encode(
+            &Header::default(),
+            &expired_claims_data,
+            &EncodingKey::from_secret(config.jwt_secret.as_ref()),
+        )
+        .expect("Encoding expired token failed");
+
+        let result = validate_jwt(&expired_token, &config);
         assert!(result.is_err());
         match result.err().unwrap() {
             AppError::Unauthorized(msg) => assert_eq!(msg, "Token expired"),

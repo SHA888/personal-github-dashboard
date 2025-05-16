@@ -9,8 +9,10 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
-    sub: String,
-    exp: usize,
+    sub: String,        // Subject (user ID)
+    exp: usize,         // Expiration timestamp (seconds since epoch)
+    iat: usize,         // Issued at timestamp (seconds since epoch)
+    roles: Vec<String>, // User roles
 }
 
 #[tokio::test]
@@ -49,9 +51,12 @@ async fn test_activity_cache_flow() {
 
     // JWT setup
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let iat = chrono::Utc::now().timestamp() as usize;
     let claims = Claims {
-        sub: "testuser".to_string(),
-        exp: 2000000000,
+        sub: "testuser".to_string(), // For this test, sub is username, which matches how User model's `id` is used in JWTs if it's a string type
+        exp: 2000000000,             // A far future expiration for testing
+        iat,                         // Issued at
+        roles: vec![],               // Empty roles for this test case
     };
     let token = encode(
         &Header::default(),

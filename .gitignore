@@ -23,3 +23,9 @@ node_modules/
 
 # OS specific
 .DS_Store
+
+# Rust build output
+**/target/
+
+# Frontend build output
+dist/

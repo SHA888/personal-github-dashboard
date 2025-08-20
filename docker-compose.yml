@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: personal_github_dashboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/personal_github_dashboard
+      - REDIS_URL=redis://redis:6379
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-changeme}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-changeme}
+      - GITHUB_REDIRECT_URL=${GITHUB_REDIRECT_URL:-http://localhost:3001/auth/callback}
+      - JWT_SECRET=${JWT_SECRET:-dev_secret_change_me}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_BASE_URL=http://backend:3001
+      - BACKEND_URL=http://backend:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  pgdata:

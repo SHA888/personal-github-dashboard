@@ -23,7 +23,64 @@
           1
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Database Migration System Setup",
+            "description": "Set up the database migration system using sqlx or diesel to manage schema changes and versioning.",
+            "dependencies": [],
+            "details": "1. Research and select between sqlx and diesel based on project requirements\n2. Configure the migration system in the project structure\n3. Set up the database connection pool configuration\n4. Create initial migration files structure\n5. Implement migration runner for up/down migrations\n6. Add CI/CD integration for automated migrations\n7. Document migration procedures for development and production environments",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Core Tables Implementation",
+            "description": "Implement the primary database tables for users, repositories, issues, and pull requests.",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "1. Create users table with fields: id, github_user_id, login, name, avatar, email, created_at\n2. Create repositories table with fields: id, owner, name, is_private, default_branch\n3. Create issues table with fields: id, repo_id, number, title, state, labels[], assignees[], created_at, updated_at, closed_at\n4. Create pull_requests table with fields: id, repo_id, number, title, state, draft, requested_reviewers[], additions, deletions, created_at, merged_at, closed_at\n5. Implement proper data types for array fields (labels, assignees, reviewers)\n6. Add appropriate primary keys and constraints\n7. Write tests for table creation and basic CRUD operations",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Relationship Tables Implementation",
+            "description": "Implement tables that manage relationships between core entities, including user_repositories, oauth_tokens, and events.",
+            "dependencies": [
+              "2.2"
+            ],
+            "details": "1. Create oauth_tokens table with fields: user_id, provider, access_token_enc, refresh_token_enc, scope, expires_at\n2. Create user_repositories table with fields: user_id, repo_id, role, is_following\n3. Create events table with fields: id, repo_id, type, actor, payload_json, created_at\n4. Create user_settings table with fields: user_id, settings_json, updated_at\n5. Implement foreign key constraints to maintain referential integrity\n6. Add appropriate indexes for relationship lookups\n7. Write tests for relationship constraints and cascading behavior",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Views and Aggregates Creation",
+            "description": "Create materialized views and aggregate tables for work items and analytics to optimize query performance.",
+            "dependencies": [
+              "2.2",
+              "2.3"
+            ],
+            "details": "1. Design and implement work_items_view as a materialized view that unions issues, PRs, and reviews\n2. Create analytics_aggregates table for storing pre-computed metrics\n3. Implement refresh mechanism for materialized views\n4. Add indexes on views for common query patterns\n5. Create helper functions for view maintenance\n6. Implement query optimization for common access patterns\n7. Write tests to verify view data integrity and performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Security Implementation",
+            "description": "Implement security features including encryption for sensitive fields and proper indexing for query optimization.",
+            "dependencies": [
+              "2.1",
+              "2.2",
+              "2.3"
+            ],
+            "details": "1. Research and implement encryption mechanism for OAuth tokens\n2. Create helper functions for encrypting/decrypting sensitive data\n3. Set up indexes for common query patterns across all tables\n4. Implement row-level security policies if needed\n5. Add database-level validation for critical fields\n6. Configure proper access controls for database users\n7. Write tests to verify encryption works correctly and sensitive data is protected\n8. Document security measures implemented for the database",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 3,
@@ -51,7 +108,64 @@
           3
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "GitHub API Client Implementation",
+            "description": "Create a robust GitHub API client in Rust that supports both REST and GraphQL APIs with authentication, rate limiting, and efficient polling.",
+            "dependencies": [],
+            "details": "1. Implement REST API client with reqwest:\n   - Create modular endpoints for repos, issues, PRs, and reviews\n   - Implement serialization/deserialization with serde\n   - Add proper error handling and response parsing\n2. Implement GraphQL API client:\n   - Create query builder for common GitHub GraphQL queries\n   - Implement response parsing for complex nested data\n3. Add authentication handling:\n   - Support GitHub personal access tokens\n   - Implement token validation and refresh logic\n4. Implement efficient polling:\n   - Add ETag/If-None-Match header support\n   - Store and use ETags for subsequent requests\n5. Add comprehensive test suite with mocked responses",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Background Sync Service with Tokio",
+            "description": "Implement a background sync service using Tokio for asynchronous processing of GitHub data with configurable polling intervals.",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "1. Set up Tokio runtime for background processing:\n   - Configure thread pool and worker configuration\n   - Implement graceful shutdown handling\n2. Create sync scheduler:\n   - Implement configurable polling intervals\n   - Add priority queue for sync tasks\n   - Ensure \"My Work\" queries have higher priority\n3. Implement sync state management:\n   - Track last sync time per repository\n   - Store sync status (success/failure/in-progress)\n4. Add on-demand sync endpoint:\n   - Implement POST /api/sync/repository/{owner}/{repo}\n   - Handle immediate sync requests\n5. Create metrics collection for sync performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Repository Data Synchronization",
+            "description": "Implement the core repository data synchronization logic to fetch and store basic repository information in the database.",
+            "dependencies": [
+              "4.1",
+              "4.2"
+            ],
+            "details": "1. Create repository sync module:\n   - Fetch basic repository metadata (name, description, stars, etc.)\n   - Sync repository branches and their protection status\n   - Update repository visibility and access information\n2. Implement database storage for repository data:\n   - Create/update repository records\n   - Store repository metadata efficiently\n3. Add incremental sync logic:\n   - Only fetch changed data using ETags\n   - Implement delta updates to minimize database writes\n4. Create repository search functionality:\n   - Sync repositories the user has access to\n   - Support filtering by organization/owner\n5. Add tests for repository sync with mock GitHub API responses",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Work Items Synchronization",
+            "description": "Implement synchronization for work items including issues, pull requests, and review requests with proper filtering for user relevance.",
+            "dependencies": [
+              "4.1",
+              "4.2",
+              "4.3"
+            ],
+            "details": "1. Implement issues sync:\n   - Fetch issues assigned to the user\n   - Sync issue metadata (labels, milestones, etc.)\n   - Store issue comments and activity\n2. Implement pull requests sync:\n   - Fetch PRs authored by or assigned to user\n   - Sync PR status (CI status, approvals, etc.)\n   - Store PR diffs and changed files metadata\n3. Implement review requests sync:\n   - Fetch review requests for the user\n   - Sync review comments and feedback\n   - Track review status changes\n4. Add relevance filtering:\n   - Prioritize items directly related to user\n   - Implement configurable filters for work items\n5. Create database models and storage logic for all work items",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Error Handling & Rate Limiting",
+            "description": "Implement comprehensive error handling and rate limit management for the GitHub API integration with exponential backoff and recovery strategies.",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "1. Implement rate limit detection:\n   - Parse GitHub rate limit headers\n   - Track remaining requests and reset times\n   - Add predictive rate limit avoidance\n2. Create exponential backoff strategy:\n   - Implement configurable backoff algorithm\n   - Add jitter to prevent thundering herd\n   - Set maximum retry attempts\n3. Handle authentication errors:\n   - Detect token revocation/expiration\n   - Implement token refresh or user notification\n4. Add network failure handling:\n   - Implement retry logic for transient errors\n   - Add circuit breaker for persistent failures\n5. Create comprehensive error reporting:\n   - Log detailed error information\n   - Provide user-friendly error messages\n   - Track error metrics for monitoring",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 5,
@@ -65,7 +179,51 @@
           4
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scoring Algorithm Implementation",
+            "description": "Implement the core scoring algorithm that calculates and ranks work items based on various signals and weights.",
+            "dependencies": [],
+            "details": "1. Implement base score calculation for different work item types (issues, PRs, reviews)\n2. Add signal weight application logic (assignment, review request, mentions, labels)\n3. Implement special case handling (draft PRs, WIP labels, stale items)\n4. Create score normalization function to ensure consistent scoring across different item types\n5. Add unit tests with various input combinations\n6. Implement performance optimizations including score caching\n7. Create batch update mechanism for efficient rescoring during sync\n\nAcceptance Criteria:\n- Algorithm correctly calculates scores based on defined weights\n- Special cases are properly handled with appropriate score adjustments\n- Unit tests pass with >90% coverage\n- Performance benchmarks show scoring of 1000+ items in under 1 second",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Role Presets Creation",
+            "description": "Implement predefined scoring presets for different user roles (IC, Reviewer, Maintainer) with appropriate weight configurations.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "1. Define weight configurations for each preset:\n   - IC preset: prioritize assigned issues and PRs\n   - Reviewer preset: prioritize review requests and team PRs\n   - Maintainer preset: balanced view with emphasis on critical issues\n2. Create preset application logic to apply weights to scoring algorithm\n3. Implement preset switching functionality\n4. Add default preset selection based on user activity patterns\n5. Create unit tests for each preset configuration\n\nAcceptance Criteria:\n- All three presets are implemented with distinct and appropriate weight configurations\n- Presets can be applied and switched without requiring application restart\n- Each preset produces expected prioritization results in test scenarios\n- Default preset selection logic works correctly based on user activity",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "User Settings Integration",
+            "description": "Implement the storage and retrieval of user preferences for prioritization weights in the user_settings table.",
+            "dependencies": [
+              "5.1",
+              "5.2"
+            ],
+            "details": "1. Design schema for storing prioritization weights in user_settings table\n2. Implement settings retrieval logic to load user preferences\n3. Create settings update functionality to save custom weight configurations\n4. Add validation for weight values to ensure they're within acceptable ranges\n5. Implement default settings application for new users\n6. Create migration script for settings table schema\n7. Add unit tests for settings storage and retrieval\n\nAcceptance Criteria:\n- User preferences are correctly stored in the database\n- Custom weight configurations are properly applied to the scoring algorithm\n- Default settings are applied for new users\n- Weight validation prevents invalid configurations\n- Settings changes are immediately reflected in prioritization results",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Score Breakdown Calculation",
+            "description": "Implement detailed score breakdown calculation to show how each factor contributes to the final score of a work item.",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "1. Modify scoring algorithm to track contribution of each factor\n2. Create data structure to store score breakdown components\n3. Implement formatting logic for UI display of score breakdowns\n4. Add percentage calculation to show relative importance of each factor\n5. Create API endpoint to retrieve score breakdown for a specific work item\n6. Implement caching for score breakdowns to improve performance\n7. Add unit tests for breakdown calculation accuracy\n\nAcceptance Criteria:\n- Score breakdown correctly shows contribution of each factor\n- Sum of breakdown components equals the total score\n- Percentage calculations accurately reflect relative importance\n- API endpoint returns properly formatted breakdown data\n- Performance impact of tracking breakdowns is minimal",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 6,
@@ -109,7 +267,50 @@
           7
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analytics Calculation Service",
+            "description": "Implement the core analytics calculation service that computes metrics like PR cycle time, review turnaround time, and other key performance indicators.",
+            "dependencies": [],
+            "details": "1. Create a dedicated analytics module with calculation functions for:\n   - PR Cycle Time (merged_at − first_commit_timestamp)\n   - Review Turnaround Time (first_review_submitted_at − review_requested_at)\n   - Time in State tracking with state transition history\n   - Throughput calculations (completed items per time period)\n   - WIP counting and limits monitoring\n   - Stale item detection with configurable thresholds\n   - PR size categorization based on lines changed\n2. Implement unit tests with known inputs and expected outputs\n3. Add caching layer for expensive calculations\n4. Create documentation for calculation methodologies\n\nAcceptance Criteria:\n- All calculations produce correct results for test datasets\n- Performance meets requirements (calculations complete in <500ms)\n- Edge cases are properly handled (missing data, outliers)\n- Calculation methods are well-documented",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Analytics API Endpoints",
+            "description": "Create the REST API endpoints that expose the analytics data to the frontend, including activity, trends, and summary endpoints.",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "1. Implement the following API endpoints:\n   - GET /api/analytics/repository/{owner}/{repo}/activity\n     - Parameters: start_date, end_date, granularity (day/week/month)\n     - Returns: Time series data of activity metrics\n   - GET /api/analytics/repository/{owner}/{repo}/trends\n     - Parameters: start_date, end_date, metrics[]\n     - Returns: Trend analysis with percentage changes\n   - GET /api/analytics/repository/{owner}/{repo}/summary\n     - Returns: Current snapshot of key metrics\n2. Add proper error handling and validation\n3. Implement request caching with appropriate cache invalidation\n4. Create comprehensive API documentation\n\nAcceptance Criteria:\n- All endpoints return correctly formatted JSON responses\n- Endpoints handle invalid parameters gracefully\n- Response times are under 1 second for typical requests\n- API documentation is complete and accurate",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Visualization Components",
+            "description": "Develop frontend visualization components to display analytics data in an intuitive and interactive way.",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "1. Create reusable chart components using a library like Chart.js or D3:\n   - Time series line charts for trend visualization\n   - Bar charts for distribution analysis\n   - Heatmaps for activity patterns\n   - Gauge charts for KPI visualization\n2. Implement dashboard components:\n   - Summary statistics cards with key metrics\n   - Stale item breakdown with aging buckets\n   - PR size distribution visualization\n   - Team performance indicators\n3. Add interactive features:\n   - Date range selection\n   - Drill-down capabilities\n   - Metric comparison views\n4. Ensure responsive design for all screen sizes\n\nAcceptance Criteria:\n- All visualizations render correctly with sample data\n- Components are responsive across different screen sizes\n- Interactions (hover, click, filter) work as expected\n- Loading states and error handling are implemented",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Data Aggregation System",
+            "description": "Implement a data aggregation system to optimize performance for analytics queries by pre-computing common metrics.",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "1. Design and implement analytics_aggregates table structure:\n   - Daily rollups of key metrics\n   - Repository-level aggregations\n   - User-level aggregations\n2. Create scheduled jobs to update aggregates:\n   - Daily aggregation job\n   - Weekly aggregation job\n   - Monthly aggregation job\n3. Implement materialized views for common queries:\n   - PR cycle time distribution\n   - Review turnaround time trends\n   - Stale item counts by category\n4. Add refresh strategies and triggers for materialized views\n5. Create migration scripts for the new tables and views\n\nAcceptance Criteria:\n- Aggregation jobs complete successfully within time constraints\n- Query performance improves by at least 50% when using aggregates\n- Data consistency is maintained between raw and aggregated data\n- System handles backfilling of historical data correctly",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 9,

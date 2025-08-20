@@ -1,44 +1,6 @@
-<div align="center">
-
 # Personal GitHub Dashboard
 
-![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange?logo=rust)
-![Backend CI](https://github.com/SHA888/personal-github-dashboard/actions/workflows/backend.yml/badge.svg)
-![Frontend CI](https://github.com/SHA888/personal-github-dashboard/actions/workflows/frontend.yml/badge.svg)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1d503988e75e42b99abe292ae36f4ce9)](https://app.codacy.com/gh/SHA888/personal-github-dashboard/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![codecov](https://codecov.io/gh/SHA888/personal-github-dashboard/branch/main/graph/badge.svg?token=TOKEN)](https://codecov.io/gh/SHA888/personal-github-dashboard)
-![GitHub Copilot enabled](https://img.shields.io/badge/Copilot-Enabled-10cfc9?logo=github)
-![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/SHA888/personal-github-dashboard?utm_source=oss&utm_medium=github&utm_campaign=SHA888%2Fpersonal-github-dashboard&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)
-
----
-
-## Integration Test Secrets in CI
-
-**Best Practice:**
-
-- Secrets such as `TEST_DATABASE_URL` and `TEST_REDIS_URL` are never committed to the repository.
-- These are securely managed as [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
-- The CI workflow injects these secrets as environment variables for integration tests.
-
-**How to set up for CI:**
-
-1. Go to your repository’s Settings → Secrets and variables → Actions.
-2. Add `TEST_DATABASE_URL` and `TEST_REDIS_URL` as secrets.
-3. The workflow uses:
-   ```yaml
-   env:
-     TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-     TEST_REDIS_URL: ${{ secrets.TEST_REDIS_URL }}
-   ```
-
-**For local development:**
-
-- Copy `.env.example` to `.env` and fill in the required values.
-- Never commit your `.env` file.
-
----
-
-A personalized dashboard that provides insights and analytics for GitHub repositories and activities.
+A personalized dashboard that provides project management, insights and analytics for GitHub repositories and activities.
 
 ## Features
 
@@ -50,21 +12,11 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 
 ## Tech Stack
 
-### Frontend
-
-- Vite + React
-- TypeScript
-- Tailwind CSS
-- React Query
-- Vitest for testing
-
-### Backend
-
-- Rust with Actix-web
-- PostgreSQL with SQLx
-- Redis for caching
-- GitHub API integration
-- WebSocket support
+- Frontend: Vite, React, TypeScript, Tailwind CSS
+- Backend: Rust, Actix-web (REST + WebSocket/SSE)
+- Database: PostgreSQL
+- Cache/Queue: Redis
+- Observability: tracing + Prometheus (planned)
 
 ## Development Setup
 
@@ -72,207 +24,107 @@ A personalized dashboard that provides insights and analytics for GitHub reposit
 
 - Node.js 18+
 - Rust 1.75+
-- Docker and Docker Compose
-- GitHub API token (for development)
+- PostgreSQL 14+ (local or Docker)
+- Redis 6+ (local or Docker)
+- Docker (optional, for local stack)
+
+### Environment variables
+
+- GITHUB_CLIENT_ID
+- GITHUB_CLIENT_SECRET
+- GITHUB_REDIRECT_URL (must match your GitHub OAuth app callback, e.g., http://localhost:3001/auth/callback)
+- JWT_SECRET
+- DATABASE_URL (e.g., postgres://postgres:postgres@localhost:5432/personal_github_dashboard)
+- REDIS_URL (e.g., redis://localhost:6379)
 
 ### Getting Started
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/personal-github-dashboard.git
-cd personal-github-dashboard
-```
-
-2. Start the development databases:
-
-```bash
-docker-compose up -d
-```
-
-3. Set up environment variables:
-
-```bash
-# Copy example environment files
-cp .env.example .env
-```
-
-4. Install dependencies:
-
-```bash
-# Install project dependencies
-npm install
-```
-
-5. Start the development servers:
-
-```bash
-# Start both frontend and backend
-npm run dev
-```
-
-The application will be available at:
-
-- Frontend: http://localhost:3001
-- Backend API: http://localhost:3000
+- Clone this repository
+- Create a .env file at the repo root with the variables above
+- Start PostgreSQL and Redis locally (or via Docker Compose when available)
+- Run backend and frontend (will be added when the project is scaffolded)
 
 ## Project Structure
 
-```
-personal-github-dashboard/
-├── backend/        # Rust backend (Actix Web)
-│   ├── src/       # Source code
-│   ├── migrations/# Database migrations
-│   └── .env       # Environment configuration
-├── frontend/      # TypeScript/React frontend
-├── docs/         # Comprehensive documentation
-└── README.md
+Planned structure (to be scaffolded):
+
+```text
+frontend/      # Vite + React + TS + Tailwind (web)
+backend/       # Rust + Actix-web (API + background workers)
+infra/         # DB migrations, seeds, scripts
+docker/        # docker-compose for local dev
 ```
 
-## Available Scripts
+## Product Decisions
 
-- `npm run dev` - Start both frontend and backend in development mode
-- `npm run build` - Build both frontend and backend for production
-- `npm run test` - Run tests for both frontend and backend
-- `npm run lint` - Run linting for frontend
-- `npm run format` - Format all code with Prettier
+- Scope: Personal initially; consider team/org later based on demand
+- Repos: Include private repos; org membership supported
+- Notifications: In-app initially; email/Slack in later phase
+- Hosting: Local-first; optional SaaS later
+- Prioritization: Provide sensible defaults with onboarding to customize
+ - OAuth scopes: Initial = read:user, user:email, repo, read:org; defer notifications until later
 
 ## API Endpoints
 
-### Health Check
+### Auth
 
-- `GET /api/health` - Check service health status
+- `GET /auth/login` - Redirect to GitHub OAuth
+- `GET /auth/callback` - OAuth callback (uses GITHUB_REDIRECT_URL)
+- `POST /auth/logout` - Clear session
+- `GET /me` - Return current user profile/session
+
+### Work
+
+- `GET /api/work-items?type=pr|issue&state=open&sort=priority` - Unified "My Work" list
+
+### Repositories
+
+- `GET /api/repos` - List accessible/followed repositories
+- `POST /api/repos/{id}/follow` - Follow/unfollow a repository
 
 ### Analytics
 
-- `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
-- `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
+- `GET /api/analytics/repository/{owner}/{repo}/activity` - Repository activity data
+- `GET /api/analytics/repository/{owner}/{repo}/trends` - Repository trends
+- `GET /api/analytics/repository/{owner}/{repo}/summary` - Key metrics summary
 
 ### Data Synchronization
 
 - `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync
 
-## Documentation
+### Health Check
 
-For comprehensive documentation, including setup instructions, architecture details, API reference, and deployment guide, please visit our [Documentation](./docs/README.md).
+- `GET /api/health` - Check service health status
 
-## Contributing
+### Realtime
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- `GET /api/stream` - Server-Sent Events for live updates (or `/ws` for WebSocket)
 
-Please read our [Development Guide](./docs/development/README.md) for detailed contribution guidelines.
+## Authorization & Scopes (GitHub OAuth)
 
-## License
+Initial scopes (MVP):
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- read:user
+- user:email
+- repo (private repos, issues/PRs)
+- read:org (org membership/access checks)
 
-## Overview
+Deferred scopes (later):
 
-This project consists of:
+- notifications (enable GitHub notifications integration in a later phase)
 
-- **Backend**: Built with Rust using Actix Web, fetching data from the GitHub API and storing in PostgreSQL.
-- **Frontend**: A TypeScript/React application with Recharts for visualizations.
-- **Cache**: Redis for real-time data and rate limiting.
+## Prioritization Model (default)
 
-## Documentation
+- Assignment to you: +3
+- Review requested: +4
+- Severity labels (P0/P1/bug/security): +5/+3/+3/+5
+- Staleness: +1/day after 2 days (cap +7)
+- Near due (<48h): +4; overdue: +6
+- Small PR (≤200 LOC): +2
+- Blocked (needs author/tests failing): +3
+- Draft PR: −3; WIP label: −2
 
-For comprehensive documentation, including setup instructions, architecture details, API reference, and deployment guide, please visit our [Documentation](./docs/README.md).
-
-## Prerequisites
-
-- Rust (install via `curl --proto '=https' --tlsv1.2 -sSf https://sh.rust-lang.org | sh`)
-- Node.js and npm (for the frontend)
-- PostgreSQL (for the database)
-- Redis (for caching)
-- A GitHub Personal Access Token (PAT) with `repo` and `user` scopes
-
-## Setup Instructions
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/SHA888/personal-github-dashboard.git
-   cd personal-github-dashboard
-   ```
-
-2. **Backend Setup**:
-
-   ```bash
-   cd backend
-   cargo build
-   ```
-
-   - Create a `.env` file in `backend/` with:
-     ```
-     GITHUB_PERSONAL_ACCESS_TOKEN=your_personal_access_token
-     DATABASE_URL=postgresql://user:password@localhost:5432/personal_github_dashboard
-     REDIS_URL=redis://localhost:6379
-     PORT=8080
-     ```
-   - Run: `cargo run`
-
-3. **Frontend Setup**:
-
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-4. **Access**:
-   - Backend: `http://localhost:8080`
-   - Frontend: `http://localhost:5173`
-
-## Project Structure
-
-```
-personal-github-dashboard/
-├── backend/        # Rust backend (Actix Web)
-│   ├── src/       # Source code
-│   ├── migrations/# Database migrations
-│   └── .env       # Environment configuration
-├── frontend/       # TypeScript/React frontend
-├── docs/          # Comprehensive documentation
-├── .gitignore
-└── README.md
-```
-
-## Development
-
-The application consists of:
-
-- Backend (Rust + Actix-web)
-
-  - GitHub API integration using octocrab
-  - PostgreSQL database for data storage
-  - Redis for caching and real-time data
-  - WebSocket support for live updates
-  - Automatic data synchronization
-  - Manual sync triggers via API
-  - Health monitoring endpoints
-
-- Frontend (React + TypeScript)
-  - Modern UI components with Tailwind CSS
-  - Real-time data visualization with Recharts
-  - WebSocket integration for live updates
-  - Responsive design
-  - Type-safe development
-
-## Architecture
-
-The system uses:
-
-- Rust for backend services
-- PostgreSQL for data storage
-- Redis for caching and real-time features
-- GitHub API for repository data
-- React + TypeScript for frontend interface
-
-Data flow:
+### Data flow:
 
 1. GitHub data is fetched via API
 2. Stored in PostgreSQL database
@@ -281,25 +133,3 @@ Data flow:
 5. Served via REST API and WebSocket
 6. Visualized in web interface
 
-## Contributing
-
-Feel free to fork, submit PRs, or open issues! Please read our [Development Guide](./docs/development/README.md) for details on how to contribute.
-
-## License
-
-MIT
-
-## API Endpoints
-
-### Health Check
-
-- `GET /api/health` - Check service health status
-
-### Analytics
-
-- `GET /api/analytics/repository/{owner}/{repo}/activity` - Get repository activity data
-- `GET /api/analytics/repository/{owner}/{repo}/trends` - Get repository trends
-
-### Data Synchronization
-
-- `POST /api/sync/repository/{owner}/{repo}` - Manually trigger repository data sync

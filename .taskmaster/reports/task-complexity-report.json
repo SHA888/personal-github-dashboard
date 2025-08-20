@@ -1,0 +1,109 @@
+{
+	"meta": {
+		"generatedAt": "2025-08-20T03:08:33.529Z",
+		"tasksAnalyzed": 12,
+		"totalTasks": 12,
+		"analysisCount": 12,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Project Setup and Infrastructure",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Project Setup and Infrastructure task into 4 subtasks: Frontend Setup, Backend Setup, Docker Configuration, and CI Pipeline Setup. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves setting up multiple technologies (React, TypeScript, Tailwind, Rust, Actix-web) and configuring Docker Compose with multiple services. It requires expertise in both frontend and backend technologies, plus DevOps knowledge for containerization and CI setup."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Database Schema and Migrations",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Database Schema and Migrations task into 5 subtasks: Migration System Setup, Core Tables Implementation, Relationship Tables Implementation, Views and Aggregates Creation, and Security Implementation. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves designing and implementing a complex database schema with multiple tables, relationships, views, and security considerations. It requires deep understanding of database design principles, encryption for sensitive data, and performance optimization for queries."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "GitHub OAuth Authentication",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the GitHub OAuth Authentication task into 4 subtasks: OAuth Flow Implementation, JWT Authentication System, Secure Token Storage, and Frontend Auth Context. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves implementing a complete authentication system with OAuth, JWT, token encryption, and frontend state management. It requires security expertise and careful handling of sensitive user data."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "GitHub API Integration and Sync Service",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the GitHub API Integration and Sync Service task into 5 subtasks: GitHub API Client Implementation, Background Sync Service, Repository Data Sync, Work Items Sync, and Error Handling & Rate Limiting. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This is one of the most complex tasks, requiring implementation of both REST and GraphQL API clients, background processing with Tokio, efficient polling strategies, and sophisticated error handling with rate limiting. It's a core component that many other features depend on."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Work Items Prioritization Engine",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Work Items Prioritization Engine task into 4 subtasks: Scoring Algorithm Implementation, Role Presets Creation, User Settings Integration, and Score Breakdown Calculation. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves implementing a complex scoring algorithm with multiple factors and weights, creating different presets, and calculating detailed score breakdowns. It requires algorithmic thinking and integration with user settings."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "My Work API and Frontend",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the My Work API and Frontend task into 4 subtasks: Work Items API Implementation, Work Item List UI Components, Real-time Updates Integration, and Quick Actions Implementation. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task combines backend API development with frontend component creation, including real-time updates and interactive features. It requires full-stack expertise and integration with the prioritization engine."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Repository List and Health Stats",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Repository List and Health Stats task into 3 subtasks: Repository API Endpoints, Repository List UI Components, and Health Statistics Calculation. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task is moderately complex, involving API endpoints, UI components, and statistical calculations. It's more straightforward than some other tasks but still requires integration with GitHub data."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Analytics Implementation",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Analytics Implementation task into 4 subtasks: Analytics Calculation Service, Analytics API Endpoints, Visualization Components, and Data Aggregation System. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves complex calculations for various metrics, data aggregation for performance, and visualization components. It requires statistical knowledge, database optimization skills, and data visualization expertise."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "User Settings and Preferences",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the User Settings and Preferences task into 3 subtasks: Settings API Implementation, Settings UI Components, and Presets Management. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task is moderately complex, involving API endpoints for settings management, UI components with interactive elements, and preset configurations. It's more straightforward than core functionality tasks."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Onboarding Flow Implementation",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Onboarding Flow Implementation task into 3 subtasks: Onboarding API Endpoints, Multi-step Wizard UI, and Onboarding State Management. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves creating a guided user experience with multiple steps, state management, and integration with settings. It requires good UX design skills and integration with multiple other components."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Realtime Updates with SSE/WebSocket",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Realtime Updates task into 3 subtasks: SSE Endpoint Implementation, Event Publishing System, and Client-side Event Handling. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves implementing real-time communication between server and client, which requires understanding of SSE/WebSocket protocols, event-based architecture, and handling connection issues gracefully."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Observability and Error Handling",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Observability and Error Handling task into 3 subtasks: Structured Logging Implementation, Metrics Collection System, and Error Handling Framework. For each subtask, provide detailed steps, acceptance criteria, and estimated effort.",
+			"reasoning": "This task involves implementing cross-cutting concerns that affect the entire application. It requires knowledge of logging best practices, metrics collection, and comprehensive error handling strategies."
+		}
+	]
+}

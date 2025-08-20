@@ -1,0 +1,190 @@
+# PRD: Personal GitHub Dashboard
+
+## 1. Summary
+A personal dashboard to manage and prioritize GitHub work across repositories. It aggregates issues, PRs, and requested reviews into a unified, prioritized queue ("My Work"), provides lightweight analytics (cycle time, stale items), and enables quick actions. Target audience starts with individual developers, with maintainers/team leads as secondary personas later.
+
+## 2. Problem Statement
+Developers struggle to track and prioritize work scattered across multiple GitHub repos and orgs. GitHub notifications and inbox are noisy; context switching is costly; stale items accumulate unnoticed; and there’s limited visibility into flow metrics without bespoke tooling.
+
+## 3. Goals / Non‑Goals
+- Goals
+  - Consolidate assigned issues, PRs, and review requests into a single prioritized list.
+  - Provide actionable insights: cycle time, review queue length, stale items.
+  - Support private repos and org membership.
+  - Be local-first for privacy and easy setup.
+- Non‑Goals (MVP)
+  - Full project management replacement; deep GitHub Projects automation.
+  - Team-wide dashboards and admin controls (later).
+  - Email/Slack notifications (later phase).
+
+## 4. Personas
+- Individual Developer: needs a daily queue to act on reviews and assignments.
+- Maintainer: triages incoming items, detects bottlenecks and hotspots.
+- Team Lead (later): monitors velocity and WIP across team.
+
+## 5. Success Metrics
+- Reduce mean time-to-review and time-to-merge for PRs.
+- Reduce count of stale items (>7 days) per user.
+- Daily “inbox zero” achievable in <10 minutes for most users.
+
+## 6. Scope (MVP)
+- GitHub OAuth login; JWT session; secure token storage.
+- "My Work" prioritized list (issues/PRs/reviews) with scoring transparency.
+- Repo list with basic health stats (open issues/PRs, stale counts).
+- Analytics (minimal): PR cycle time, stale items, review queue length.
+- Sync: On-demand + background polling; handle rate limits.
+- Settings: repo selection, prioritization weights, notification prefs (in-app only).
+
+## 7. Functional Requirements
+- Auth via GitHub OAuth App using initial scopes: read:user, user:email, repo, read:org.
+- Persist GitHub data to Postgres and cache hot queries in Redis.
+- Compute priority scores per work item; show factor breakdown.
+- Real-time updates after sync via SSE/WebSocket.
+- REST API for frontend + health endpoint.
+
+## 8. Non‑Functional Requirements
+- Local-first via Docker Compose.
+- Privacy: store tokens encrypted; do not transmit data externally.
+- Reliability: degrade gracefully on rate limits; background retry/backoff.
+- Observability: structured logs; basic metrics (requests, errors, sync stats).
+
+## 9. Architecture
+- Frontend: Vite + React + TypeScript + Tailwind.
+- Backend: Rust + Actix‑web (REST + SSE/WS); background worker (Tokio).
+- DB: PostgreSQL (source of truth).
+- Cache/Queue: Redis (caching and job queues/streams).
+- Realtime: SSE preferred for simplicity in MVP.
+
+## 10. Authentication & Authorization
+- GitHub OAuth App with redirect URL env `GITHUB_REDIRECT_URL` that matches the GitHub app callback (e.g., http://localhost:3001/auth/callback).
+- Initial scopes: read:user, user:email, repo, read:org. Defer notifications.
+- Backend issues short-lived JWTs + refresh; token storage encrypted at rest.
+
+## 11. Data Model (initial)
+- users: id, github_user_id, login, name, avatar, email, created_at.
+- oauth_tokens: user_id, provider, access_token_enc, refresh_token_enc, scope, expires_at.
+- repositories: id, owner, name, is_private, default_branch.
+- user_repositories: user_id, repo_id, role, is_following.
+- issues: id, repo_id, number, title, state, labels[], assignees[], created_at, updated_at, closed_at.
+- pull_requests: id, repo_id, number, title, state, draft, requested_reviewers[], additions, deletions, created_at, merged_at, closed_at.
+- events: id, repo_id, type, actor, payload_json, created_at.
+- work_items_view (materialized/denorm): union of issues/prs/reviews for fast queries by user.
+- analytics_aggregates: per repo/user daily metrics (cycle time, WIP, aging buckets).
+- user_settings: user_id, settings_json (prioritization preset + weights), updated_at.
+
+## 12. Prioritization Model (default)
+- Score = Σ(weight × signal). Default weights:
+  - Assignment to you: +3
+  - Review requested: +4
+  - Severity labels (P0/P1/bug/security): +5/+3/+3/+5
+  - Staleness: +1/day after 2 days (cap +7)
+  - Near due (<48h): +4; overdue: +6
+  - Small PR (≤200 LOC): +2
+  - Blocked (needs author/tests failing): +3
+  - Draft PR: −3; WIP label: −2
+- Onboarding presets: IC / Reviewer / Maintainer, with optional sliders to tweak top signals. Skippable; defaults applied.
+- Transparency: UI shows factor breakdown for each item.
+
+## 13. Sync Strategy
+- Polling first; use ETag/If‑None‑Match; adaptive backoff on secondary rate limits.
+- Prioritize “My Work” queries; followed repos next.
+- Optional webhooks (later) for repos where user has admin rights; avoid admin:repo_hook in MVP.
+
+## 14. API (MVP)
+- Auth
+  - GET /auth/login
+  - GET /auth/callback
+  - POST /auth/logout
+  - GET /me
+- Work
+  - GET /api/work-items?type=pr|issue&state=open&sort=priority
+- Repositories
+  - GET /api/repos
+  - POST /api/repos/{id}/follow
+- Analytics
+  - GET /api/analytics/repository/{owner}/{repo}/activity
+  - GET /api/analytics/repository/{owner}/{repo}/trends
+  - GET /api/analytics/repository/{owner}/{repo}/summary
+- Sync
+  - POST /api/sync/repository/{owner}/{repo}
+
+- Health
+  - GET /api/health
+
+- Settings
+  - GET /api/settings/prioritization
+  - PUT /api/settings/prioritization
+  - GET /api/settings/repos
+  - PUT /api/settings/repos
+  - GET /api/onboarding/status
+  - POST /api/onboarding/complete
+
+- Realtime
+  - GET /api/stream (SSE) or /ws
+
+## 15. Security & Privacy
+- Encrypt OAuth tokens at rest; restrict access by user_id.
+- JWT signing keys secured via env; short expiry with refresh.
+- Scope least-privilege; no notifications scope in MVP.
+
+## 16. Observability
+- Structured logs with request IDs.
+- Basic metrics: request count/latency, error rates, sync durations, cache hit rate.
+
+## 17. Risks & Mitigations
+- GitHub rate limits: use GraphQL for aggregates; ETag-based polling; backoff.
+- Data sparsity (due dates absent): gracefully skip due-date signals.
+- Private/org repos approval/SSO: detect and guide user to grant access.
+
+## Onboarding Flow (MVP)
+- Goals: fast start with value in <1 minute; optional customization; fully skippable.
+- Steps
+  1) Choose preset: IC / Reviewer / Maintainer
+  2) Optional sliders: adjust top signals (Review weight, Staleness sensitivity, Overdue impact)
+  3) Select repositories to follow (search, multi-select; default = recent activity)
+  4) Confirmation: show sample “My Work” with score breakdown
+- UX
+  - Always provide “Use defaults” and “Skip for now”
+  - Persist partial progress; resume onboarding if incomplete
+  - Display why each item ranks high (top 3 factors)
+- Persistence
+  - user_settings.settings_json stores preset and weights
+  - user_repositories marks followed repos
+  - onboarding_status = { started_at, completed_at, step }
+- APIs
+  - GET/PUT /api/settings/prioritization
+  - GET/PUT /api/settings/repos
+  - GET /api/onboarding/status; POST /api/onboarding/complete
+
+## Analytics Metrics & Definitions
+- PR Cycle Time: merged_at − first_commit_timestamp in PR branch (approx: opened_at if commit time unavailable)
+- Lead Time for Changes (later): deploy_time − commit_time (out of MVP scope)
+- Review Turnaround Time: first_review_submitted_at − review_requested_at
+- Pickup Time: first_review_started_at − review_requested_at (proxy via first review event)
+- Time in State: duration PR/issue remains in open/draft/review states
+- Throughput: count of merged PRs per week
+- WIP: open PRs authored by user; open PRs assigned for review
+- Stale Items: no activity for N days (default 7); aging buckets 7/14/30/60+
+- PR Size Buckets: XS (≤50 LOC), S (≤200), M (≤500), L (≤1000), XL (>1000)
+- Data Notes
+  - Prefer GraphQL for aggregate queries; REST fallbacks where needed
+  - Missing fields (due dates) are ignored in scoring
+  - Org/private repo visibility respected per user’s token
+
+## 18. Milestones (rough)
+ - Phase 0: Repo scaffold + health endpoint (1–2 days)
+ - Phase 1: OAuth + JWT + repo list + My Work (1–2 weeks)
+ - Phase 2: Analytics (cycle time, stale), realtime, polish (1–2 weeks)
+
+## 19. Environment Variables
+- GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URL
+- JWT_SECRET
+- DATABASE_URL
+- REDIS_URL
+
+## 20. Acceptance Criteria (MVP)
+- User logs in via GitHub; sees their profile.
+- User selects repos; "My Work" shows assigned issues/PRs and requested reviews with scores and factor breakdown.
+- Repo list displays basic metrics; analytics page shows cycle time and stale items.
+- Sync operates in background and on-demand; realtime updates reflect after sync.
+- All endpoints protected by JWT where applicable; health endpoint returns 200.

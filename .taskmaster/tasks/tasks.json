@@ -1,0 +1,179 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Infrastructure",
+        "description": "Set up the initial project structure with Vite, React, TypeScript, and Tailwind for frontend, and Rust with Actix-web for backend. Configure Docker Compose for local development.",
+        "details": "1. Create frontend project:\n   - Use Vite to scaffold a React + TypeScript project\n   - Install and configure Tailwind CSS\n   - Set up folder structure (components, hooks, services, types)\n   - Configure ESLint and Prettier\n\n2. Create backend project:\n   - Initialize a new Rust project with Cargo\n   - Add Actix-web, Tokio, and other dependencies\n   - Set up folder structure (routes, models, services, utils)\n   - Create health endpoint at GET /api/health\n\n3. Create Docker Compose setup:\n   - Frontend container\n   - Backend container\n   - PostgreSQL container\n   - Redis container\n   - Configure environment variables\n   - Set up volume mounts for development\n\n4. Configure CI pipeline:\n   - Basic linting and testing\n   - Build verification",
+        "testStrategy": "1. Verify Docker Compose setup works by running `docker-compose up`\n2. Confirm all services start without errors\n3. Test health endpoint returns 200 OK\n4. Verify frontend development server runs and connects to backend\n5. Run linting and type checking on both frontend and backend",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Database Schema and Migrations",
+        "description": "Implement the database schema as defined in the PRD, including tables for users, oauth_tokens, repositories, user_repositories, issues, pull_requests, events, and views for work items and analytics.",
+        "details": "1. Create database migration system using sqlx or diesel\n2. Implement the following tables:\n   - users (id, github_user_id, login, name, avatar, email, created_at)\n   - oauth_tokens (user_id, provider, access_token_enc, refresh_token_enc, scope, expires_at)\n   - repositories (id, owner, name, is_private, default_branch)\n   - user_repositories (user_id, repo_id, role, is_following)\n   - issues (id, repo_id, number, title, state, labels[], assignees[], created_at, updated_at, closed_at)\n   - pull_requests (id, repo_id, number, title, state, draft, requested_reviewers[], additions, deletions, created_at, merged_at, closed_at)\n   - events (id, repo_id, type, actor, payload_json, created_at)\n   - user_settings (user_id, settings_json, updated_at)\n3. Create materialized view for work_items_view (union of issues/PRs/reviews)\n4. Create analytics_aggregates table for metrics\n5. Implement encryption for sensitive fields (OAuth tokens)\n6. Set up indexes for common query patterns",
+        "testStrategy": "1. Write unit tests for database models\n2. Test migrations up and down\n3. Verify encryption/decryption of sensitive fields\n4. Test query performance for common access patterns\n5. Validate foreign key constraints and cascading behavior",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "GitHub OAuth Authentication",
+        "description": "Implement GitHub OAuth authentication flow, JWT session management, and secure token storage as specified in the PRD.",
+        "details": "1. Create GitHub OAuth App in GitHub Developer Settings\n2. Implement authentication endpoints:\n   - GET /auth/login: Redirect to GitHub OAuth\n   - GET /auth/callback: Handle OAuth callback, create user, store tokens\n   - POST /auth/logout: Invalidate session\n   - GET /me: Return current user profile\n3. Implement JWT authentication:\n   - Generate short-lived JWTs with user info\n   - Implement refresh token mechanism\n   - Create middleware for protected routes\n4. Secure token storage:\n   - Encrypt OAuth tokens before storing in database\n   - Implement token refresh when expired\n5. Handle scopes: read:user, user:email, repo, read:org\n6. Create AuthContext in React for frontend auth state",
+        "testStrategy": "1. Test OAuth flow with mock GitHub responses\n2. Verify token encryption/decryption\n3. Test JWT generation, validation, and refresh\n4. Test protected routes with and without valid tokens\n5. Verify error handling for invalid/expired tokens\n6. Test frontend auth context with various auth states",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "GitHub API Integration and Sync Service",
+        "description": "Implement the GitHub API integration and sync service to fetch and store repository data, issues, PRs, and review requests with proper rate limit handling.",
+        "details": "1. Create GitHub API client in Rust:\n   - Implement REST and GraphQL API clients\n   - Handle authentication with user tokens\n   - Implement rate limit detection and backoff\n   - Use ETag/If-None-Match for efficient polling\n2. Implement sync service with Tokio:\n   - Background worker for periodic polling\n   - On-demand sync endpoint\n   - Prioritize \"My Work\" queries over other data\n3. Implement repository sync:\n   - Fetch and store basic repo information\n   - Sync issues assigned to user\n   - Sync PRs authored by or assigned to user\n   - Sync review requests\n4. Implement sync endpoints:\n   - POST /api/sync/repository/{owner}/{repo}\n5. Handle error cases:\n   - Rate limiting with exponential backoff\n   - Token revocation/expiration\n   - Network failures",
+        "testStrategy": "1. Mock GitHub API responses for testing\n2. Test rate limit detection and backoff behavior\n3. Verify ETag usage reduces unnecessary data transfer\n4. Test background sync with various schedules\n5. Verify data consistency after sync\n6. Test error handling and recovery\n7. Measure sync performance and optimize",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Work Items Prioritization Engine",
+        "description": "Implement the prioritization engine that scores and ranks work items (issues, PRs, reviews) based on the scoring model defined in the PRD.",
+        "details": "1. Implement scoring algorithm:\n   - Calculate base score for each work item\n   - Apply weights based on signals (assignment, review request, labels, etc.)\n   - Handle special cases (draft PRs, WIP labels)\n2. Create presets for different roles:\n   - IC preset\n   - Reviewer preset\n   - Maintainer preset\n3. Implement settings storage and retrieval:\n   - Store user preferences in user_settings table\n   - Allow customization of weights\n4. Create score breakdown calculation:\n   - Track contribution of each factor to final score\n   - Format for display in UI\n5. Optimize for performance:\n   - Consider caching scores\n   - Batch update on sync",
+        "testStrategy": "1. Unit test scoring algorithm with various inputs\n2. Verify preset configurations produce expected results\n3. Test edge cases (missing data, extreme values)\n4. Benchmark performance with large datasets\n5. Verify score breakdown matches total score\n6. Test customization of weights affects scores as expected",
+        "priority": "high",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "My Work API and Frontend",
+        "description": "Implement the \"My Work\" prioritized list API and frontend components to display issues, PRs, and review requests with scoring transparency.",
+        "details": "1. Implement API endpoint:\n   - GET /api/work-items with filtering and sorting\n   - Include score breakdown in response\n2. Create frontend components:\n   - WorkItemList component\n   - WorkItemCard component with expandable details\n   - Filtering and sorting controls\n   - Score breakdown visualization\n3. Implement real-time updates:\n   - Set up SSE endpoint at GET /api/stream\n   - Create client-side event listener\n   - Update UI when new data arrives\n4. Add quick actions:\n   - Link to GitHub item\n   - Mark as read/unread\n   - Change status (where applicable)\n5. Implement responsive design for mobile/desktop",
+        "testStrategy": "1. Test API endpoints with various filter combinations\n2. Verify sorting works correctly\n3. Test real-time updates with simulated sync events\n4. Verify UI renders correctly with different data shapes\n5. Test responsive design on various screen sizes\n6. Verify quick actions perform expected operations\n7. Test accessibility of UI components",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Repository List and Health Stats",
+        "description": "Implement the repository list view with basic health statistics including open issues/PRs and stale counts.",
+        "details": "1. Implement API endpoints:\n   - GET /api/repos\n   - POST /api/repos/{id}/follow\n2. Create frontend components:\n   - RepositoryList component\n   - RepositoryCard with health stats\n   - Follow/unfollow functionality\n3. Implement health statistics calculation:\n   - Count open issues/PRs\n   - Calculate stale items (>7 days no activity)\n   - Show trend indicators\n4. Add repository search and filtering:\n   - Filter by name/organization\n   - Sort by activity/health\n5. Implement repository selection for onboarding",
+        "testStrategy": "1. Test API endpoints for repository listing and following\n2. Verify health statistics calculations are accurate\n3. Test search and filtering functionality\n4. Verify follow/unfollow updates user_repositories correctly\n5. Test UI rendering with various repository states\n6. Verify trend indicators reflect actual changes",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Analytics Implementation",
+        "description": "Implement the analytics features including PR cycle time, stale items, and review queue length calculations and visualizations.",
+        "details": "1. Implement analytics calculation service:\n   - PR Cycle Time: merged_at − first_commit_timestamp\n   - Review Turnaround Time: first_review_submitted_at − review_requested_at\n   - Time in State tracking\n   - Throughput calculations\n   - WIP counting\n   - Stale item detection and aging buckets\n   - PR size categorization\n2. Create analytics API endpoints:\n   - GET /api/analytics/repository/{owner}/{repo}/activity\n   - GET /api/analytics/repository/{owner}/{repo}/trends\n   - GET /api/analytics/repository/{owner}/{repo}/summary\n3. Implement frontend visualizations:\n   - Time series charts for trends\n   - Summary statistics cards\n   - Stale item breakdown\n   - PR size distribution\n4. Add data aggregation for performance:\n   - Daily rollups in analytics_aggregates\n   - Optimize queries with materialized views",
+        "testStrategy": "1. Unit test analytics calculations with known inputs\n2. Verify aggregation logic produces correct results\n3. Test API endpoints with various time ranges\n4. Verify visualization components render correctly\n5. Test performance with large datasets\n6. Verify data consistency between raw and aggregated data",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "User Settings and Preferences",
+        "description": "Implement user settings management including prioritization weights, repository selection, and notification preferences.",
+        "details": "1. Implement settings API endpoints:\n   - GET /api/settings/prioritization\n   - PUT /api/settings/prioritization\n   - GET /api/settings/repos\n   - PUT /api/settings/repos\n2. Create settings UI components:\n   - Settings page layout\n   - Prioritization weight sliders\n   - Repository selection interface\n   - Notification preferences\n3. Implement settings persistence:\n   - Store in user_settings table\n   - Handle validation and defaults\n4. Add preset selection:\n   - IC / Reviewer / Maintainer presets\n   - Custom option with manual weights",
+        "testStrategy": "1. Test settings API endpoints for retrieval and update\n2. Verify validation of settings values\n3. Test preset application sets correct weights\n4. Verify UI components update when settings change\n5. Test persistence of settings across sessions\n6. Verify defaults are applied for new users",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Onboarding Flow Implementation",
+        "description": "Implement the onboarding flow for new users including preset selection, signal weight adjustment, repository selection, and sample work items preview.",
+        "details": "1. Implement onboarding API endpoints:\n   - GET /api/onboarding/status\n   - POST /api/onboarding/complete\n2. Create onboarding UI components:\n   - Multi-step wizard interface\n   - Preset selection screen\n   - Signal weight adjustment sliders\n   - Repository selection with search\n   - Sample \"My Work\" preview\n3. Implement onboarding state management:\n   - Track progress through steps\n   - Allow skipping/resuming\n   - Store partial progress\n4. Add onboarding completion logic:\n   - Apply selected settings\n   - Mark onboarding as complete\n   - Redirect to main dashboard",
+        "testStrategy": "1. Test onboarding API endpoints\n2. Verify wizard navigation works correctly\n3. Test preset application and customization\n4. Verify repository search and selection\n5. Test sample preview generation\n6. Verify settings are correctly applied on completion\n7. Test skipping and resuming functionality",
+        "priority": "medium",
+        "dependencies": [
+          6,
+          7,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Realtime Updates with SSE/WebSocket",
+        "description": "Implement server-sent events (SSE) or WebSocket for real-time updates after sync operations complete.",
+        "details": "1. Implement SSE endpoint:\n   - GET /api/stream\n   - Authenticate with JWT\n   - Create event stream per user\n2. Add event publishing:\n   - Emit events after sync completes\n   - Include changed entity types and IDs\n   - Format events for client consumption\n3. Implement client-side event handling:\n   - Connect to SSE endpoint\n   - Parse incoming events\n   - Update UI components based on event type\n   - Handle reconnection on errors\n4. Add connection status indicator in UI",
+        "testStrategy": "1. Test SSE endpoint authentication\n2. Verify events are emitted after sync\n3. Test client-side event handling with various event types\n4. Verify UI updates correctly when events arrive\n5. Test reconnection behavior on network interruption\n6. Measure performance with many concurrent connections",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Observability and Error Handling",
+        "description": "Implement structured logging, metrics collection, and comprehensive error handling throughout the application.",
+        "details": "1. Implement structured logging:\n   - Add request ID to all logs\n   - Log request/response details\n   - Configure log levels\n   - Format logs for development and production\n2. Add metrics collection:\n   - Request count and latency\n   - Error rates\n   - Sync durations\n   - Cache hit rates\n   - GitHub API rate limit usage\n3. Implement comprehensive error handling:\n   - Create error types and mapping\n   - Add user-friendly error messages\n   - Handle GitHub API errors gracefully\n   - Implement rate limit detection and backoff\n4. Add health check endpoint with detailed status",
+        "testStrategy": "1. Verify logs contain required fields\n2. Test metrics collection with various scenarios\n3. Verify error handling for common failure cases\n4. Test rate limit detection and backoff behavior\n5. Verify health check endpoint returns accurate status\n6. Test log levels configuration",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-20T03:07:54.317Z",
+      "updated": "2025-08-20T03:07:54.317Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
